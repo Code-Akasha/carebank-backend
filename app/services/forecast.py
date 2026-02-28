@@ -58,7 +58,9 @@ def _prophet_forecast(transactions: list[dict], periods: int) -> dict:
     upper = float(last_row["yhat_upper"])
 
     interval_width = upper - lower
-    forecast_error = min(abs(interval_width / predicted), 1.0) if predicted != 0 else 0.5
+    forecast_error = (
+        min(abs(interval_width / predicted), 1.0) if predicted != 0 else 0.5
+    )
 
     daily = forecast.tail(periods)[["ds", "yhat"]].rename(
         columns={"ds": "date", "yhat": "predicted"}
@@ -103,7 +105,9 @@ def _linear_fallback(transactions: list[dict], periods: int) -> dict:
         "predicted_balance": round(predicted, 2),
         "lower_bound": round(predicted - 1.645 * std, 2),
         "upper_bound": round(predicted + 1.645 * std, 2),
-        "forecast_error": round(min(std / abs(predicted), 1.0) if predicted != 0 else 0.5, 4),
+        "forecast_error": round(
+            min(std / abs(predicted), 1.0) if predicted != 0 else 0.5, 4
+        ),
         "daily_forecast": [],
     }
 

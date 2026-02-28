@@ -33,24 +33,34 @@ def generate_mock_transactions(
 
         for _ in range(num_txns):
             cat = random.choices(categories, weights=weights, k=1)[0]
-            amount = round(base_daily_spend * random.uniform(0.2, 2.5) * weights[categories.index(cat)] * 3, 2)
-            transactions.append({
-                "user_id": user_id,
-                "date": datetime.combine(date, datetime.min.time()),
-                "amount": -amount,
-                "category": cat,
-                "merchant": random.choice(merchants[cat]),
-            })
+            amount = round(
+                base_daily_spend
+                * random.uniform(0.2, 2.5)
+                * weights[categories.index(cat)]
+                * 3,
+                2,
+            )
+            transactions.append(
+                {
+                    "user_id": user_id,
+                    "date": datetime.combine(date, datetime.min.time()),
+                    "amount": -amount,
+                    "category": cat,
+                    "merchant": random.choice(merchants[cat]),
+                }
+            )
 
         # Periodic income (every 30 days)
         if day_offset % 30 == 0:
-            transactions.append({
-                "user_id": user_id,
-                "date": datetime.combine(date, datetime.min.time()),
-                "amount": 50000.0,
-                "category": "income",
-                "merchant": "Salary",
-            })
+            transactions.append(
+                {
+                    "user_id": user_id,
+                    "date": datetime.combine(date, datetime.min.time()),
+                    "amount": 50000.0,
+                    "category": "income",
+                    "merchant": "Salary",
+                }
+            )
 
     return transactions
 
@@ -97,9 +107,12 @@ def calculate_monthly_stats(transactions: list[dict]) -> dict:
     savings_ratio = max(0, (income - expenses) / income) if income > 0 else 0
 
     # Month-over-month expense variance
-    expense_values = [monthly[m]["expenses"] for m in months if monthly[m]["expenses"] > 0]
+    expense_values = [
+        monthly[m]["expenses"] for m in months if monthly[m]["expenses"] > 0
+    ]
     if len(expense_values) >= 2:
         import numpy as np
+
         mean_exp = np.mean(expense_values)
         std_exp = np.std(expense_values)
         expense_variance = float(std_exp / mean_exp) if mean_exp > 0 else 0

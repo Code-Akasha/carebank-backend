@@ -6,12 +6,28 @@ PERSONAS = ["Cautious Saver", "Balanced Manager", "Social Spender", "Impulse Buy
 
 # Pre-computed centroids from mock data analysis
 # Features: [food, transport, entertainment, shopping, bills, other]
-_CENTROIDS = np.array([
-    [0.15, 0.10, 0.10, 0.10, 0.50, 0.05],  # Cautious Saver — bills-heavy, low discretionary
-    [0.25, 0.15, 0.15, 0.15, 0.25, 0.05],  # Balanced Manager — evenly spread
-    [0.35, 0.10, 0.30, 0.10, 0.10, 0.05],  # Social Spender — food + entertainment heavy
-    [0.20, 0.05, 0.15, 0.40, 0.10, 0.10],  # Impulse Buyer — shopping-heavy
-])
+_CENTROIDS = np.array(
+    [
+        [
+            0.15,
+            0.10,
+            0.10,
+            0.10,
+            0.50,
+            0.05,
+        ],  # Cautious Saver — bills-heavy, low discretionary
+        [0.25, 0.15, 0.15, 0.15, 0.25, 0.05],  # Balanced Manager — evenly spread
+        [
+            0.35,
+            0.10,
+            0.30,
+            0.10,
+            0.10,
+            0.05,
+        ],  # Social Spender — food + entertainment heavy
+        [0.20, 0.05, 0.15, 0.40, 0.10, 0.10],  # Impulse Buyer — shopping-heavy
+    ]
+)
 
 _CATEGORY_ORDER = ["food", "transport", "entertainment", "shopping", "bills", "other"]
 
@@ -34,9 +50,9 @@ def cluster_persona(spending_profile: dict[str, float]) -> dict:
             "top_category": "unknown",
         }
 
-    feature_vector = np.array([
-        spending_profile.get(cat, 0.0) for cat in _CATEGORY_ORDER
-    ]).reshape(1, -1)
+    feature_vector = np.array(
+        [spending_profile.get(cat, 0.0) for cat in _CATEGORY_ORDER]
+    ).reshape(1, -1)
 
     distances = np.linalg.norm(_CENTROIDS - feature_vector, axis=1)
     cluster_id = int(np.argmin(distances))
@@ -46,7 +62,11 @@ def cluster_persona(spending_profile: dict[str, float]) -> dict:
     max_possible_dist = np.sqrt(len(_CATEGORY_ORDER))
     confidence = round(max(0.0, 1.0 - (min_dist / max_possible_dist)), 2)
 
-    top_category = max(spending_profile, key=spending_profile.get) if spending_profile else "unknown"
+    top_category = (
+        max(spending_profile, key=spending_profile.get)
+        if spending_profile
+        else "unknown"
+    )
 
     return {
         "persona": PERSONAS[cluster_id],

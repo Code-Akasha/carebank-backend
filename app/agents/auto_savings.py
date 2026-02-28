@@ -2,7 +2,6 @@ from app.agents.base import BaseAgent, AgentInput, AgentOutput
 
 
 class AutoSavingsAgent(BaseAgent):
-
     @property
     def name(self) -> str:
         return "AutoSavingsAgent"

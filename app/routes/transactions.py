@@ -9,7 +9,9 @@ router = APIRouter(prefix="/api/transactions", tags=["transactions"])
 
 
 @router.get("/", response_model=list[TransactionResponse])
-def list_transactions(user_id: str, skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+def list_transactions(
+    user_id: str, skip: int = 0, limit: int = 50, db: Session = Depends(get_db)
+):
     return (
         db.query(Transaction)
         .filter(Transaction.user_id == user_id)

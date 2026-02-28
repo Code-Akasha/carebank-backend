@@ -1,4 +1,9 @@
-from app.core.finance import calculate_surplus, forecast_impact, check_eligibility, calculate_health_score
+from app.core.finance import (
+    calculate_surplus,
+    forecast_impact,
+    check_eligibility,
+    calculate_health_score,
+)
 
 
 def test_calculate_surplus():
