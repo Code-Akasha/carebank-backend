@@ -43,7 +43,9 @@ def simulate(request: SimulateRequest):
     )
 
     impact_amount = simulated_balance - current_balance
-    retained_pct = (simulated_balance / current_balance * 100) if current_balance > 0 else 0
+    retained_pct = (
+        (simulated_balance / current_balance * 100) if current_balance > 0 else 0
+    )
 
     if retained_pct > 70:
         risk_level = "low"
@@ -60,11 +62,13 @@ def simulate(request: SimulateRequest):
 
     suggestions = []
     if risk_level in ("medium", "high"):
-        suggestions.append({
-            "type": "product",
-            "name": "3-Month EMI",
-            "description": f"Split into 3 payments of ₹{request.expense_amount / 3:,.0f}",
-        })
+        suggestions.append(
+            {
+                "type": "product",
+                "name": "3-Month EMI",
+                "description": f"Split into 3 payments of ₹{request.expense_amount / 3:,.0f}",
+            }
+        )
 
     return SimulateResponse(
         current_forecast={

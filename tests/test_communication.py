@@ -1,14 +1,12 @@
-import pytest
-
 from app.agents.communication import CommunicationAgent
 from app.agents.base import AgentInput
 from app.compliance.guard import validate_and_refine
-from app.services.llm import get_llm_provider
 from app.services.nlg import generate_response
 from app.services.nudge import can_send_nudge, record_nudge, _user_nudge_history
 
 
 # ── Nudge Fatigue Tests ───────────────────────────────────────────────
+
 
 class TestNudgeFatigue:
     def setup_method(self):
@@ -28,6 +26,7 @@ class TestNudgeFatigue:
     def test_daily_limit(self):
         # Manually set history to simulate 2 nudges past cooldown but within 24h
         from datetime import datetime, timedelta, timezone
+
         now = datetime.now(timezone.utc)
         _user_nudge_history["user_test"] = [
             now - timedelta(hours=10),
@@ -40,19 +39,25 @@ class TestNudgeFatigue:
 
 # ── NLG / Template Fallback Tests ─────────────────────────────────────
 
+
 class TestNLGService:
     def test_template_fallback_cautious(self):
-        result = generate_response("Cautious Saver", "Low savings", "Increase emergency fund")
+        result = generate_response(
+            "Cautious Saver", "Low savings", "Increase emergency fund"
+        )
         assert result["provider"] == "template_fallback"
         assert "safety is priority" in result["text"].lower()
 
     def test_template_fallback_social(self):
-        result = generate_response("Social Spender", "High dining", "Cut back eating out")
+        result = generate_response(
+            "Social Spender", "High dining", "Cut back eating out"
+        )
         assert result["provider"] == "template_fallback"
         assert "looks like fun" in result["text"].lower()
 
 
 # ── Compliance Guard Tests ────────────────────────────────────────────
+
 
 class TestComplianceGuard:
     def test_blacklist_redaction(self):
@@ -84,18 +89,21 @@ class TestComplianceGuard:
 
 # ── Communication Agent Tests ─────────────────────────────────────────
 
+
 class TestCommunicationAgent:
     def setup_method(self):
         _user_nudge_history.clear()
 
     def test_agent_invokes_nlg(self):
         agent = CommunicationAgent()
-        output = agent.invoke(AgentInput(
-            user_id="user123",
-            message="Explain my score",
-            intent="general",
-            context={"data": "Score is 75", "task": "explain"}
-        ))
+        output = agent.invoke(
+            AgentInput(
+                user_id="user123",
+                message="Explain my score",
+                intent="general",
+                context={"data": "Score is 75", "task": "explain"},
+            )
+        )
         assert output.agent_name == "CommunicationAgent"
         assert len(output.response) > 0
         assert "provider" in output.metadata
@@ -103,18 +111,22 @@ class TestCommunicationAgent:
     def test_agent_blocks_nudge(self):
         agent = CommunicationAgent()
         # First nudge
-        agent.invoke(AgentInput(
-            user_id="user456",
-            message="Nudge user",
-            intent="general",
-            context={"is_nudge": True}
-        ))
+        agent.invoke(
+            AgentInput(
+                user_id="user456",
+                message="Nudge user",
+                intent="general",
+                context={"is_nudge": True},
+            )
+        )
         # Second nudge (should be blocked by cooldown)
-        output = agent.invoke(AgentInput(
-            user_id="user456",
-            message="Nudge user again",
-            intent="general",
-            context={"is_nudge": True}
-        ))
+        output = agent.invoke(
+            AgentInput(
+                user_id="user456",
+                message="Nudge user again",
+                intent="general",
+                context={"is_nudge": True},
+            )
+        )
         assert "Nudge Blocked" in output.response
         assert output.metadata["nudge"] == "blocked"

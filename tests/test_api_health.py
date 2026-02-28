@@ -2,7 +2,6 @@
 Integration tests for the CareBank API health endpoint.
 Verifies the FastAPI app starts and responds correctly.
 """
-import pytest
 
 
 class TestHealthEndpoint:

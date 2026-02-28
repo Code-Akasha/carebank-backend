@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from app.core.finance import calculate_health_score
-from app.services.data import calculate_monthly_stats, aggregate_spending_profile, generate_mock_transactions
+from app.services.data import (
+    calculate_monthly_stats,
+    aggregate_spending_profile,
+    generate_mock_transactions,
+)
 from app.services.forecast import forecast_balance
 from app.services.clustering import cluster_persona
 

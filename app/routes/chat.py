@@ -22,12 +22,14 @@ class ChatResponse(BaseModel):
 
 @router.post("", response_model=ChatResponse)
 def chat(request: ChatRequest, db: DBSession = Depends(get_db)):
-    result = coordinator_graph.invoke({
-        "user_id": request.user_id,
-        "message": request.message,
-        "audit_log": [],
-        "conversation_history": [],
-    })
+    result = coordinator_graph.invoke(
+        {
+            "user_id": request.user_id,
+            "message": request.message,
+            "audit_log": [],
+            "conversation_history": [],
+        }
+    )
 
     # Persist audit log entry
     audit_entry = AuditLog(

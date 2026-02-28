@@ -17,22 +17,19 @@ class AgentOutput(BaseModel):
 
 
 class BaseAgent(ABC):
-
     @property
     @abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
     @abstractmethod
-    def _invoke(self, agent_input: AgentInput) -> AgentOutput:
-        ...
+    def _invoke(self, agent_input: AgentInput) -> AgentOutput: ...
 
     def invoke(self, agent_input: AgentInput) -> AgentOutput:
         try:
             return self._invoke(agent_input)
         except Exception as exc:
             return AgentOutput(
-                response=f"I'm sorry, I encountered an issue processing your request. Please try again.",
+                response="I'm sorry, I encountered an issue processing your request. Please try again.",
                 agent_name=self.name,
                 confidence=0.0,
                 metadata={"error": str(exc)},

@@ -1,14 +1,12 @@
 from app.agents.base import BaseAgent, AgentInput, AgentOutput
 from app.services.forecast import forecast_balance
-from app.services.clustering import cluster_persona
 from app.services.anomaly import detect_anomaly
 from app.services.health_score import compute_health_score
-from app.services.data import generate_mock_transactions, aggregate_spending_profile
+from app.services.data import generate_mock_transactions
 from app.core.finance import forecast_impact
 
 
 class IntelligenceAgent(BaseAgent):
-
     @property
     def name(self) -> str:
         return "IntelligenceAgent"
@@ -38,14 +36,22 @@ class IntelligenceAgent(BaseAgent):
         persona = result.get("persona", {}).get("persona", "Balanced Manager")
         factors = result.get("factors", {})
 
-        top_factor = max(factors.items(), key=lambda x: x[1]["score"])[0] if factors else "savings"
-        weak_factor = min(factors.items(), key=lambda x: x[1]["score"])[0] if factors else "liquidity"
+        top_factor = (
+            max(factors.items(), key=lambda x: x[1]["score"])[0]
+            if factors
+            else "savings"
+        )
+        weak_factor = (
+            min(factors.items(), key=lambda x: x[1]["score"])[0]
+            if factors
+            else "liquidity"
+        )
 
         response = (
             f"Your Financial Health Score is {score}/100. "
             f"Strongest area: {top_factor} ({factors.get(top_factor, {}).get('label', 'Good')}). "
             f"Area to improve: {weak_factor} ({factors.get(weak_factor, {}).get('label', 'Needs Work')}). "
-            f"Your spending persona is \"{persona}\"."
+            f'Your spending persona is "{persona}".'
         )
 
         return AgentOutput(
@@ -75,7 +81,9 @@ class IntelligenceAgent(BaseAgent):
         )
 
         impact = simulated_balance - current_balance
-        retained_pct = (simulated_balance / current_balance * 100) if current_balance > 0 else 0
+        retained_pct = (
+            (simulated_balance / current_balance * 100) if current_balance > 0 else 0
+        )
 
         if retained_pct > 70:
             risk_level = "low"

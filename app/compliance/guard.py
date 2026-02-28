@@ -9,8 +9,14 @@ from app.core.database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
-# Basic blacklist for MVP. 
-BLACKLIST_TERMS = ["guarantee", "promise", "risk-free", "100% safe", "investment advice"]
+# Basic blacklist for MVP.
+BLACKLIST_TERMS = [
+    "guarantee",
+    "promise",
+    "risk-free",
+    "100% safe",
+    "investment advice",
+]
 
 DISCLAIMER = "\n\n*Disclaimer: CareBank insights are for informational purposes and do not constitute formal financial advice.*"
 
@@ -25,7 +31,7 @@ def validate_and_refine(
     1. Blacklist check
     2. Number verification (if original data provided)
     3. Disclaimer injection
-    
+
     Returns:
         tuple of (refined_response, compliance_metadata)
     """
@@ -50,16 +56,22 @@ def validate_and_refine(
     # If the LLM generates a number not in the original data context, flag an alert
     if original_data:
         # Extract all numbers from response
-        resp_numbers = [float(n.replace(',', '')) for n in set(re.findall(r"\d+(?:,\d+)*(?:\.\d+)?", refined_response))]
-        
+        resp_numbers = [
+            float(n.replace(",", ""))
+            for n in set(re.findall(r"\d+(?:,\d+)*(?:\.\d+)?", refined_response))
+        ]
+
         # Flatten original data to string and extract numbers
         data_str = str(original_data)
-        data_numbers = [float(n.replace(',', '')) for n in set(re.findall(r"\d+(?:,\d+)*(?:\.\d+)?", data_str))]
-        
+        data_numbers = [
+            float(n.replace(",", ""))
+            for n in set(re.findall(r"\d+(?:,\d+)*(?:\.\d+)?", data_str))
+        ]
+
         # Check if any major number in response (> 100) is NOT in original data
         for num in resp_numbers:
             if num > 100 and num not in data_numbers:
-                # Flag hallucination (allow a small float tolerance) 
+                # Flag hallucination (allow a small float tolerance)
                 # (In a real system, we'd do fuzzy matching or use LLM-as-a-judge)
                 metadata["numbers_verified"] = False
                 logger.warning(f"Compliance flag: Possible number hallucination: {num}")

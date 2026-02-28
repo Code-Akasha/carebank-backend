@@ -1,5 +1,3 @@
-import pytest
-
 from app.agents.base import AgentInput, AgentOutput
 from app.agents.intelligence import IntelligenceAgent
 from app.agents.communication import CommunicationAgent
@@ -15,12 +13,15 @@ from app.agents.coordinator import (
 
 # ── Base agent tests ──────────────────────────────────────────────────
 
+
 class TestBaseAgentInterface:
     def test_intelligence_implements_base(self):
         agent = IntelligenceAgent()
         assert agent.name == "IntelligenceAgent"
 
-        output = agent.invoke(AgentInput(user_id="u1", message="score", intent="health_score"))
+        output = agent.invoke(
+            AgentInput(user_id="u1", message="score", intent="health_score")
+        )
         assert isinstance(output, AgentOutput)
         assert output.agent_name == "IntelligenceAgent"
 
@@ -47,6 +48,7 @@ class TestBaseAgentInterface:
 
 
 # ── Intent classification tests ───────────────────────────────────────
+
 
 class TestIntentClassification:
     def test_health_query(self):
@@ -96,6 +98,7 @@ class TestIntentClassification:
 
 
 # ── Routing tests ─────────────────────────────────────────────────────
+
 
 class TestRouting:
     def test_health_routes_to_intelligence(self):
@@ -152,6 +155,7 @@ class TestRouting:
 
 # ── Full graph tests ──────────────────────────────────────────────────
 
+
 class TestCoordinatorGraph:
     def test_graph_compiles(self):
         graph = build_coordinator_graph()
@@ -159,35 +163,41 @@ class TestCoordinatorGraph:
 
     def test_end_to_end_health(self):
         graph = build_coordinator_graph()
-        result = graph.invoke({
-            "user_id": "test_user",
-            "message": "What is my health score?",
-            "audit_log": [],
-            "conversation_history": [],
-        })
+        result = graph.invoke(
+            {
+                "user_id": "test_user",
+                "message": "What is my health score?",
+                "audit_log": [],
+                "conversation_history": [],
+            }
+        )
         assert result["intent"] == "health_score"
         assert result["agent_used"] == "IntelligenceAgent"
         assert "Health Score" in result["agent_response"]
 
     def test_end_to_end_general(self):
         graph = build_coordinator_graph()
-        result = graph.invoke({
-            "user_id": "test_user",
-            "message": "Tell me something random",
-            "audit_log": [],
-            "conversation_history": [],
-        })
+        result = graph.invoke(
+            {
+                "user_id": "test_user",
+                "message": "Tell me something random",
+                "audit_log": [],
+                "conversation_history": [],
+            }
+        )
         assert result["intent"] == "general"
         assert result["agent_used"] == "CommunicationAgent"
 
     def test_audit_log_created(self):
         graph = build_coordinator_graph()
-        result = graph.invoke({
-            "user_id": "test_user",
-            "message": "What is my score?",
-            "audit_log": [],
-            "conversation_history": [],
-        })
+        result = graph.invoke(
+            {
+                "user_id": "test_user",
+                "message": "What is my score?",
+                "audit_log": [],
+                "conversation_history": [],
+            }
+        )
         assert len(result["audit_log"]) == 1
         assert result["audit_log"][0]["agent_used"] == "IntelligenceAgent"
 

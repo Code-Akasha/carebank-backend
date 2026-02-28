@@ -15,10 +15,23 @@ from app.compliance.guard import validate_and_refine, log_compliance_decision
 # Intent keywords → intent label mapping
 # ---------------------------------------------------------------------------
 _INTENT_KEYWORDS: dict[str, list[str]] = {
-    "health_score": ["health", "score", "wellness", "how am i doing", "financial health"],
+    "health_score": [
+        "health",
+        "score",
+        "wellness",
+        "how am i doing",
+        "financial health",
+    ],
     "what_if": ["what if", "what-if", "spend", "impact", "simulate", "scenario"],
     "auto_savings": ["save", "saving", "savings", "budget", "micro", "transfer"],
-    "opportunity": ["product", "recommend", "loan", "subscription", "offer", "eligible"],
+    "opportunity": [
+        "product",
+        "recommend",
+        "loan",
+        "subscription",
+        "offer",
+        "eligible",
+    ],
 }
 
 _INTENT_TO_AGENT: dict[str, str] = {
@@ -66,6 +79,7 @@ _AGENT_REGISTRY = _build_agent_registry()
 # State
 # ---------------------------------------------------------------------------
 
+
 class CoordinatorState(TypedDict, total=False):
     user_id: str
     message: str
@@ -80,6 +94,7 @@ class CoordinatorState(TypedDict, total=False):
 # ---------------------------------------------------------------------------
 # Graph nodes
 # ---------------------------------------------------------------------------
+
 
 def classify_intent(state: CoordinatorState) -> CoordinatorState:
     message = state["message"].lower()
@@ -136,13 +151,17 @@ def validate_response(state: CoordinatorState) -> CoordinatorState:
         refined_response, metadata = validate_and_refine(
             response=state.get("agent_response", ""),
             intent=state.get("intent", "general"),
-            original_data=None, # In a full system, we'd pass original data context here
+            original_data=None,  # In a full system, we'd pass original data context here
         )
-        
+
         # Determine strict blocking or just logging based on flags (MVP: just log/redact)
-        
-        if metadata.get("blacklist_flagged") or metadata.get("disclaimer_added") or not metadata.get("numbers_verified"):
-             log_compliance_decision(
+
+        if (
+            metadata.get("blacklist_flagged")
+            or metadata.get("disclaimer_added")
+            or not metadata.get("numbers_verified")
+        ):
+            log_compliance_decision(
                 user_id=state["user_id"],
                 intent=state.get("intent", "general"),
                 original_response=state.get("agent_response", ""),
@@ -151,7 +170,7 @@ def validate_response(state: CoordinatorState) -> CoordinatorState:
             )
 
         return {**state, "agent_response": refined_response}
-    except Exception as e:
+    except Exception:
         # Fail open or fail closed? MVP: fail open with original response if compliance bugs out
         return state
 
@@ -170,6 +189,7 @@ def format_response(state: CoordinatorState) -> CoordinatorState:
 # ---------------------------------------------------------------------------
 # Graph builder
 # ---------------------------------------------------------------------------
+
 
 def build_coordinator_graph():
     graph = StateGraph(CoordinatorState)

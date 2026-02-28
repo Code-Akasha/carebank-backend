@@ -27,6 +27,7 @@ def get_llm_provider(
     if settings.ollama_base_url:
         try:
             from langchain_ollama import ChatOllama
+
             # Use llama3.2 as default small fast model, or mistral
             llm = ChatOllama(
                 base_url=settings.ollama_base_url,
@@ -43,6 +44,7 @@ def get_llm_provider(
     if settings.gemini_api_key:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
+
             llm = ChatGoogleGenerativeAI(
                 model="gemini-2.5-flash",
                 google_api_key=settings.gemini_api_key,

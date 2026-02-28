@@ -14,7 +14,7 @@ PERSONA_PROMPT_MAP = {
     "Cautious Saver": "You are a supportive and reassuring financial assistant. You encourage steady growth and safe financial choices.",
     "Balanced Manager": "You are a practical and straightforward financial assistant. You provide clear, actionable advice.",
     "Social Spender": "You are an energetic and engaging financial assistant. You focus on maximizing enjoyment while staying within budget.",
-    "Impulse Buyer": "You are a gentle but firm financial coach. You emphasize taking a moment to pause before spending."
+    "Impulse Buyer": "You are a gentle but firm financial coach. You emphasize taking a moment to pause before spending.",
 }
 
 DEFAULT_PERSONA = PERSONA_PROMPT_MAP["Balanced Manager"]
@@ -53,11 +53,13 @@ def generate_response(
     chain = prompt | llm
 
     try:
-        response = chain.invoke({
-            "persona_instruction": persona_instruction,
-            "data_context": data_context,
-            "task_description": task_description,
-        })
+        response = chain.invoke(
+            {
+                "persona_instruction": persona_instruction,
+                "data_context": data_context,
+                "task_description": task_description,
+            }
+        )
         return {
             "text": response.content.strip(),
             "provider": provider,
@@ -68,10 +70,12 @@ def generate_response(
         return _template_fallback(persona, data_context, task_description)
 
 
-def _template_fallback(persona: str, data_context: str, task_description: str) -> dict[str, Any]:
+def _template_fallback(
+    persona: str, data_context: str, task_description: str
+) -> dict[str, Any]:
     """Fallback generator when LLMs fail or are misconfigured."""
     text = f"Based on {data_context}, we suggest looking into your options. We currently cannot generate a fully personalized message. "
-    
+
     if "Cautious" in persona:
         text = f"Your safety is priority. {data_context} indicates you should stay the course. "
     elif "Social" in persona:
