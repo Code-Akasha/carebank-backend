@@ -1,22 +1,24 @@
 from fastapi import APIRouter
-from app.core.finance import calculate_health_score
-from app.schemas.models import HealthScoreResponse
+from pydantic import BaseModel
+
+from app.services.health_score import compute_health_score
 
 router = APIRouter(prefix="/api/health-score", tags=["health-score"])
+
+
+class HealthScoreResponse(BaseModel):
+    score: float
+    factors: dict
+    persona: dict | None = None
+    forecast: dict | None = None
+    stats: dict | None = None
 
 
 @router.get("/{user_id}", response_model=HealthScoreResponse)
 def get_health_score(user_id: str):
     """
-    Health Score endpoint.
-    Currently returns a deterministic calculation from placeholder values.
-    In Phase 3, this will pull real data from the Intelligence Agent (Prophet forecasts)
-    and the database (savings ratio, expense variance, liquidity days).
+    Health Score endpoint — dynamically computed from ML pipeline + Deterministic Core.
+    Uses mock transaction data for MVP; real DB integration in Phase 5.
     """
-    result = calculate_health_score(
-        savings_ratio=0.18,
-        expense_variance=0.15,
-        liquidity_days=12.0,
-        forecast_error=0.10,
-    )
+    result = compute_health_score(user_id)
     return result
