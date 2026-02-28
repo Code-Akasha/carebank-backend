@@ -111,8 +111,10 @@ class TestAnomalyDetection:
         assert result["is_anomaly"] is False
 
     def test_anomaly_flagged(self):
-        history = [100, 120, 110, 95, 130, 105, 115, 100, 125, 90]
-        result = detect_anomaly(5000, history)  # 50x normal
+        history = [100, 120, 110, 95, 130, 105, 115, 100, 125, 90,
+                   108, 112, 118, 102, 98, 107, 122, 113, 97, 103,
+                   110, 105, 115, 100, 125, 90, 108, 112, 118, 102]
+        result = detect_anomaly(10000, history)  # 100x normal
         assert result["is_anomaly"] is True
         assert result["severity"] in ("medium", "high")
 

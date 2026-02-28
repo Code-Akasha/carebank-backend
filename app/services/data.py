@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 
@@ -25,7 +25,7 @@ def generate_mock_transactions(
     }
 
     transactions: list[dict] = []
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).date()
 
     for day_offset in range(days, 0, -1):
         date = today - timedelta(days=day_offset)
