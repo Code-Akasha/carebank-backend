@@ -88,10 +88,10 @@ def log_compliance_decision(
         with SessionLocal() as db:
             log_entry = AuditLog(
                 user_id=user_id,
-                message="[COMPLIANCE CHECK]",
+                user_message="[COMPLIANCE CHECK]",
                 intent=intent,
                 agent_used="ComplianceGuard",
-                response=f"Flags: Blacklist={metadata['blacklist_flagged']}, Verified={metadata['numbers_verified']}",
+                agent_response=f"Flags: Blacklist={metadata['blacklist_flagged']}, Verified={metadata['numbers_verified']}, Disclaimer={metadata['disclaimer_added']}",
             )
             db.add(log_entry)
             db.commit()
