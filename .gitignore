@@ -1,7 +1,16 @@
 venv/
+.venv/
 __pycache__/
 .env
 .idea/
 *.pyc
 db.sqlite3
 *.log
+
+# Test artifacts
+test.db
+.pytest_cache/
+test-results.xml
+coverage.xml
+htmlcov/
+.coverage
