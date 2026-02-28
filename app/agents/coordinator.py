@@ -9,6 +9,7 @@ from app.agents.intelligence import IntelligenceAgent
 from app.agents.communication import CommunicationAgent
 from app.agents.opportunity import OpportunityAgent
 from app.agents.auto_savings import AutoSavingsAgent
+from app.compliance.guard import validate_and_refine, log_compliance_decision
 
 # ---------------------------------------------------------------------------
 # Intent keywords → intent label mapping
@@ -131,8 +132,28 @@ def route_to_agent(state: CoordinatorState) -> CoordinatorState:
 
 
 def validate_response(state: CoordinatorState) -> CoordinatorState:
-    # Placeholder for Compliance Guard — pass-through for Phase 2
-    return state
+    try:
+        refined_response, metadata = validate_and_refine(
+            response=state.get("agent_response", ""),
+            intent=state.get("intent", "general"),
+            original_data=None, # In a full system, we'd pass original data context here
+        )
+        
+        # Determine strict blocking or just logging based on flags (MVP: just log/redact)
+        
+        if metadata.get("blacklist_flagged") or metadata.get("disclaimer_added") or not metadata.get("numbers_verified"):
+             log_compliance_decision(
+                user_id=state["user_id"],
+                intent=state.get("intent", "general"),
+                original_response=state.get("agent_response", ""),
+                final_response=refined_response,
+                metadata=metadata,
+            )
+
+        return {**state, "agent_response": refined_response}
+    except Exception as e:
+        # Fail open or fail closed? MVP: fail open with original response if compliance bugs out
+        return state
 
 
 def format_response(state: CoordinatorState) -> CoordinatorState:
