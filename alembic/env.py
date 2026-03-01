@@ -14,7 +14,7 @@ from app.models import Transaction, Balance, Product, Session, AuditLog  # noqa:
 config = context.config
 
 # Override sqlalchemy.url from app settings (env-based)
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+config.set_main_option("sqlalchemy.url", get_settings().get_database_url())
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

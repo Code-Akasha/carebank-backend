@@ -5,12 +5,17 @@ services:
     image: ankane/pgvector:v0.5.1
     environment:
       POSTGRES_USER: carebank
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Jefino 1537}
       POSTGRES_DB: carebank_db
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carebank -d carebank_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7.2-alpine

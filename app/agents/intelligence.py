@@ -1,9 +1,18 @@
+import logging
+
 from app.agents.base import BaseAgent, AgentInput, AgentOutput
 from app.services.forecast import forecast_balance
 from app.services.anomaly import detect_anomaly
 from app.services.health_score import compute_health_score
 from app.services.data import generate_mock_transactions
 from app.core.finance import forecast_impact
+from app.services.mockbank_client import (
+    get_transactions_sync,
+    get_balance_sync,
+    MockBankClientError,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class IntelligenceAgent(BaseAgent):
@@ -31,7 +40,13 @@ class IntelligenceAgent(BaseAgent):
         return self._handle_health_score(user_id)
 
     def _handle_health_score(self, user_id: str) -> AgentOutput:
-        result = compute_health_score(user_id)
+        transactions = self._fetch_transactions(user_id)
+        current_balance = self._fetch_balance(user_id)
+        result = compute_health_score(
+            user_id,
+            transactions=transactions,
+            current_balance=current_balance,
+        )
         score = result["score"]
         persona = result.get("persona", {}).get("persona", "Balanced Manager")
         factors = result.get("factors", {})
@@ -67,11 +82,12 @@ class IntelligenceAgent(BaseAgent):
         )
 
     def _handle_what_if(self, user_id: str, expense_amount: float) -> AgentOutput:
-        transactions = generate_mock_transactions(user_id)
+        transactions = self._fetch_transactions(user_id)
+        current_balance = self._fetch_balance(user_id)
 
         # Current forecast
         current = forecast_balance(transactions)
-        current_balance = current["predicted_balance"]
+        predicted_balance = current.get("predicted_balance", current_balance)
 
         # Simulated forecast (using Deterministic Core for impact)
         simulated_balance = forecast_impact(
@@ -80,9 +96,11 @@ class IntelligenceAgent(BaseAgent):
             simulated_expense=expense_amount,
         )
 
-        impact = simulated_balance - current_balance
+        impact = simulated_balance - predicted_balance
         retained_pct = (
-            (simulated_balance / current_balance * 100) if current_balance > 0 else 0
+            (simulated_balance / predicted_balance * 100)
+            if predicted_balance > 0
+            else 0
         )
 
         if retained_pct > 70:
@@ -93,7 +111,7 @@ class IntelligenceAgent(BaseAgent):
             risk_level = "high"
 
         response = (
-            f"Current forecast: ₹{current_balance:,.0f} end-of-month. "
+            f"Current forecast: ₹{predicted_balance:,.0f} end-of-month. "
             f"After this expense: ₹{simulated_balance:,.0f} (impact: ₹{impact:,.0f}). "
             f"Risk level: {risk_level}."
         )
@@ -112,7 +130,7 @@ class IntelligenceAgent(BaseAgent):
         )
 
     def _handle_anomaly(self, user_id: str, amount: float) -> AgentOutput:
-        transactions = generate_mock_transactions(user_id)
+        transactions = self._fetch_transactions(user_id)
         history = [abs(t["amount"]) for t in transactions if t["amount"] < 0]
 
         result = detect_anomaly(abs(amount), history)
@@ -132,3 +150,20 @@ class IntelligenceAgent(BaseAgent):
             confidence=0.9,
             metadata={"intent_handled": "anomaly_check", **result},
         )
+
+    def _fetch_transactions(self, user_id: str) -> list[dict]:
+        try:
+            return get_transactions_sync(user_id=user_id)
+        except MockBankClientError as exc:
+            logger.warning(
+                "Falling back to generated transactions for %s: %s", user_id, exc
+            )
+            return generate_mock_transactions(user_id)
+
+    def _fetch_balance(self, user_id: str) -> float:
+        try:
+            balance = get_balance_sync(user_id)
+            return float(balance.get("current_balance", 25000.0))
+        except MockBankClientError as exc:
+            logger.warning("Falling back to default balance for %s: %s", user_id, exc)
+            return 25000.0

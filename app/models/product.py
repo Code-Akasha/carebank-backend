@@ -8,6 +8,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
     type = Column(String, index=True, nullable=False)  # e.g., savings_plan, loan
+    provider_id = Column(String, index=True, nullable=True)
     description = Column(Text, nullable=True)
     min_balance_required = Column(Float, nullable=True)
     interest_rate = Column(Float, nullable=True)
