@@ -74,11 +74,15 @@ async def simulate(request: SimulateRequest):
         )
 
     return SimulateResponse(
-        current_forecast=current,
+        current_forecast={
+            "end_of_month_balance": current.get("end_of_month_balance"),
+            "confidence": current.get("confidence"),
+        },
         simulated_forecast={"predicted_balance": simulated_balance},
         impact={
             "amount": impact_amount,
             "retained_pct": retained_pct,
+            "retained_percentage": round(retained_pct, 1),
             "risk_level": risk_level,
         },
         explanation=explanation,

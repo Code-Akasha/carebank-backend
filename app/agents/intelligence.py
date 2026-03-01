@@ -87,7 +87,7 @@ class IntelligenceAgent(BaseAgent):
 
         # Current forecast
         current = forecast_balance(transactions)
-        current_balance = current.get("predicted_balance", current_balance)
+        predicted_balance = current.get("predicted_balance", current_balance)
 
         # Simulated forecast (using Deterministic Core for impact)
         simulated_balance = forecast_impact(
@@ -96,9 +96,11 @@ class IntelligenceAgent(BaseAgent):
             simulated_expense=expense_amount,
         )
 
-        impact = simulated_balance - current_balance
+        impact = simulated_balance - predicted_balance
         retained_pct = (
-            (simulated_balance / current_balance * 100) if current_balance > 0 else 0
+            (simulated_balance / predicted_balance * 100)
+            if predicted_balance > 0
+            else 0
         )
 
         if retained_pct > 70:
@@ -109,7 +111,7 @@ class IntelligenceAgent(BaseAgent):
             risk_level = "high"
 
         response = (
-            f"Current forecast: ₹{current_balance:,.0f} end-of-month. "
+            f"Current forecast: ₹{predicted_balance:,.0f} end-of-month. "
             f"After this expense: ₹{simulated_balance:,.0f} (impact: ₹{impact:,.0f}). "
             f"Risk level: {risk_level}."
         )

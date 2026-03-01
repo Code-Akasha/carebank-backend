@@ -20,6 +20,7 @@ pandas>=2.2.0
 numpy>=1.26.0
 langchain-google-genai>=2.0.0
 langchain-ollama>=0.2.0
+nest-asyncio>=1.6.0
 pyjwt>=2.8.0
 respx>=0.20.0
 rich>=13.7.0

@@ -9,8 +9,11 @@ from typing import Any
 
 import httpx
 import jwt
+import nest_asyncio
 
 from app.core.config import get_settings
+
+nest_asyncio.apply()
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +32,12 @@ def _parse_iso(value: str | None) -> datetime | None:
     # Collapse duplicate timezone suffix e.g. "...+00:00+00:00"
     while value.count("+00:00") > 1:
         value = value.replace("+00:00+00:00", "+00:00")
-    # Add UTC if no timezone present
-    if "+" not in value:
+    # Add UTC if no timezone present (check only in the time portion)
+    sep_index = value.find("T")
+    if sep_index == -1:
+        sep_index = value.find(" ")
+    time_and_tz = value[sep_index + 1 :] if sep_index != -1 else ""
+    if "+" not in time_and_tz and "-" not in time_and_tz:
         value = f"{value}+00:00"
     return datetime.fromisoformat(value)
 
@@ -68,10 +75,11 @@ class MockBankClient:
                     method, url, params=params, json=json_body, headers=headers
                 )
                 response.raise_for_status()
+                data = response.json()
             except httpx.HTTPError as exc:
                 logger.error("MockBank request failed: %s", exc)
                 raise MockBankClientError(str(exc)) from exc
-        return response.json()
+        return data
 
     async def get_transactions(
         self,
@@ -149,6 +157,15 @@ def get_mockbank_client() -> MockBankClient:
     return _client
 
 
+def _run_sync(coro: Any) -> Any:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
+
+
 def get_transactions_sync(
     *,
     user_id: str,
@@ -157,7 +174,7 @@ def get_transactions_sync(
     category: str | None = None,
 ) -> list[dict[str, Any]]:
     client = get_mockbank_client()
-    return asyncio.run(
+    return _run_sync(
         client.get_transactions(
             user_id,
             start_date=start_date,
@@ -169,19 +186,19 @@ def get_transactions_sync(
 
 def get_balance_sync(user_id: str) -> dict[str, Any]:
     client = get_mockbank_client()
-    return asyncio.run(client.get_balance(user_id))
+    return _run_sync(client.get_balance(user_id))
 
 
 def get_products_sync(user_id: str | None = None) -> list[dict[str, Any]]:
     client = get_mockbank_client()
-    return asyncio.run(client.get_products(user_id))
+    return _run_sync(client.get_products(user_id))
 
 
 def get_accounts_sync(user_id: str) -> list[dict[str, Any]]:
     client = get_mockbank_client()
-    return asyncio.run(client.get_accounts(user_id))
+    return _run_sync(client.get_accounts(user_id))
 
 
 def get_providers_sync() -> list[dict[str, Any]]:
     client = get_mockbank_client()
-    return asyncio.run(client.get_providers())
+    return _run_sync(client.get_providers())

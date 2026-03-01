@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     db_host: str = "localhost"
     db_port: int = 5432
     db_user: str = "carebank"
-    db_password: str = "Jefino 1537"
+    db_password: str = ""
     db_name: str = "carebank_db"
 
     redis_url: str = "redis://localhost:6379"
