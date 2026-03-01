@@ -13,18 +13,28 @@ def _persist_accounts(db: Session, records: list[dict]) -> None:
     if not records:
         return
     for record in records:
-        account = db.query(Account).filter(Account.account_id == record.get("account_id")).first()
+        account = (
+            db.query(Account)
+            .filter(Account.account_id == record.get("account_id"))
+            .first()
+        )
         if account:
             account.name = record.get("name", account.name)
             account.account_type = record.get("account_type", account.account_type)
             account.mask = record.get("mask", account.mask)
             account.currency = record.get("currency", account.currency)
             account.institution = record.get("institution", account.institution)
-            account.current_balance = record.get("current_balance", account.current_balance)
-            account.available_balance = record.get("available_balance", account.available_balance)
+            account.current_balance = record.get(
+                "current_balance", account.current_balance
+            )
+            account.available_balance = record.get(
+                "available_balance", account.available_balance
+            )
             account.status = record.get("status", account.status)
             account.provider_id = record.get("provider_id", account.provider_id)
-            account.last_statement_date = record.get("last_statement_date", account.last_statement_date)
+            account.last_statement_date = record.get(
+                "last_statement_date", account.last_statement_date
+            )
         else:
             db.add(
                 Account(
@@ -51,8 +61,9 @@ async def list_accounts(user_id: str, db: Session = Depends(get_db)):
     try:
         records = await client.get_accounts(user_id)
     except MockBankClientError as exc:
-        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"MockBank unavailable: {exc}"
+        ) from exc
 
     _persist_accounts(db, records)
     return records
-

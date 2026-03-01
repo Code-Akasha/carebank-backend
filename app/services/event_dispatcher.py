@@ -32,7 +32,9 @@ def _recent_history(user_id: str, limit: int = 50) -> list[float]:
     return [abs(row[0]) for row in amounts if row and row[0] is not None]
 
 
-async def handle_transaction_event(transaction: dict[str, Any], redis_client: redis.Redis | None = None) -> None:
+async def handle_transaction_event(
+    transaction: dict[str, Any], redis_client: redis.Redis | None = None
+) -> None:
     user_id = transaction.get("user_id")
     if not user_id:
         logger.warning("Received transaction without user_id: %s", transaction)
@@ -53,20 +55,30 @@ async def handle_transaction_event(transaction: dict[str, Any], redis_client: re
 
     previous_score = await _get_cached_score(redis_client, user_id)
     await _cache_health_score(redis_client, user_id, score_result)
-    score_dropped = previous_score is not None and score_result["score"] <= previous_score - 5
+    score_dropped = (
+        previous_score is not None and score_result["score"] <= previous_score - 5
+    )
 
     if anomaly["is_anomaly"] or score_dropped:
         await _send_nudge(user_id, transaction, anomaly, score_result)
 
 
-async def _cache_health_score(redis_client: redis.Redis | None, user_id: str, score_result: dict) -> None:
+async def _cache_health_score(
+    redis_client: redis.Redis | None, user_id: str, score_result: dict
+) -> None:
     if not redis_client:
         return
     key = HEALTH_SCORE_KEY.format(user_id=user_id)
-    await redis_client.set(key, json.dumps({"score": score_result.get("score", 0)}), ex=HEALTH_SCORE_CACHE_TTL)
+    await redis_client.set(
+        key,
+        json.dumps({"score": score_result.get("score", 0)}),
+        ex=HEALTH_SCORE_CACHE_TTL,
+    )
 
 
-async def _get_cached_score(redis_client: redis.Redis | None, user_id: str) -> float | None:
+async def _get_cached_score(
+    redis_client: redis.Redis | None, user_id: str
+) -> float | None:
     if not redis_client:
         return None
     key = HEALTH_SCORE_KEY.format(user_id=user_id)
@@ -80,7 +92,9 @@ async def _get_cached_score(redis_client: redis.Redis | None, user_id: str) -> f
     return payload.get("score")
 
 
-async def _send_nudge(user_id: str, transaction: dict[str, Any], anomaly: dict, score_result: dict) -> None:
+async def _send_nudge(
+    user_id: str, transaction: dict[str, Any], anomaly: dict, score_result: dict
+) -> None:
     agent = CommunicationAgent()
     context = {
         "is_nudge": True,

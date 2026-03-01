@@ -48,7 +48,10 @@ class AutoSavingsAgent(BaseAgent):
                     response=response,
                     agent_name=self.name,
                     confidence=0.9,
-                    metadata={"suggested_amount": suggested_amount, "goal_progress": 0.68},
+                    metadata={
+                        "suggested_amount": suggested_amount,
+                        "goal_progress": 0.68,
+                    },
                 )
 
         # If not safe, suggest no savings
@@ -65,7 +68,9 @@ class AutoSavingsAgent(BaseAgent):
         try:
             return get_transactions_sync(user_id=user_id)
         except MockBankClientError as exc:
-            logger.warning("AutoSavingsAgent fallback transactions for %s: %s", user_id, exc)
+            logger.warning(
+                "AutoSavingsAgent fallback transactions for %s: %s", user_id, exc
+            )
             return generate_mock_transactions(user_id, days=90)
 
     def _fetch_balance(self, user_id: str) -> float:
@@ -80,7 +85,9 @@ class AutoSavingsAgent(BaseAgent):
         try:
             return get_accounts_sync(user_id)
         except MockBankClientError as exc:
-            logger.warning("AutoSavingsAgent fallback accounts for %s: %s", user_id, exc)
+            logger.warning(
+                "AutoSavingsAgent fallback accounts for %s: %s", user_id, exc
+            )
             return [
                 {
                     "account_type": "checking",
@@ -92,7 +99,12 @@ class AutoSavingsAgent(BaseAgent):
     def _derive_safety_threshold(self, accounts: list[dict]) -> float:
         if not accounts:
             return 5000.0
-        checking = next((acct for acct in accounts if acct.get("account_type") == "checking"), accounts[0])
-        available = checking.get("available_balance") or checking.get("current_balance", 0.0)
+        checking = next(
+            (acct for acct in accounts if acct.get("account_type") == "checking"),
+            accounts[0],
+        )
+        available = checking.get("available_balance") or checking.get(
+            "current_balance", 0.0
+        )
         dynamic_floor = max(3000.0, available * 0.3)
         return round(dynamic_floor, 2)

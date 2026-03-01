@@ -21,7 +21,9 @@ def _persist_providers(db: Session, records: list[dict]) -> None:
             provider.channels = record.get("channels", provider.channels)
             provider.latency_ms = record.get("latency_ms", provider.latency_ms)
             provider.logo_url = record.get("logo_url", provider.logo_url)
-            provider.support_contact = record.get("support_contact", provider.support_contact)
+            provider.support_contact = record.get(
+                "support_contact", provider.support_contact
+            )
         else:
             db.add(
                 Provider(
@@ -44,8 +46,9 @@ async def list_providers(db: Session = Depends(get_db)):
     try:
         records = await client.get_providers()
     except MockBankClientError as exc:
-        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"MockBank unavailable: {exc}"
+        ) from exc
 
     _persist_providers(db, records)
     return records
-

@@ -25,6 +25,7 @@ class Settings(BaseSettings):
         if self.database_url:
             return self.database_url
         from sqlalchemy.engine import URL
+
         return URL.create(
             drivername="postgresql",
             username=self.db_user.strip(),

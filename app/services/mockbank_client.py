@@ -64,7 +64,9 @@ class MockBankClient:
         headers = self._auth_headers(user_id)
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             try:
-                response = await client.request(method, url, params=params, json=json_body, headers=headers)
+                response = await client.request(
+                    method, url, params=params, json=json_body, headers=headers
+                )
                 response.raise_for_status()
             except httpx.HTTPError as exc:
                 logger.error("MockBank request failed: %s", exc)
@@ -87,13 +89,17 @@ class MockBankClient:
         if category:
             params["category"] = category
 
-        data = await self._request("GET", "/transactions", user_id=user_id, params=params)
+        data = await self._request(
+            "GET", "/transactions", user_id=user_id, params=params
+        )
         return [self._normalize_transaction(item) for item in data]
 
     async def get_balance(self, user_id: str) -> dict[str, Any]:
         data = await self._request("GET", "/balances", user_id=user_id)
         parsed = data.copy()
-        parsed["last_updated"] = _parse_iso(parsed.get("last_updated")) or datetime.utcnow()
+        parsed["last_updated"] = (
+            _parse_iso(parsed.get("last_updated")) or datetime.utcnow()
+        )
         return parsed
 
     async def get_products(self, user_id: str | None = None) -> list[dict[str, Any]]:
@@ -112,7 +118,9 @@ class MockBankClient:
         user_id = payload.get("user_id")
         if not user_id:
             raise ValueError("user_id required to trigger transaction")
-        return await self._request("POST", "/transactions/trigger", user_id=user_id, json_body=payload)
+        return await self._request(
+            "POST", "/transactions/trigger", user_id=user_id, json_body=payload
+        )
 
     @staticmethod
     def _normalize_transaction(data: dict[str, Any]) -> dict[str, Any]:
@@ -141,7 +149,13 @@ def get_mockbank_client() -> MockBankClient:
     return _client
 
 
-def get_transactions_sync(*, user_id: str, start_date: datetime | None = None, end_date: datetime | None = None, category: str | None = None) -> list[dict[str, Any]]:
+def get_transactions_sync(
+    *,
+    user_id: str,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    category: str | None = None,
+) -> list[dict[str, Any]]:
     client = get_mockbank_client()
     return asyncio.run(
         client.get_transactions(

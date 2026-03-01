@@ -54,7 +54,9 @@ async def list_transactions(
             category=category,
         )
     except MockBankClientError as exc:
-        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"MockBank unavailable: {exc}"
+        ) from exc
 
     _persist_transactions(db, records)
 
@@ -86,5 +88,7 @@ async def trigger_transaction_proxy(payload: TransactionCreate):
     try:
         response = await client.trigger_transaction(payload.model_dump())
     except MockBankClientError as exc:
-        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"MockBank unavailable: {exc}"
+        ) from exc
     return response

@@ -31,7 +31,9 @@ async def simulate(request: SimulateRequest):
         transactions = await client.get_transactions(request.user_id)
         balance = await client.get_balance(request.user_id)
     except MockBankClientError as exc:
-        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"MockBank unavailable: {exc}"
+        ) from exc
 
     if not transactions:
         transactions = generate_mock_transactions(request.user_id)
@@ -74,7 +76,11 @@ async def simulate(request: SimulateRequest):
     return SimulateResponse(
         current_forecast=current,
         simulated_forecast={"predicted_balance": simulated_balance},
-        impact={"amount": impact_amount, "retained_pct": retained_pct, "risk_level": risk_level},
+        impact={
+            "amount": impact_amount,
+            "retained_pct": retained_pct,
+            "risk_level": risk_level,
+        },
         explanation=explanation,
         suggestions=suggestions,
     )

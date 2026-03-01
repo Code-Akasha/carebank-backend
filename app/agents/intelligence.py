@@ -153,7 +153,9 @@ class IntelligenceAgent(BaseAgent):
         try:
             return get_transactions_sync(user_id=user_id)
         except MockBankClientError as exc:
-            logger.warning("Falling back to generated transactions for %s: %s", user_id, exc)
+            logger.warning(
+                "Falling back to generated transactions for %s: %s", user_id, exc
+            )
             return generate_mock_transactions(user_id)
 
     def _fetch_balance(self, user_id: str) -> float:

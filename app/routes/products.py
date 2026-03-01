@@ -19,9 +19,13 @@ def _persist_products(db: Session, products: list[dict]) -> None:
             product.type = record.get("type", product.type)
             product.provider_id = record.get("provider_id", product.provider_id)
             product.description = record.get("description", product.description)
-            product.min_balance_required = record.get("min_balance_required", product.min_balance_required)
+            product.min_balance_required = record.get(
+                "min_balance_required", product.min_balance_required
+            )
             product.interest_rate = record.get("interest_rate", product.interest_rate)
-            product.eligibility_rules = record.get("eligibility_rules", product.eligibility_rules)
+            product.eligibility_rules = record.get(
+                "eligibility_rules", product.eligibility_rules
+            )
         else:
             db.add(
                 Product(
@@ -44,7 +48,9 @@ async def list_products(db: Session = Depends(get_db)):
     try:
         products = await client.get_products()
     except MockBankClientError as exc:
-        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"MockBank unavailable: {exc}"
+        ) from exc
 
     _persist_products(db, products)
     return products

@@ -20,7 +20,9 @@ async def _event_stream() -> AsyncGenerator[str, None]:
     await pubsub.subscribe("carebank:transactions")
     try:
         while True:
-            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=5.0)
+            message = await pubsub.get_message(
+                ignore_subscribe_messages=True, timeout=5.0
+            )
             if message and message.get("type") == "message":
                 payload = message.get("data")
                 data = payload if isinstance(payload, str) else json.dumps(payload)
@@ -35,4 +37,3 @@ async def _event_stream() -> AsyncGenerator[str, None]:
 @router.get("/stream")
 async def stream_events() -> StreamingResponse:
     return StreamingResponse(_event_stream(), media_type="text/event-stream")
-

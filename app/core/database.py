@@ -6,7 +6,7 @@ from app.core.config import get_settings
 settings = get_settings()
 engine = create_engine(
     settings.get_database_url(),
-    pool_pre_ping=True,       # detect stale connections
+    pool_pre_ping=True,  # detect stale connections
     pool_size=10,
     max_overflow=20,
 )
@@ -24,6 +24,7 @@ def init_db() -> None:
     import app.models.provider  # noqa: F401
     import app.models.session  # noqa: F401
     import app.models.audit_log  # noqa: F401
+
     Base.metadata.create_all(bind=engine)
 
 

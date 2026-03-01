@@ -22,7 +22,9 @@ async def get_health_score(user_id: str):
         transactions = await client.get_transactions(user_id)
         balance = await client.get_balance(user_id)
     except MockBankClientError as exc:
-        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"MockBank unavailable: {exc}"
+        ) from exc
 
     result = compute_health_score(
         user_id,

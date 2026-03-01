@@ -15,12 +15,18 @@ async def get_balance(user_id: str, db: Session = Depends(get_db)):
     try:
         balance_data = await client.get_balance(user_id)
     except MockBankClientError as exc:
-        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"MockBank unavailable: {exc}"
+        ) from exc
 
     balance = db.query(Balance).filter(Balance.user_id == user_id).first()
     if balance:
-        balance.current_balance = balance_data.get("current_balance", balance.current_balance)
-        balance.available_balance = balance_data.get("available_balance", balance.available_balance)
+        balance.current_balance = balance_data.get(
+            "current_balance", balance.current_balance
+        )
+        balance.available_balance = balance_data.get(
+            "available_balance", balance.available_balance
+        )
         balance.last_updated = balance_data.get("last_updated", balance.last_updated)
     else:
         balance = Balance(

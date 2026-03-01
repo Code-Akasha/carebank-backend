@@ -22,13 +22,18 @@ class OpportunityAgent(BaseAgent):
     def name(self) -> str:
         return "OpportunityAgent"
 
-    def _detect_unused_subscriptions(self, transactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _detect_unused_subscriptions(
+        self, transactions: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         # Hardcoding unused pattern matching for testing purpose
         # In a real app we'd look for recurring payments without corresponding login data etc
         subs = []
         for txn in transactions:
             merchant = (txn.get("merchant") or "").title()
-            if txn["category"].lower() == "entertainment" and merchant in ENTERTAINMENT_MERCHANTS:
+            if (
+                txn["category"].lower() == "entertainment"
+                and merchant in ENTERTAINMENT_MERCHANTS
+            ):
                 # simple mock logic: if we see an entertainment txn, flag as potential unused sub
                 subs.append(txn)
         return subs
@@ -81,7 +86,9 @@ class OpportunityAgent(BaseAgent):
         try:
             return get_transactions_sync(user_id=user_id)
         except MockBankClientError as exc:
-            logger.warning("OpportunityAgent fallback transactions for %s: %s", user_id, exc)
+            logger.warning(
+                "OpportunityAgent fallback transactions for %s: %s", user_id, exc
+            )
             return generate_mock_transactions(user_id, days=30)
 
     def _fetch_products(self) -> list[dict[str, Any]]:
@@ -102,7 +109,9 @@ class OpportunityAgent(BaseAgent):
         try:
             return get_accounts_sync(user_id)
         except MockBankClientError as exc:
-            logger.warning("OpportunityAgent fallback accounts for %s: %s", user_id, exc)
+            logger.warning(
+                "OpportunityAgent fallback accounts for %s: %s", user_id, exc
+            )
             return [
                 {
                     "account_id": f"{user_id}-chk",
@@ -141,7 +150,8 @@ class OpportunityAgent(BaseAgent):
         active_providers = {
             acct["provider_id"]
             for acct in accounts
-            if provider_lookup.get(acct["provider_id"], {}).get("status") != "maintenance"
+            if provider_lookup.get(acct["provider_id"], {}).get("status")
+            != "maintenance"
         }
         ranked = sorted(
             products,
@@ -150,19 +160,38 @@ class OpportunityAgent(BaseAgent):
         )
         for product in ranked:
             provider_id = product.get("provider_id")
-            if not provider_id or provider_id in active_providers or not active_providers:
+            if (
+                not provider_id
+                or provider_id in active_providers
+                or not active_providers
+            ):
                 provider = provider_lookup.get(provider_id, {})
-                product = {**product, "provider_name": provider.get("name", provider_id or "CareBank")}
+                product = {
+                    **product,
+                    "provider_name": provider.get("name", provider_id or "CareBank"),
+                }
                 return product
         first = ranked[0]
         provider = provider_lookup.get(first.get("provider_id"), {})
-        return {**first, "provider_name": provider.get("name", first.get("provider_id", "CareBank"))}
+        return {
+            **first,
+            "provider_name": provider.get("name", first.get("provider_id", "CareBank")),
+        }
 
-    def _pick_underutilized_account(self, accounts: list[dict[str, Any]]) -> dict[str, Any] | None:
+    def _pick_underutilized_account(
+        self, accounts: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
         if not accounts:
             return None
-        savings_like = [acct for acct in accounts if acct.get("account_type") in {"savings", "checking"}]
-        target = max(savings_like or accounts, key=lambda acct: acct.get("available_balance", 0.0))
+        savings_like = [
+            acct
+            for acct in accounts
+            if acct.get("account_type") in {"savings", "checking"}
+        ]
+        target = max(
+            savings_like or accounts,
+            key=lambda acct: acct.get("available_balance", 0.0),
+        )
         available = max(0.0, target.get("available_balance", 0.0) - 5000.0)
         return {
             **target,

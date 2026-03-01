@@ -15,4 +15,3 @@ class Provider(Base):
     logo_url = Column(String, nullable=True)
     support_contact = Column(String, nullable=True)
     metadata_json = Column("metadata", JSON, nullable=True)
-
