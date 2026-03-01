@@ -3,13 +3,36 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql://carebank:password@localhost:5432/carebank_db"
+    # Preferred: set the full URL via env var DATABASE_URL
+    # Falls back to building from individual parts if not set
+    database_url: str = ""
+    db_host: str = "localhost"
+    db_port: int = 5432
+    db_user: str = "carebank"
+    db_password: str = "Jefino 1537"
+    db_name: str = "carebank_db"
+
     redis_url: str = "redis://localhost:6379"
-    mock_bank_url: str = "http://localhost:3001"
+    mock_bank_url: str = "http://localhost:8001"
+    mockbank_jwt_secret: str = "mockbank-dev-secret"
     openai_api_key: str = ""
     ollama_base_url: str | None = "http://localhost:11434"
     gemini_api_key: str = ""
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+
+    def get_database_url(self) -> str:
+        """Return a properly-encoded PostgreSQL URL, using individual parts when DATABASE_URL is not set."""
+        if self.database_url:
+            return self.database_url
+        from sqlalchemy.engine import URL
+        return URL.create(
+            drivername="postgresql",
+            username=self.db_user.strip(),
+            password=self.db_password.strip(),
+            host=self.db_host.strip(),
+            port=self.db_port,
+            database=self.db_name.strip(),
+        ).render_as_string(hide_password=False)
 
 
 @lru_cache
