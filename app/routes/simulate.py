@@ -1,9 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.services.data import generate_mock_transactions
 from app.services.forecast import forecast_balance
 from app.core.finance import forecast_impact
+from app.services.mockbank_client import get_mockbank_client, MockBankClientError
 
 router = APIRouter(prefix="/api/simulate", tags=["simulate"])
 
@@ -24,28 +25,28 @@ class SimulateResponse(BaseModel):
 
 
 @router.post("", response_model=SimulateResponse)
-def simulate(request: SimulateRequest):
-    """
-    What-If Simulator — runs dual forecast (with/without expense).
-    Uses Deterministic Core for impact calculation.
-    """
-    transactions = generate_mock_transactions(request.user_id)
+async def simulate(request: SimulateRequest):
+    client = get_mockbank_client()
+    try:
+        transactions = await client.get_transactions(request.user_id)
+        balance = await client.get_balance(request.user_id)
+    except MockBankClientError as exc:
+        raise HTTPException(status_code=503, detail=f"MockBank unavailable: {exc}") from exc
 
-    # Current forecast (without expense)
+    if not transactions:
+        transactions = generate_mock_transactions(request.user_id)
+
     current = forecast_balance(transactions)
-    current_balance = current["predicted_balance"]
+    base_balance = balance.get("current_balance", current.get("predicted_balance", 0.0))
 
-    # Simulated balance (Deterministic Core)
     simulated_balance = forecast_impact(
-        current_balance=current_balance,
+        current_balance=base_balance,
         scheduled_expenses=0,
         simulated_expense=request.expense_amount,
     )
 
-    impact_amount = simulated_balance - current_balance
-    retained_pct = (
-        (simulated_balance / current_balance * 100) if current_balance > 0 else 0
-    )
+    impact_amount = simulated_balance - base_balance
+    retained_pct = (simulated_balance / base_balance * 100) if base_balance > 0 else 0
 
     if retained_pct > 70:
         risk_level = "low"
@@ -56,7 +57,7 @@ def simulate(request: SimulateRequest):
 
     explanation = (
         f"With this ₹{request.expense_amount:,.0f} {request.category} expense, "
-        f"your projected balance drops from ₹{current_balance:,.0f} to ₹{simulated_balance:,.0f}. "
+        f"your projected balance drops from ₹{base_balance:,.0f} to ₹{simulated_balance:,.0f}. "
         f"Risk level: {risk_level}."
     )
 
@@ -71,19 +72,9 @@ def simulate(request: SimulateRequest):
         )
 
     return SimulateResponse(
-        current_forecast={
-            "end_of_month_balance": current_balance,
-            "confidence": 1.0 - current.get("forecast_error", 0.5),
-        },
-        simulated_forecast={
-            "end_of_month_balance": simulated_balance,
-            "confidence": 1.0 - current.get("forecast_error", 0.5),
-        },
-        impact={
-            "amount": impact_amount,
-            "risk_level": risk_level,
-            "retained_percentage": round(retained_pct, 1),
-        },
+        current_forecast=current,
+        simulated_forecast={"predicted_balance": simulated_balance},
+        impact={"amount": impact_amount, "retained_pct": retained_pct, "risk_level": risk_level},
         explanation=explanation,
         suggestions=suggestions,
     )

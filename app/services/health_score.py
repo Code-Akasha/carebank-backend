@@ -13,7 +13,7 @@ from app.services.clustering import cluster_persona
 def compute_health_score(
     user_id: str,
     transactions: list[dict] | None = None,
-    current_balance: float = 25000.0,
+    current_balance: float | None = None,
 ) -> dict:
     """
     Full Health Score computation pipeline.
@@ -27,6 +27,9 @@ def compute_health_score(
     """
     if not transactions:
         transactions = generate_mock_transactions(user_id)
+
+    if current_balance is None:
+        current_balance = 25000.0
 
     # Monthly financial stats
     stats = calculate_monthly_stats(transactions)
