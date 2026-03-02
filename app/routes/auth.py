@@ -44,11 +44,15 @@ class UserResponse(BaseModel):
     is_active: bool
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(body: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == body.email).first()
     if existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+        )
 
     user_count = db.query(User).filter(User.role == "user").count()
     user_id = f"user_{user_count + 1:03d}"
@@ -75,7 +79,9 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
     except Exception:
         pass
 
-    token = create_access_token({"user_id": user.user_id, "email": user.email, "role": user.role})
+    token = create_access_token(
+        {"user_id": user.user_id, "email": user.email, "role": user.role}
+    )
     return TokenResponse(
         access_token=token,
         user_id=user.user_id,
@@ -88,12 +94,18 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
 async def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
+        )
 
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated"
+        )
 
-    token = create_access_token({"user_id": user.user_id, "email": user.email, "role": user.role})
+    token = create_access_token(
+        {"user_id": user.user_id, "email": user.email, "role": user.role}
+    )
     return TokenResponse(
         access_token=token,
         user_id=user.user_id,

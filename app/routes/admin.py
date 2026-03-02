@@ -47,7 +47,9 @@ async def admin_list_users(
         )
 
     total = query.count()
-    users = query.order_by(User.user_id).offset((page - 1) * per_page).limit(per_page).all()
+    users = (
+        query.order_by(User.user_id).offset((page - 1) * per_page).limit(per_page).all()
+    )
 
     client = get_banking_client()
     user_list = []
@@ -78,7 +80,9 @@ async def admin_get_user(
 ):
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     client = get_banking_client()
     result = {
@@ -118,7 +122,12 @@ async def admin_agent_logs(
         query = query.filter(AuditLog.agent_used.ilike(f"%{agent_name}%"))
 
     total = query.count()
-    logs = query.order_by(AuditLog.timestamp.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    logs = (
+        query.order_by(AuditLog.timestamp.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
 
     return {
         "total": total,
@@ -150,7 +159,12 @@ async def admin_agent_logs_for_user(
 ):
     query = db.query(AuditLog).filter(AuditLog.user_id == user_id)
     total = query.count()
-    logs = query.order_by(AuditLog.timestamp.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    logs = (
+        query.order_by(AuditLog.timestamp.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
 
     return {
         "total": total,
@@ -182,7 +196,9 @@ async def admin_simulation_toggle(
         result = await client.toggle_simulation(body.enabled)
         return result
     except BankingClientError as exc:
-        raise HTTPException(status_code=503, detail=f"Banking API unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"Banking API unavailable: {exc}"
+        ) from exc
 
 
 @router.get("/simulation/status")
@@ -194,7 +210,9 @@ async def admin_simulation_status(
         result = await client.get_simulation_status()
         return result
     except BankingClientError as exc:
-        raise HTTPException(status_code=503, detail=f"Banking API unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"Banking API unavailable: {exc}"
+        ) from exc
 
 
 @router.post("/scenario")
@@ -207,4 +225,6 @@ async def admin_trigger_scenario(
         result = await client.trigger_scenario(body.user_id, body.scenario_type)
         return result
     except BankingClientError as exc:
-        raise HTTPException(status_code=503, detail=f"Banking API unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"Banking API unavailable: {exc}"
+        ) from exc

@@ -52,7 +52,9 @@ class BankingClient:
         self._secret = settings.banking_api_secret
         self._timeout = httpx.Timeout(10.0, connect=5.0)
 
-    def _auth_headers(self, user_id: str | None, *, role: str = "user") -> dict[str, str]:
+    def _auth_headers(
+        self, user_id: str | None, *, role: str = "user"
+    ) -> dict[str, str]:
         payload = {
             "user_id": user_id or "system",
             "role": role,
@@ -139,7 +141,9 @@ class BankingClient:
 
     # ── Admin-scoped endpoints ───────────────────────────────────────
 
-    async def create_profile(self, user_id: str, balance: float = 25000.0) -> dict[str, Any]:
+    async def create_profile(
+        self, user_id: str, balance: float = 25000.0
+    ) -> dict[str, Any]:
         return await self._request(
             "POST",
             "/profiles",
@@ -161,9 +165,13 @@ class BankingClient:
         )
 
     async def get_simulation_status(self) -> dict[str, Any]:
-        return await self._request("GET", "/admin/simulation/status", user_id="admin", role="admin")
+        return await self._request(
+            "GET", "/admin/simulation/status", user_id="admin", role="admin"
+        )
 
-    async def trigger_scenario(self, user_id: str, scenario_type: str) -> dict[str, Any]:
+    async def trigger_scenario(
+        self, user_id: str, scenario_type: str
+    ) -> dict[str, Any]:
         return await self._request(
             "POST",
             "/admin/scenario",
