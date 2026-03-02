@@ -13,7 +13,7 @@ from app.core.database import SessionLocal
 from app.models.transaction import Transaction
 from app.services.anomaly import detect_anomaly
 from app.services.health_score import compute_health_score
-from app.services.mockbank_client import get_mockbank_client
+from app.services.banking_client import get_banking_client
 
 logger = logging.getLogger(__name__)
 HEALTH_SCORE_CACHE_TTL = 300
@@ -43,7 +43,7 @@ async def handle_transaction_event(
     history = _recent_history(user_id)
     anomaly = detect_anomaly(abs(transaction.get("amount", 0.0)), history)
 
-    client = get_mockbank_client()
+    client = get_banking_client()
     transactions = await client.get_transactions(user_id)
     balance = await client.get_balance(user_id)
 

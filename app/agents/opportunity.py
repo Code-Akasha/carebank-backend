@@ -3,12 +3,12 @@ import logging
 from typing import Any
 
 from app.services.data import generate_mock_transactions
-from app.services.mockbank_client import (
+from app.services.banking_client import (
     get_transactions_sync,
     get_products_sync,
     get_accounts_sync,
     get_providers_sync,
-    MockBankClientError,
+    BankingClientError,
 )
 
 
@@ -85,7 +85,7 @@ class OpportunityAgent(BaseAgent):
     def _fetch_transactions(self, user_id: str) -> list[dict[str, Any]]:
         try:
             return get_transactions_sync(user_id=user_id)
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning(
                 "OpportunityAgent fallback transactions for %s: %s", user_id, exc
             )
@@ -94,7 +94,7 @@ class OpportunityAgent(BaseAgent):
     def _fetch_products(self) -> list[dict[str, Any]]:
         try:
             return get_products_sync()
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning("OpportunityAgent fallback products: %s", exc)
             return [
                 {
@@ -108,7 +108,7 @@ class OpportunityAgent(BaseAgent):
     def _fetch_accounts(self, user_id: str) -> list[dict[str, Any]]:
         try:
             return get_accounts_sync(user_id)
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning(
                 "OpportunityAgent fallback accounts for %s: %s", user_id, exc
             )
@@ -128,7 +128,7 @@ class OpportunityAgent(BaseAgent):
     def _fetch_providers(self) -> list[dict[str, Any]]:
         try:
             return get_providers_sync()
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning("OpportunityAgent fallback providers: %s", exc)
             return [
                 {

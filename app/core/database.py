@@ -32,6 +32,7 @@ def init_db() -> None:
     import app.models.provider  # noqa: F401
     import app.models.session  # noqa: F401
     import app.models.audit_log  # noqa: F401
+    import app.models.user  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from app.services.data import generate_mock_transactions
 from app.services.forecast import forecast_balance
 from app.core.finance import forecast_impact
-from app.services.mockbank_client import get_mockbank_client, MockBankClientError
+from app.services.banking_client import get_banking_client, BankingClientError
 
 router = APIRouter(prefix="/api/simulate", tags=["simulate"])
 
@@ -26,13 +26,13 @@ class SimulateResponse(BaseModel):
 
 @router.post("", response_model=SimulateResponse)
 async def simulate(request: SimulateRequest):
-    client = get_mockbank_client()
+    client = get_banking_client()
     try:
         transactions = await client.get_transactions(request.user_id)
         balance = await client.get_balance(request.user_id)
-    except MockBankClientError as exc:
+    except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"MockBank unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}"
         ) from exc
 
     if not transactions:

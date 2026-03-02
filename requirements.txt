@@ -24,3 +24,5 @@ nest-asyncio>=1.6.0
 pyjwt>=2.8.0
 respx>=0.20.0
 rich>=13.7.0
+passlib[bcrypt]>=1.7.0
+python-multipart>=0.0.6
