@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.services.health_score import compute_health_score
-from app.services.mockbank_client import get_mockbank_client, MockBankClientError
+from app.services.banking_client import get_banking_client, BankingClientError
 
 router = APIRouter(prefix="/api/health-score", tags=["health-score"])
 
@@ -17,13 +17,13 @@ class HealthScoreResponse(BaseModel):
 
 @router.get("/{user_id}", response_model=HealthScoreResponse)
 async def get_health_score(user_id: str):
-    client = get_mockbank_client()
+    client = get_banking_client()
     try:
         transactions = await client.get_transactions(user_id)
         balance = await client.get_balance(user_id)
-    except MockBankClientError as exc:
+    except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"MockBank unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}"
         ) from exc
 
     result = compute_health_score(

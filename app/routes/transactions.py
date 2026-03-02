@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.transaction import Transaction
 from app.schemas.models import TransactionCreate, TransactionResponse
-from app.services.mockbank_client import get_mockbank_client, MockBankClientError
+from app.services.banking_client import get_banking_client, BankingClientError
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
 
@@ -45,7 +45,7 @@ async def list_transactions(
     category: str | None = None,
     db: Session = Depends(get_db),
 ):
-    client = get_mockbank_client()
+    client = get_banking_client()
     try:
         records = await client.get_transactions(
             user_id,
@@ -53,9 +53,9 @@ async def list_transactions(
             end_date=end_date,
             category=category,
         )
-    except MockBankClientError as exc:
+    except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"MockBank unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}"
         ) from exc
 
     _persist_transactions(db, records)
@@ -84,11 +84,11 @@ async def get_transaction(transaction_id: int, db: Session = Depends(get_db)):
 
 @router.post("/trigger", response_model=dict)
 async def trigger_transaction_proxy(payload: TransactionCreate):
-    client = get_mockbank_client()
+    client = get_banking_client()
     try:
         response = await client.trigger_transaction(payload.model_dump())
-    except MockBankClientError as exc:
+    except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"MockBank unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}"
         ) from exc
     return response

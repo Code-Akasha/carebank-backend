@@ -6,10 +6,10 @@ from app.services.anomaly import detect_anomaly
 from app.services.health_score import compute_health_score
 from app.services.data import generate_mock_transactions
 from app.core.finance import forecast_impact
-from app.services.mockbank_client import (
+from app.services.banking_client import (
     get_transactions_sync,
     get_balance_sync,
-    MockBankClientError,
+    BankingClientError,
 )
 
 logger = logging.getLogger(__name__)
@@ -154,7 +154,7 @@ class IntelligenceAgent(BaseAgent):
     def _fetch_transactions(self, user_id: str) -> list[dict]:
         try:
             return get_transactions_sync(user_id=user_id)
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning(
                 "Falling back to generated transactions for %s: %s", user_id, exc
             )
@@ -164,6 +164,6 @@ class IntelligenceAgent(BaseAgent):
         try:
             balance = get_balance_sync(user_id)
             return float(balance.get("current_balance", 25000.0))
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning("Falling back to default balance for %s: %s", user_id, exc)
             return 25000.0

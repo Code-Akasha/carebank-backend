@@ -3,11 +3,11 @@ import logging
 from app.agents.base import BaseAgent, AgentInput, AgentOutput
 from app.services.forecast import forecast_balance
 from app.services.data import generate_mock_transactions
-from app.services.mockbank_client import (
+from app.services.banking_client import (
     get_transactions_sync,
     get_balance_sync,
     get_accounts_sync,
-    MockBankClientError,
+    BankingClientError,
 )
 
 
@@ -67,7 +67,7 @@ class AutoSavingsAgent(BaseAgent):
     def _fetch_transactions(self, user_id: str) -> list[dict]:
         try:
             return get_transactions_sync(user_id=user_id)
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning(
                 "AutoSavingsAgent fallback transactions for %s: %s", user_id, exc
             )
@@ -77,14 +77,14 @@ class AutoSavingsAgent(BaseAgent):
         try:
             balance = get_balance_sync(user_id)
             return float(balance.get("current_balance", 0.0))
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning("AutoSavingsAgent fallback balance for %s: %s", user_id, exc)
             return 0.0
 
     def _fetch_accounts(self, user_id: str) -> list[dict]:
         try:
             return get_accounts_sync(user_id)
-        except MockBankClientError as exc:
+        except BankingClientError as exc:
             logger.warning(
                 "AutoSavingsAgent fallback accounts for %s: %s", user_id, exc
             )

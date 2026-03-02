@@ -13,11 +13,14 @@ class Settings(BaseSettings):
     db_name: str = "carebank_db"
 
     redis_url: str = "redis://localhost:6379"
-    mock_bank_url: str = "http://localhost:8001"
-    mockbank_jwt_secret: str = "mockbank-dev-secret"
+    banking_api_url: str = "http://localhost:8001"
+    banking_api_secret: str = "mockbank-dev-secret"
     openai_api_key: str = ""
     ollama_base_url: str | None = "http://localhost:11434"
     gemini_api_key: str = ""
+    jwt_secret: str = "carebank-backend-secret-2026-hackathon"
+    jwt_algorithm: str = "HS256"
+    jwt_expiry_hours: int = 24
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     def get_database_url(self) -> str:

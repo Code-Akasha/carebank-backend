@@ -18,21 +18,18 @@ nest_asyncio.apply()
 logger = logging.getLogger(__name__)
 
 
-class MockBankClientError(RuntimeError):
-    """Raised when MockBank cannot be reached."""
+class BankingClientError(RuntimeError):
+    """Raised when the Banking API cannot be reached."""
 
 
 def _parse_iso(value: str | None) -> datetime | None:
     if not value:
         return None
     value = value.strip()
-    # Replace trailing Z
     if value.endswith("Z"):
         value = value[:-1] + "+00:00"
-    # Collapse duplicate timezone suffix e.g. "...+00:00+00:00"
     while value.count("+00:00") > 1:
         value = value.replace("+00:00+00:00", "+00:00")
-    # Add UTC if no timezone present (check only in the time portion)
     sep_index = value.find("T")
     if sep_index == -1:
         sep_index = value.find(" ")
@@ -42,16 +39,25 @@ def _parse_iso(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value)
 
 
-class MockBankClient:
+class BankingClient:
+    """HTTP client for the connected Banking API.
+
+    This client is API-agnostic — it communicates with whatever banking
+    service is configured via ``BANKING_API_URL`` and ``BANKING_API_SECRET``.
+    """
+
     def __init__(self) -> None:
         settings = get_settings()
-        self._base_url = settings.mock_bank_url.rstrip("/")
-        self._secret = settings.mockbank_jwt_secret
+        self._base_url = settings.banking_api_url.rstrip("/")
+        self._secret = settings.banking_api_secret
         self._timeout = httpx.Timeout(10.0, connect=5.0)
 
-    def _auth_headers(self, user_id: str | None) -> dict[str, str]:
+    def _auth_headers(
+        self, user_id: str | None, *, role: str = "user"
+    ) -> dict[str, str]:
         payload = {
             "user_id": user_id or "system",
+            "role": role,
             "iat": int(time.time()),
             "exp": int(time.time()) + 300,
         }
@@ -64,11 +70,12 @@ class MockBankClient:
         path: str,
         *,
         user_id: str | None = None,
+        role: str = "user",
         params: dict[str, Any] | None = None,
         json_body: dict[str, Any] | None = None,
     ) -> Any:
         url = f"{self._base_url}{path}"
-        headers = self._auth_headers(user_id)
+        headers = self._auth_headers(user_id, role=role)
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             try:
                 response = await client.request(
@@ -77,9 +84,11 @@ class MockBankClient:
                 response.raise_for_status()
                 data = response.json()
             except httpx.HTTPError as exc:
-                logger.error("MockBank request failed: %s", exc)
-                raise MockBankClientError(str(exc)) from exc
+                logger.error("Banking API request failed: %s", exc)
+                raise BankingClientError(str(exc)) from exc
         return data
+
+    # ── User-scoped endpoints ────────────────────────────────────────
 
     async def get_transactions(
         self,
@@ -130,6 +139,47 @@ class MockBankClient:
             "POST", "/transactions/trigger", user_id=user_id, json_body=payload
         )
 
+    # ── Admin-scoped endpoints ───────────────────────────────────────
+
+    async def create_profile(
+        self, user_id: str, balance: float = 25000.0
+    ) -> dict[str, Any]:
+        return await self._request(
+            "POST",
+            "/profiles",
+            user_id="admin",
+            role="admin",
+            json_body={
+                "user_id": user_id,
+                "current_balance": balance,
+            },
+        )
+
+    async def toggle_simulation(self, enabled: bool) -> dict[str, Any]:
+        return await self._request(
+            "POST",
+            "/admin/simulation/toggle",
+            user_id="admin",
+            role="admin",
+            json_body={"enabled": enabled},
+        )
+
+    async def get_simulation_status(self) -> dict[str, Any]:
+        return await self._request(
+            "GET", "/admin/simulation/status", user_id="admin", role="admin"
+        )
+
+    async def trigger_scenario(
+        self, user_id: str, scenario_type: str
+    ) -> dict[str, Any]:
+        return await self._request(
+            "POST",
+            "/admin/scenario",
+            user_id="admin",
+            role="admin",
+            json_body={"user_id": user_id, "scenario_type": scenario_type},
+        )
+
     @staticmethod
     def _normalize_transaction(data: dict[str, Any]) -> dict[str, Any]:
         normalized = {
@@ -144,16 +194,16 @@ class MockBankClient:
         return normalized
 
 
-_client: MockBankClient | None = None
+_client: BankingClient | None = None
 _client_lock = Lock()
 
 
-def get_mockbank_client() -> MockBankClient:
+def get_banking_client() -> BankingClient:
     global _client
     if _client is None:
         with _client_lock:
             if _client is None:
-                _client = MockBankClient()
+                _client = BankingClient()
     return _client
 
 
@@ -173,7 +223,7 @@ def get_transactions_sync(
     end_date: datetime | None = None,
     category: str | None = None,
 ) -> list[dict[str, Any]]:
-    client = get_mockbank_client()
+    client = get_banking_client()
     return _run_sync(
         client.get_transactions(
             user_id,
@@ -185,20 +235,20 @@ def get_transactions_sync(
 
 
 def get_balance_sync(user_id: str) -> dict[str, Any]:
-    client = get_mockbank_client()
+    client = get_banking_client()
     return _run_sync(client.get_balance(user_id))
 
 
 def get_products_sync(user_id: str | None = None) -> list[dict[str, Any]]:
-    client = get_mockbank_client()
+    client = get_banking_client()
     return _run_sync(client.get_products(user_id))
 
 
 def get_accounts_sync(user_id: str) -> list[dict[str, Any]]:
-    client = get_mockbank_client()
+    client = get_banking_client()
     return _run_sync(client.get_accounts(user_id))
 
 
 def get_providers_sync() -> list[dict[str, Any]]:
-    client = get_mockbank_client()
+    client = get_banking_client()
     return _run_sync(client.get_providers())
