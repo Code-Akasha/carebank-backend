@@ -1,10 +1,13 @@
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.transaction import Transaction
+from app.models.user import User
 from app.schemas.models import TransactionCreate, TransactionResponse
 from app.services.banking_client import get_banking_client, BankingClientError
 
@@ -37,18 +40,19 @@ def _persist_transactions(db: Session, records: list[dict]) -> None:
     db.commit()
 
 
-@router.get("/", response_model=list[TransactionResponse])
+@router.get("/")
 async def list_transactions(
-    user_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     category: str | None = None,
+    limit: int = 20,
     db: Session = Depends(get_db),
 ):
     client = get_banking_client()
     try:
         records = await client.get_transactions(
-            user_id,
+            current_user.user_id,
             start_date=start_date,
             end_date=end_date,
             category=category,
@@ -60,7 +64,7 @@ async def list_transactions(
 
     _persist_transactions(db, records)
 
-    return [
+    result = [
         TransactionResponse(
             id=record["id"],
             user_id=record["user_id"],
@@ -73,6 +77,8 @@ async def list_transactions(
         for record in records
     ]
 
+    return {"transactions": result[:limit], "total": len(result)}
+
 
 @router.get("/{transaction_id}", response_model=TransactionResponse)
 async def get_transaction(transaction_id: int, db: Session = Depends(get_db)):
@@ -83,10 +89,16 @@ async def get_transaction(transaction_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/trigger", response_model=dict)
-async def trigger_transaction_proxy(payload: TransactionCreate):
+async def trigger_transaction_proxy(
+    payload: TransactionCreate,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    # Ensure user can only trigger for themselves
+    payload_dict = payload.model_dump()
+    payload_dict["user_id"] = current_user.user_id
     client = get_banking_client()
     try:
-        response = await client.trigger_transaction(payload.model_dump())
+        response = await client.trigger_transaction(payload_dict)
     except BankingClientError as exc:
         raise HTTPException(
             status_code=503, detail=f"Banking API unavailable: {exc}"

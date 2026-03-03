@@ -15,6 +15,14 @@ os.environ.setdefault("OPENAI_API_KEY", "test-key")
 os.environ.setdefault("GEMINI_API_KEY", "test-key")
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_db():
+    """Initialize the test database tables."""
+    from app.core.database import init_db
+
+    init_db()
+
+
 @pytest.fixture
 def client():
     """FastAPI test client for integration tests."""
