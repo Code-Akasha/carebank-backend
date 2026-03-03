@@ -28,8 +28,12 @@ async def get_balance(
 
     balance = db.query(Balance).filter(Balance.user_id == current_user.user_id).first()
     if balance:
-        balance.current_balance = balance_data.get("current_balance", balance.current_balance)
-        balance.available_balance = balance_data.get("available_balance", balance.available_balance)
+        balance.current_balance = balance_data.get(
+            "current_balance", balance.current_balance
+        )
+        balance.available_balance = balance_data.get(
+            "available_balance", balance.available_balance
+        )
         balance.last_updated = balance_data.get("last_updated", balance.last_updated)
     else:
         balance = Balance(

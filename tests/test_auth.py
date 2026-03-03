@@ -4,6 +4,7 @@ Integration tests for the CareBank Auth API.
 
 import uuid
 
+
 def test_register_user(client):
     test_id = uuid.uuid4().hex[:8]
     email = f"testauth_{test_id}@example.com"
@@ -12,8 +13,8 @@ def test_register_user(client):
         json={
             "email": email,
             "password": "Password123!",
-            "full_name": "Test Auth User"
-        }
+            "full_name": "Test Auth User",
+        },
     )
     assert response.status_code == 201
     data = response.json()
@@ -30,22 +31,19 @@ def test_login_user(client):
         json={
             "email": email,
             "password": "Password123!",
-            "full_name": "Test Auth User 2"
-        }
+            "full_name": "Test Auth User 2",
+        },
     )
 
     # Then login
     response = client.post(
-        "/api/auth/login",
-        json={
-            "email": email,
-            "password": "Password123!"
-        }
+        "/api/auth/login", json={"email": email, "password": "Password123!"}
     )
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
     assert data["role"] == "user"
+
 
 def test_get_me(client):
     test_id = uuid.uuid4().hex[:8]
@@ -56,16 +54,13 @@ def test_get_me(client):
         json={
             "email": email,
             "password": "Password123!",
-            "full_name": "Test Auth User 3"
-        }
+            "full_name": "Test Auth User 3",
+        },
     )
     token = reg_response.json()["access_token"]
 
     # Then fetch me
-    response = client.get(
-        "/api/auth/me",
-        headers={"Authorization": f"Bearer {token}"}
-    )
+    response = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == email
