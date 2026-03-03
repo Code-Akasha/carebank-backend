@@ -1,49 +1,58 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.core.database import get_db
-from app.models.product import Product
-from app.schemas.models import ProductResponse
 from app.services.banking_client import get_banking_client, BankingClientError
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
 
 def _persist_products(db: Session, products: list[dict]) -> None:
+    """Upsert products using raw SQL to avoid ORM schema conflicts."""
     if not products:
         return
     for record in products:
-        product = db.query(Product).filter(Product.id == record.get("id")).first()
-        if product:
-            product.name = record.get("name", product.name)
-            product.type = record.get("type", product.type)
-            product.provider_id = record.get("provider_id", product.provider_id)
-            product.description = record.get("description", product.description)
-            product.min_balance_required = record.get(
-                "min_balance_required", product.min_balance_required
-            )
-            product.interest_rate = record.get("interest_rate", product.interest_rate)
-            product.eligibility_rules = record.get(
-                "eligibility_rules", product.eligibility_rules
-            )
-        else:
-            db.add(
-                Product(
-                    id=record.get("id"),
-                    name=record.get("name"),
-                    type=record.get("type"),
-                    provider_id=record.get("provider_id"),
-                    description=record.get("description"),
-                    min_balance_required=record.get("min_balance_required"),
-                    interest_rate=record.get("interest_rate"),
-                    eligibility_rules=record.get("eligibility_rules"),
-                )
-            )
+        eligibility = record.get("eligibility_rules")
+        eligibility_json = json.dumps(eligibility) if eligibility else None
+        db.execute(
+            text(
+                """
+                INSERT INTO products
+                    (id, name, type, provider_id, description,
+                     min_balance_required, interest_rate, eligibility_rules)
+                VALUES
+                    (:id, :name, :type, :provider_id, :description,
+                     :min_balance_required, :interest_rate, :eligibility_rules)
+                ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
+                    type = excluded.type,
+                    provider_id = excluded.provider_id,
+                    description = excluded.description,
+                    min_balance_required = excluded.min_balance_required,
+                    interest_rate = excluded.interest_rate,
+                    eligibility_rules = excluded.eligibility_rules
+                """
+            ),
+            {
+                "id": record.get("id"),
+                "name": record.get("name"),
+                "type": record.get("type"),
+                "provider_id": record.get("provider_id"),
+                "description": record.get("description"),
+                "min_balance_required": record.get("min_balance_required"),
+                "interest_rate": record.get("interest_rate"),
+                "eligibility_rules": eligibility_json,
+            },
+        )
     db.commit()
 
 
-@router.get("/", response_model=list[ProductResponse])
-async def list_products(db: Session = Depends(get_db)):
+@router.get("/")
+async def list_products(db: Session = Depends(get_db)) -> list:
+    """Return products from the mock bank, persisting locally for caching."""
     client = get_banking_client()
     try:
         products = await client.get_products()

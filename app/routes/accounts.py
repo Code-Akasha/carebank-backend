@@ -1,8 +1,12 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.account import Account
+from app.models.user import User
 from app.schemas.models import AccountResponse
 from app.services.banking_client import get_banking_client, BankingClientError
 
@@ -24,17 +28,11 @@ def _persist_accounts(db: Session, records: list[dict]) -> None:
             account.mask = record.get("mask", account.mask)
             account.currency = record.get("currency", account.currency)
             account.institution = record.get("institution", account.institution)
-            account.current_balance = record.get(
-                "current_balance", account.current_balance
-            )
-            account.available_balance = record.get(
-                "available_balance", account.available_balance
-            )
+            account.current_balance = record.get("current_balance", account.current_balance)
+            account.available_balance = record.get("available_balance", account.available_balance)
             account.status = record.get("status", account.status)
             account.provider_id = record.get("provider_id", account.provider_id)
-            account.last_statement_date = record.get(
-                "last_statement_date", account.last_statement_date
-            )
+            account.last_statement_date = record.get("last_statement_date", account.last_statement_date)
         else:
             db.add(
                 Account(
@@ -55,11 +53,14 @@ def _persist_accounts(db: Session, records: list[dict]) -> None:
     db.commit()
 
 
-@router.get("/{user_id}", response_model=list[AccountResponse])
-async def list_accounts(user_id: str, db: Session = Depends(get_db)):
+@router.get("/", response_model=list[AccountResponse])
+async def list_accounts(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Session = Depends(get_db),
+):
     client = get_banking_client()
     try:
-        records = await client.get_accounts(user_id)
+        records = await client.get_accounts(current_user.user_id)
     except BankingClientError as exc:
         raise HTTPException(
             status_code=503, detail=f"Banking API unavailable: {exc}"
