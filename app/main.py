@@ -1,3 +1,4 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -16,10 +17,36 @@ from app.routes.admin import router as admin_router
 from app.core.database import init_db
 from app.core.config import get_settings
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    # Auto-seed demo users if DB is empty (safe to run every startup)
+    try:
+        from app.core.database import SessionLocal
+        from app.models.user import User
+
+        db = SessionLocal()
+        user_count = db.query(User).count()
+        db.close()
+        if user_count == 0:
+            import subprocess
+            import sys
+            import os
+
+            script = os.path.join(
+                os.path.dirname(__file__), "..", "scripts", "register_demo_users.py"
+            )
+            subprocess.Popen(
+                [sys.executable, script],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            logger.info("Empty DB detected — running demo user seed in background")
+    except Exception as exc:
+        logger.warning("Auto-seed check failed (non-fatal): %s", exc)
     yield
 
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session as DBSession
 
-from app.agents.coordinator import coordinator_graph
+from app.agents.coordinator import coordinator_graph, get_conversation_history
 from app.core.database import get_db
 from app.models.audit_log import AuditLog
 
@@ -22,12 +22,14 @@ class ChatResponse(BaseModel):
 
 @router.post("", response_model=ChatResponse)
 def chat(request: ChatRequest, db: DBSession = Depends(get_db)):
+    history = get_conversation_history(request.user_id)
+
     result = coordinator_graph.invoke(
         {
             "user_id": request.user_id,
             "message": request.message,
             "audit_log": [],
-            "conversation_history": [],
+            "conversation_history": history,
         }
     )
 
