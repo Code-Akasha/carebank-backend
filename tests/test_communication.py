@@ -133,9 +133,14 @@ class TestCommunicationAgent:
         assert output.metadata["nudge"] == "blocked"
 
     def test_extract_purchase_amount_supports_indian_units(self):
-        assert CommunicationAgent._extract_purchase_amount("can i buy this for 50k") == 50000
         assert (
-            CommunicationAgent._extract_purchase_amount("can i buy this for 50 thousand")
+            CommunicationAgent._extract_purchase_amount("can i buy this for 50k")
+            == 50000
+        )
+        assert (
+            CommunicationAgent._extract_purchase_amount(
+                "can i buy this for 50 thousand"
+            )
             == 50000
         )
         assert (

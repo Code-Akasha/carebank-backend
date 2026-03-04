@@ -27,6 +27,7 @@ async def lifespan(app: FastAPI):
     try:
         from app.core.database import SessionLocal
         from app.models.user import User
+
         db = SessionLocal()
         user_count = db.query(User).count()
         db.close()
@@ -35,7 +36,10 @@ async def lifespan(app: FastAPI):
             import subprocess
             import sys
             import os
-            script = os.path.join(os.path.dirname(__file__), "..", "scripts", "register_demo_users.py")
+
+            script = os.path.join(
+                os.path.dirname(__file__), "..", "scripts", "register_demo_users.py"
+            )
             subprocess.Popen(
                 [sys.executable, script],
                 stdout=subprocess.DEVNULL,
@@ -45,7 +49,6 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("Auto-seed check failed (non-fatal): %s", exc)
     yield
-
 
 
 app = FastAPI(
