@@ -4,6 +4,7 @@ then initialise all SQLAlchemy tables via init_db().
 Run from the project root:
     python scripts/setup_postgres.py
 """
+
 import sys
 import os
 from dotenv import load_dotenv
@@ -20,14 +21,16 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 SUPERUSER_DSN = {
-    "host": "localhost",
-    "port": 5432,
-    "user": "postgres",
-    "password": "Jefino 1537",
-    "dbname": "postgres",
+    "host": os.environ.get("PG_SUPERUSER_HOST", "localhost"),
+    "port": int(os.environ.get("PG_SUPERUSER_PORT", "5432")),
+    "user": os.environ.get("PG_SUPERUSER_USER", "postgres"),
+    "password": os.environ.get(
+        "PG_SUPERUSER_PASSWORD", os.environ.get("DB_PASSWORD", "")
+    ),
+    "dbname": os.environ.get("PG_SUPERUSER_DB", "postgres"),
 }
 
-CAREBANK_PASSWORD = os.environ.get("DB_PASSWORD", "Jefino 1537")
+CAREBANK_PASSWORD = os.environ.get("DB_PASSWORD", "")
 CAREBANK_USER = os.environ.get("DB_USER", "carebank")
 CAREBANK_DB = os.environ.get("DB_NAME", "carebank_db")
 
@@ -61,14 +64,18 @@ conn.close()
 
 # ── 2. Grant schema privileges (needed for PostgreSQL 15+) ──────────────────
 conn2 = psycopg2.connect(
-    host="localhost", port=5432,
-    user="postgres", password="Jefino 1537",
+    host=SUPERUSER_DSN["host"],
+    port=SUPERUSER_DSN["port"],
+    user=SUPERUSER_DSN["user"],
+    password=SUPERUSER_DSN["password"],
     dbname=CAREBANK_DB,
 )
 conn2.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 cur2 = conn2.cursor()
 cur2.execute(f"GRANT ALL ON SCHEMA public TO {CAREBANK_USER}")
-cur2.execute(f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {CAREBANK_USER}")
+cur2.execute(
+    f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {CAREBANK_USER}"
+)
 print("  Schema public privileges granted.")
 cur2.close()
 conn2.close()
@@ -76,8 +83,10 @@ conn2.close()
 # ── 3. Verify carebank user can connect ─────────────────────────────────────
 print("Verifying carebank user connection …")
 conn3 = psycopg2.connect(
-    host="localhost", port=5432,
-    user=CAREBANK_USER, password=CAREBANK_PASSWORD,
+    host=SUPERUSER_DSN["host"],
+    port=SUPERUSER_DSN["port"],
+    user=CAREBANK_USER,
+    password=CAREBANK_PASSWORD,
     dbname=CAREBANK_DB,
 )
 print("  Connection verified ✓")
@@ -89,11 +98,15 @@ load_dotenv(ENV_PATH, override=False)
 
 # Clear lru_cache so settings re-read the freshly loaded env
 from app.core import config as _cfg
+
 _cfg.get_settings.cache_clear()
 
 from app.core.database import init_db
+
 init_db()
 print("  Tables created / verified ✓")
 
 print("\nPostgreSQL setup complete!")
-print(f"  DATABASE_URL = postgresql://{CAREBANK_USER}:***@localhost:5432/{CAREBANK_DB}")
+print(
+    f"  DATABASE_URL = postgresql://{CAREBANK_USER}:***@{SUPERUSER_DSN['host']}:{SUPERUSER_DSN['port']}/{CAREBANK_DB}"
+)
