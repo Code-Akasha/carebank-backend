@@ -4,8 +4,8 @@ from datetime import datetime
 
 class TransactionBase(BaseModel):
     amount: float
-    merchant: str
-    category: str
+    merchant: str | None = None
+    category: str | None = None
     description: str | None = None
 
 
