@@ -6,6 +6,26 @@ if [ ! -x "$PYTHON" ]; then
   PYTHON="python"
 fi
 
-echo "Running backend pre-commit checks..."
-"$PYTHON" -m ruff format --check app/ tests/
-"$PYTHON" -m ruff check app/ tests/
+STAGED_PY_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^(app|tests)/.*\.py$' || true)
+
+if [ -z "$STAGED_PY_FILES" ]; then
+  echo "No staged backend Python files to check."
+  exit 0
+fi
+
+echo "Auto-formatting staged backend Python files with Ruff..."
+printf '%s\n' "$STAGED_PY_FILES" | while IFS= read -r file; do
+  [ -n "$file" ] || continue
+  "$PYTHON" -m ruff format "$file"
+done
+
+echo "Running Ruff lint checks on staged backend Python files..."
+printf '%s\n' "$STAGED_PY_FILES" | while IFS= read -r file; do
+  [ -n "$file" ] || continue
+  "$PYTHON" -m ruff check "$file"
+done
+
+printf '%s\n' "$STAGED_PY_FILES" | while IFS= read -r file; do
+  [ -n "$file" ] || continue
+  git add "$file"
+done
