@@ -62,7 +62,9 @@ class Dashboard:
 
     def show_status(self) -> None:
         backend = self._request_backend("GET", "/")
-        mockbank = self._request_mockbank("GET", "/", token=self._user_token("user_001"))
+        mockbank = self._request_mockbank(
+            "GET", "/", token=self._user_token("user_001")
+        )
         table = Table(title="Service Health", box=box.SIMPLE)
         table.add_column("Service")
         table.add_column("Status")
@@ -113,7 +115,9 @@ class Dashboard:
         table = Table(title=f"Health Score for {user_id}", box=box.SIMPLE)
         table.add_column("Score")
         table.add_column("Persona")
-        table.add_row(str(data.get("score")), data.get("persona", {}).get("persona", "-"))
+        table.add_row(
+            str(data.get("score")), data.get("persona", {}).get("persona", "-")
+        )
         console.print(table)
         console.print_json(data=data.get("factors", {}))
 
@@ -132,7 +136,9 @@ class Dashboard:
 
     def trigger_transaction(self) -> None:
         user_id = Prompt.ask("User ID", default="user_001")
-        amount = float(Prompt.ask("Amount (positive=credit, negative=debit)", default="-1200"))
+        amount = float(
+            Prompt.ask("Amount (positive=credit, negative=debit)", default="-1200")
+        )
         merchant = Prompt.ask("Merchant", default="CLI Merchant")
         category = Prompt.ask("Category", default="general")
         payload = {
@@ -141,15 +147,21 @@ class Dashboard:
             "merchant": merchant,
             "category": category,
         }
-        result = self._request_backend("POST", "/api/transactions/trigger", json=payload)
+        result = self._request_backend(
+            "POST", "/api/transactions/trigger", json=payload
+        )
         console.print_json(data=result)
 
     def trigger_scenario(self) -> None:
         user_id = Prompt.ask("User ID", default="user_001")
-        scenario = Prompt.ask("Scenario", choices=list(SCENARIOS), default="large_medical_expense")
+        scenario = Prompt.ask(
+            "Scenario", choices=list(SCENARIOS), default="large_medical_expense"
+        )
         token = self._admin_token()
         payload = {"user_id": user_id, "scenario_type": scenario}
-        result = self._request_mockbank("POST", "/admin/scenario", json=payload, token=token)
+        result = self._request_mockbank(
+            "POST", "/admin/scenario", json=payload, token=token
+        )
         console.print_json(data=result)
 
     def upsert_profile(self) -> None:
@@ -226,7 +238,9 @@ class Dashboard:
         console.print("[cyan]Streaming events. Press Ctrl+C to stop.[/cyan]")
         try:
             with httpx.Client(timeout=None) as client:
-                with client.stream("GET", f"{self.backend_url}/api/events/stream") as resp:
+                with client.stream(
+                    "GET", f"{self.backend_url}/api/events/stream"
+                ) as resp:
                     resp.raise_for_status()
                     for line in resp.iter_lines():
                         if line and line.startswith("data: "):
@@ -239,10 +253,18 @@ class Dashboard:
         console.print("Goodbye! 👋")
         sys.exit(0)
 
-    def _request_backend(self, method: str, path: str, params: dict | None = None, json: dict | None = None) -> dict:
+    def _request_backend(
+        self,
+        method: str,
+        path: str,
+        params: dict | None = None,
+        json: dict | None = None,
+    ) -> dict:
         url = f"{self.backend_url}{path}"
         with httpx.Client(timeout=self.http_timeout) as client:
-            resp = client.request(method, url, params=params, json=json, follow_redirects=True)
+            resp = client.request(
+                method, url, params=params, json=json, follow_redirects=True
+            )
             resp.raise_for_status()
             return resp.json()
 
@@ -258,7 +280,9 @@ class Dashboard:
         headers = {"Authorization": f"Bearer {token}"}
         url = f"{self.mockbank_url}{path}"
         with httpx.Client(timeout=self.http_timeout) as client:
-            resp = client.request(method, url, params=params, json=json, headers=headers)
+            resp = client.request(
+                method, url, params=params, json=json, headers=headers
+            )
             resp.raise_for_status()
             return resp.json()
 
@@ -288,4 +312,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

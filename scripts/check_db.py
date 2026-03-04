@@ -8,4 +8,3 @@ assert "balances" in tables, "balances table missing!"
 assert "transactions" in tables, "transactions table missing!"
 assert "products" in tables, "products table missing!"
 print("All required tables present - DB init OK")
-

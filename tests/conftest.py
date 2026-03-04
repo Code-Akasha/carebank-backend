@@ -13,6 +13,10 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379")
 os.environ.setdefault("OPENAI_API_KEY", "test-key")
 os.environ.setdefault("GEMINI_API_KEY", "test-key")
+os.environ.setdefault("BANKING_API_URL", "http://localhost:8001")
+os.environ.setdefault("BANKING_API_SECRET", "test-banking-secret")
+os.environ.setdefault("JWT_SECRET", "test-jwt-secret")
+os.environ.setdefault("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
 
 
 @pytest.fixture(scope="session", autouse=True)

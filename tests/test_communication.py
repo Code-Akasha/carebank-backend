@@ -46,14 +46,14 @@ class TestNLGService:
             "Cautious Saver", "Low savings", "Increase emergency fund"
         )
         assert result["provider"] == "template_fallback"
-        assert "safety is priority" in result["text"].lower()
+        assert "prioritize stability" in result["text"].lower()
 
     def test_template_fallback_social(self):
         result = generate_response(
             "Social Spender", "High dining", "Cut back eating out"
         )
         assert result["provider"] == "template_fallback"
-        assert "looks like fun" in result["text"].lower()
+        assert "fits your budget" in result["text"].lower()
 
 
 # ── Compliance Guard Tests ────────────────────────────────────────────
