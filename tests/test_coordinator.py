@@ -210,6 +210,14 @@ class TestCoordinatorGraph:
             def name(self) -> str:
                 return "FailingAgent"
 
+            @property
+            def description(self) -> str:
+                return "Test agent that fails"
+
+            @property
+            def capabilities(self) -> list[str]:
+                return ["test_failure"]
+
             def _invoke(self, agent_input):
                 raise RuntimeError("Boom")
 

@@ -41,25 +41,32 @@ INTENT_CLASSIFICATION_PROMPT = """You are an intelligent financial assistant coo
 Available agents and their capabilities:
 {agent_descriptions}
 
+Intent codes (use these exactly):
+- balance: Account balance and transaction queries
+- forecast: Future balance predictions
+- health_score: Financial health assessment
+- what_if: Scenario analysis ("what if I spend...", impact analysis)
+- auto_savings: Savings advice and micro-savings
+- opportunity: Product recommendations and offers
+- general: Non-financial questions or small talk
+
 User query: "{user_message}"
 Recent conversation context: {conversation_summary}
 
 Task: Analyze the user's query and determine:
-1. The primary intent/goal of the request
+1. The primary intent CODE (from the list above)
 2. Which agent is best suited to handle it
-3. Any relevant context or parameters to extract
+3. Your confidence in this classification
 
 Respond in this exact format:
-INTENT: <brief intent description>
+INTENT: <one of: balance, forecast, health_score, what_if, auto_savings, opportunity, general>
 AGENT: <exact agent name from the list>
 CONFIDENCE: <0.0 to 1.0>
-CONTEXT: <any extracted parameters as key=value pairs, or "none">
 
 Example:
-INTENT: Check account balance
+INTENT: balance
 AGENT: CommunicationAgent
 CONFIDENCE: 0.95
-CONTEXT: none
 
 Now analyze the query:"""
 
@@ -108,6 +115,14 @@ _INTENT_TO_AGENT: dict[str, str] = {
     "auto_savings": "AutoSavingsAgent",
     "opportunity": "OpportunityAgent",
     "general": "CommunicationAgent",
+}
+
+# Reverse mapping: agent name -> primary intent it handles
+_AGENT_TO_INTENT: dict[str, str] = {
+    "IntelligenceAgent": "health_score",
+    "CommunicationAgent": "balance",
+    "AutoSavingsAgent": "auto_savings",
+    "OpportunityAgent": "opportunity",
 }
 
 # ---------------------------------------------------------------------------
@@ -288,8 +303,13 @@ def classify_intent(state: CoordinatorState) -> CoordinatorState:
 
 def route_to_agent(state: CoordinatorState) -> CoordinatorState:
     """Route to the appropriate agent based on classification."""
-    agent_name = state.get("agent_name", "CommunicationAgent")
     intent = state.get("intent", "general")
+    agent_name = state.get("agent_name")
+
+    # If agent_name not provided, derive it from intent
+    if not agent_name:
+        agent_name = _INTENT_TO_AGENT.get(intent, "CommunicationAgent")
+        logger.info("Derived agent '%s' from intent '%s'", agent_name, intent)
 
     agent = _AGENT_REGISTRY.get(agent_name)
 
