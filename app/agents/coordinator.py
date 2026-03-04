@@ -16,6 +16,7 @@ from app.services.llm import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
+
 # ---------------------------------------------------------------------------
 # Agent registry
 # ---------------------------------------------------------------------------
@@ -141,7 +142,9 @@ def _get_agent_descriptions() -> str:
     descriptions = []
     for agent_name, agent in _AGENT_REGISTRY.items():
         caps = ", ".join(agent.capabilities)
-        descriptions.append(f"- {agent_name}: {agent.description}\n  Capabilities: {caps}")
+        descriptions.append(
+            f"- {agent_name}: {agent.description}\n  Capabilities: {caps}"
+        )
     return "\n".join(descriptions)
 
 
@@ -151,7 +154,7 @@ def _parse_llm_classification(response: str) -> tuple[str, str, float]:
     intent = "general"
     agent = "CommunicationAgent"
     confidence = 0.7
-    
+
     for line in lines:
         line = line.strip()
         if line.startswith("INTENT:"):
@@ -163,46 +166,63 @@ def _parse_llm_classification(response: str) -> tuple[str, str, float]:
                 confidence = float(line.split(":", 1)[1].strip())
             except ValueError:
                 confidence = 0.7
-    
+
     return intent, agent, confidence
 
 
-def _classify_intent_with_llm(message: str, history: list[dict]) -> tuple[str, str, float]:
+def _classify_intent_with_llm(
+    message: str, history: list[dict]
+) -> tuple[str, str, float]:
     """Use LLM to intelligently classify intent and route to appropriate agent."""
     llm, provider = get_llm_provider(temperature=0.3)
-    
+
     if not llm:
-        logger.warning("🔄 LLM unavailable (provider: %s), falling back to keyword matching", provider)
+        logger.warning(
+            "🔄 LLM unavailable (provider: %s), falling back to keyword matching",
+            provider,
+        )
         return _classify_intent_keywords(message)
-    
+
     try:
         # Summarize recent conversation
         conv_summary = "No previous context"
         if history:
             recent = history[-3:]
-            conv_summary = " | ".join([f"{msg['role']}: {msg['content'][:50]}" for msg in recent])
-        
+            conv_summary = " | ".join(
+                [f"{msg['role']}: {msg['content'][:50]}" for msg in recent]
+            )
+
         prompt = PromptTemplate.from_template(INTENT_CLASSIFICATION_PROMPT)
         chain = prompt | llm
-        
+
         logger.info("🧠 Using LLM-based classification (provider: %s)", provider)
-        
-        response = chain.invoke({
-            "agent_descriptions": _get_agent_descriptions(),
-            "user_message": message,
-            "conversation_summary": conv_summary,
-        })
-        
+
+        response = chain.invoke(
+            {
+                "agent_descriptions": _get_agent_descriptions(),
+                "user_message": message,
+                "conversation_summary": conv_summary,
+            }
+        )
+
         intent, agent_name, confidence = _parse_llm_classification(response.content)
-        
+
         # Validate agent exists
         if agent_name not in _AGENT_REGISTRY:
-            logger.warning("⚠️ LLM suggested non-existent agent: %s, using keyword fallback", agent_name)
+            logger.warning(
+                "⚠️ LLM suggested non-existent agent: %s, using keyword fallback",
+                agent_name,
+            )
             return _classify_intent_keywords(message)
-        
-        logger.info("✅ LLM classified: intent='%s', agent='%s', confidence=%.2f", intent, agent_name, confidence)
+
+        logger.info(
+            "✅ LLM classified: intent='%s', agent='%s', confidence=%.2f",
+            intent,
+            agent_name,
+            confidence,
+        )
         return intent, agent_name, confidence
-        
+
     except Exception as e:
         logger.warning("❌ LLM classification failed: %s, falling back to keywords", e)
         return _classify_intent_keywords(message)
@@ -211,15 +231,19 @@ def _classify_intent_with_llm(message: str, history: list[dict]) -> tuple[str, s
 def _classify_intent_keywords(message: str) -> tuple[str, str, float]:
     """Fallback keyword-based classification."""
     message_lower = message.lower()
-    
+
     detected_intent = "general"
     for intent, keywords in _INTENT_KEYWORDS.items():
         if any(kw in message_lower for kw in keywords):
             detected_intent = intent
             break
-    
+
     agent_name = _INTENT_TO_AGENT.get(detected_intent, "CommunicationAgent")
-    logger.info("🔑 Keyword matched: intent='%s', agent='%s', confidence=0.6", detected_intent, agent_name)
+    logger.info(
+        "🔑 Keyword matched: intent='%s', agent='%s', confidence=0.6",
+        detected_intent,
+        agent_name,
+    )
     return detected_intent, agent_name, 0.6  # Lower confidence for keyword matching
 
 
@@ -250,10 +274,10 @@ def classify_intent(state: CoordinatorState) -> CoordinatorState:
     """Intelligently classify user intent using LLM, with keyword fallback."""
     message = state["message"]
     history = state.get("conversation_history", [])
-    
+
     # Use LLM-based intelligent classification
     intent, agent_name, confidence = _classify_intent_with_llm(message, history)
-    
+
     return {
         **state,
         "intent": intent,
@@ -266,7 +290,7 @@ def route_to_agent(state: CoordinatorState) -> CoordinatorState:
     """Route to the appropriate agent based on classification."""
     agent_name = state.get("agent_name", "CommunicationAgent")
     intent = state.get("intent", "general")
-    
+
     agent = _AGENT_REGISTRY.get(agent_name)
 
     if agent is None:

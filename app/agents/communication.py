@@ -129,16 +129,18 @@ class CommunicationAgent(BaseAgent):
             "account remaining",
             "remaining balance",
         ]
-        
+
         # If the message is just "balance" or contains balance-related phrases
         words = message.split()
         if any(word in balance_keywords for word in words) and len(words) <= 3:
             return True
-        
+
         # Check for "left" or "remaining" queries about account
-        if ("left" in message or "remaining" in message) and ("account" in message or "money" in message or len(words) <= 5):
+        if ("left" in message or "remaining" in message) and (
+            "account" in message or "money" in message or len(words) <= 5
+        ):
             return True
-        
+
         return any(phrase in message for phrase in balance_phrases)
 
     @staticmethod

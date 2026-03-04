@@ -46,7 +46,9 @@ def generate_response(
     Returns:
         dict with text, provider, and persona used
     """
-    llm, provider = get_llm_provider(temperature=0.5)  # Lower temperature to reduce hallucination
+    llm, provider = get_llm_provider(
+        temperature=0.5
+    )  # Lower temperature to reduce hallucination
 
     if not llm:
         return _template_fallback(persona, data_context, task_description)

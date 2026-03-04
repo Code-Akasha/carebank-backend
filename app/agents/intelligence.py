@@ -106,18 +106,18 @@ class IntelligenceAgent(BaseAgent):
         """Handle balance forecast queries."""
         transactions = self._fetch_transactions(user_id)
         current_balance = self._fetch_balance(user_id)
-        
+
         forecast_result = forecast_balance(transactions, periods=30)
         predicted_balance = forecast_result.get("predicted_balance", current_balance)
         lower_bound = forecast_result.get("lower_bound", predicted_balance * 0.9)
         upper_bound = forecast_result.get("upper_bound", predicted_balance * 1.1)
-        
+
         response = (
             f"Based on your current spending patterns and income, your forecasted balance at the end of the month is "
             f"₹{predicted_balance:,.0f} (range: ₹{lower_bound:,.0f} - ₹{upper_bound:,.0f}). "
             f"Your current balance is ₹{current_balance:,.0f}."
         )
-        
+
         return AgentOutput(
             response=response,
             agent_name=self.name,
