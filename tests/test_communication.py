@@ -42,14 +42,22 @@ class TestNudgeFatigue:
 
 
 class TestNLGService:
-    def test_template_fallback_cautious(self):
+    def test_template_fallback_cautious(self, monkeypatch):
+        monkeypatch.setattr(
+            "app.services.nlg.get_llm_provider",
+            lambda *args, **kwargs: (None, "template_fallback"),
+        )
         result = generate_response(
             "Cautious Saver", "Low savings", "Increase emergency fund"
         )
         assert result["provider"] == "template_fallback"
         assert "prioritize stability" in result["text"].lower()
 
-    def test_template_fallback_social(self):
+    def test_template_fallback_social(self, monkeypatch):
+        monkeypatch.setattr(
+            "app.services.nlg.get_llm_provider",
+            lambda *args, **kwargs: (None, "template_fallback"),
+        )
         result = generate_response(
             "Social Spender", "High dining", "Cut back eating out"
         )

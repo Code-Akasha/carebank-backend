@@ -77,11 +77,29 @@ def _template_fallback(
     persona: str, data_context: str, task_description: str
 ) -> dict[str, Any]:
     """Fallback generator when LLMs fail or are misconfigured. Avoids hallucinating data."""
-    text = (
-        f"I can help with that. To provide specific information about your {data_context}, "
-        "please ask me directly about your balance, transactions, or forecast. "
-        "I avoid making assumptions about your financial data to ensure accuracy."
+    common_tail = (
+        "I avoid making assumptions about your financial data to ensure accuracy. "
+        "Please ask me directly about your balance, transactions, or forecast for exact numbers."
     )
+
+    if persona == "Cautious Saver":
+        text = (
+            f"Let's prioritize stability while addressing your {data_context}. "
+            f"Suggested focus: {task_description}. "
+            f"{common_tail}"
+        )
+    elif persona == "Social Spender":
+        text = (
+            f"Let's work on your {data_context} in a way that fits your budget. "
+            f"Suggested focus: {task_description}. "
+            f"{common_tail}"
+        )
+    else:
+        text = (
+            f"I can help with that regarding your {data_context}. "
+            f"Suggested focus: {task_description}. "
+            f"{common_tail}"
+        )
 
     return {
         "text": text,
