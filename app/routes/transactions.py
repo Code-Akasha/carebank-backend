@@ -96,13 +96,13 @@ async def trigger_transaction_proxy(
     # Ensure user can only trigger for themselves
     payload_dict = payload.model_dump()
     payload_dict["user_id"] = current_user.user_id
-    
+
     # Set defaults for merchant and category if not provided
     if not payload_dict.get("merchant"):
         payload_dict["merchant"] = "Manual Transaction"
     if not payload_dict.get("category"):
         payload_dict["category"] = "Manual"
-    
+
     client = get_banking_client()
     try:
         response = await client.trigger_transaction(payload_dict)
