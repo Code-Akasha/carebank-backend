@@ -50,7 +50,6 @@ async def lifespan(app: FastAPI):
     yield
 
 
-
 app = FastAPI(
     title="CareBank Backend",
     description="Personalized Banking & Financial Wellness API",
