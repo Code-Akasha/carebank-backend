@@ -19,6 +19,23 @@ class AutoSavingsAgent(BaseAgent):
     def name(self) -> str:
         return "AutoSavingsAgent"
 
+    @property
+    def description(self) -> str:
+        return (
+            "Recommends optimal savings amounts based on financial forecasts and safety thresholds. "
+            "Analyzes upcoming expenses and income to suggest safe micro-savings transfers."
+        )
+
+    @property
+    def capabilities(self) -> list[str]:
+        return [
+            "auto_savings_recommendation",
+            "micro_savings",
+            "budget_analysis",
+            "savings_goal_tracking",
+            "safe_transfer_calculation",
+        ]
+
     def _invoke(self, agent_input: AgentInput) -> AgentOutput:
         user_id = agent_input.user_id
         transactions = self._fetch_transactions(user_id)

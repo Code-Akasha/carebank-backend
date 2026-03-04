@@ -19,16 +19,19 @@ PERSONA_PROMPT_MAP = {
 
 DEFAULT_PERSONA = PERSONA_PROMPT_MAP["Balanced Manager"]
 
-BASE_PROMPT = """{persona_instruction}
+BASE_PROMPT = """You are a helpful financial assistant for CareBank.
 
-Context:
-You are generating a response for a user regarding their finances.
-Data point: {data_context}
+IMPORTANT RULES:
+1. NEVER make up or hallucinate specific financial numbers (balances, amounts, dates, transaction values)
+2. If you don't have specific data, say so clearly and suggest the user ask for specific information
+3. Keep responses concise (maximum 3 sentences)
+4. Do NOT add financial disclaimers (the system adds them automatically)
+
+Context: {data_context}
 Task: {task_description}
 
-Please write a concise, helpful, and personalized response (maximum 3 sentences). Do NOT include any financial disclaimers, the system will add them if needed.
-
-Response:"""
+Provide a helpful response that follows the rules above:
+"""
 
 
 def generate_response(
@@ -43,8 +46,9 @@ def generate_response(
     Returns:
         dict with text, provider, and persona used
     """
-    persona_instruction = PERSONA_PROMPT_MAP.get(persona, DEFAULT_PERSONA)
-    llm, provider = get_llm_provider(temperature=0.7)
+    llm, provider = get_llm_provider(
+        temperature=0.5
+    )  # Lower temperature to reduce hallucination
 
     if not llm:
         return _template_fallback(persona, data_context, task_description)
@@ -55,7 +59,6 @@ def generate_response(
     try:
         response = chain.invoke(
             {
-                "persona_instruction": persona_instruction,
                 "data_context": data_context,
                 "task_description": task_description,
             }
@@ -73,24 +76,29 @@ def generate_response(
 def _template_fallback(
     persona: str, data_context: str, task_description: str
 ) -> dict[str, Any]:
-    """Fallback generator when LLMs fail or are misconfigured."""
-    text = (
-        f"I can help with this request: {data_context}. "
-        "Based on your recent financial profile, review your available balance, upcoming bills, and emergency buffer before deciding. "
-        f"Recommended next step: {task_description}"
+    """Fallback generator when LLMs fail or are misconfigured. Avoids hallucinating data."""
+    common_tail = (
+        "I avoid making assumptions about your financial data to ensure accuracy. "
+        "Please ask me directly about your balance, transactions, or forecast for exact numbers."
     )
 
-    if "Cautious" in persona:
+    if persona == "Cautious Saver":
         text = (
-            f"For this request ({data_context}), prioritize stability first. "
-            "Confirm essential expenses and keep a safety buffer before committing. "
-            f"Recommended next step: {task_description}"
+            f"Let's prioritize stability while addressing your {data_context}. "
+            f"Suggested focus: {task_description}. "
+            f"{common_tail}"
         )
-    elif "Social" in persona:
+    elif persona == "Social Spender":
         text = (
-            f"For this request ({data_context}), aim for a choice that fits your budget without increasing stress. "
-            "Keep monthly obligations and savings goals on track before finalizing. "
-            f"Recommended next step: {task_description}"
+            f"Let's work on your {data_context} in a way that fits your budget. "
+            f"Suggested focus: {task_description}. "
+            f"{common_tail}"
+        )
+    else:
+        text = (
+            f"I can help with that regarding your {data_context}. "
+            f"Suggested focus: {task_description}. "
+            f"{common_tail}"
         )
 
     return {

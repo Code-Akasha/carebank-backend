@@ -17,6 +17,24 @@ class CommunicationAgent(BaseAgent):
     def name(self) -> str:
         return "CommunicationAgent"
 
+    @property
+    def description(self) -> str:
+        return (
+            "Handles conversational queries, balance checks, affordability questions, and general user interactions. "
+            "Provides direct answers to account questions and helps users understand their current financial position."
+        )
+
+    @property
+    def capabilities(self) -> list[str]:
+        return [
+            "balance_inquiry",
+            "affordability_check",
+            "purchase_guidance",
+            "conversational_response",
+            "account_summary",
+            "general_queries",
+        ]
+
     def _invoke(self, agent_input: AgentInput) -> AgentOutput:
         user_id = agent_input.user_id
         message = agent_input.message
@@ -89,17 +107,41 @@ class CommunicationAgent(BaseAgent):
 
     @staticmethod
     def _is_balance_question(message: str) -> bool:
-        return any(
-            phrase in message
-            for phrase in [
-                "what is my balance",
-                "what's my balance",
-                "show my balance",
-                "check my balance",
-                "my balance",
-                "available balance",
-            ]
-        )
+        # Check for balance-related queries including simple one-word queries
+        balance_keywords = ["balance", "balances"]
+        balance_phrases = [
+            "what is my balance",
+            "what's my balance",
+            "show my balance",
+            "check my balance",
+            "my balance",
+            "available balance",
+            "current balance",
+            "account balance",
+            "how much do i have",
+            "how much money",
+            "what is left",
+            "what's left",
+            "how much left",
+            "left in my account",
+            "left in account",
+            "remaining in account",
+            "account remaining",
+            "remaining balance",
+        ]
+
+        # If the message is just "balance" or contains balance-related phrases
+        words = message.split()
+        if any(word in balance_keywords for word in words) and len(words) <= 3:
+            return True
+
+        # Check for "left" or "remaining" queries about account
+        if ("left" in message or "remaining" in message) and (
+            "account" in message or "money" in message or len(words) <= 5
+        ):
+            return True
+
+        return any(phrase in message for phrase in balance_phrases)
 
     @staticmethod
     def _is_purchase_question(message: str) -> bool:
