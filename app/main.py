@@ -32,7 +32,6 @@ async def lifespan(app: FastAPI):
         user_count = db.query(User).count()
         db.close()
         if user_count == 0:
-            import asyncio
             import subprocess
             import sys
             import os
