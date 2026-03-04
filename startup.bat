@@ -62,8 +62,6 @@ if exist ".venv\Scripts\activate" (
     set DB_PASSWORD=%DB_PASSWORD%
     set DB_NAME=%DB_NAME%
     python scripts\setup_postgres.py
-    echo Seeding demo users (skips existing)...
-    python scripts\register_demo_users.py
 )
 
 REM --- Start MockBank ---
