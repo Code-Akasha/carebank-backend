@@ -62,8 +62,6 @@ if exist ".venv\Scripts\activate" (
     set DB_PASSWORD=%DB_PASSWORD%
     set DB_NAME=%DB_NAME%
     python scripts\setup_postgres.py
-    echo Seeding demo users (skips existing)...
-    python scripts\register_demo_users.py
 )
 
 REM --- Start MockBank ---
@@ -93,6 +91,18 @@ if exist "%FRONTEND_DIR%\node_modules" (
 echo Waiting for services to start...
 timeout /t 6 /nobreak >nul
 
+echo Seeding demo users ^(skips existing^)...
+cd /d "%BACKEND_DIR%"
+if exist ".venv\Scripts\activate" (
+    call .venv\Scripts\activate
+)
+call :wait_for_backend
+if errorlevel 1 (
+    echo [WARN] Backend not ready yet; skipping demo user seeding.
+) else (
+    python scripts\register_demo_users.py
+)
+
 echo Launching CareBank Dashboard CLI...
 cd /d "%BACKEND_DIR%"
 if exist ".venv\Scripts\activate" (
@@ -109,6 +119,16 @@ set MOCK_BANK_URL=%MOCK_BANK_URL%
 python scripts\dashboard_cli.py
 
 goto :eof
+
+:wait_for_backend
+set "WAIT_URL=http://localhost:8000/docs"
+set "MAX_ATTEMPTS=20"
+for /L %%I in (1,1,%MAX_ATTEMPTS%) do (
+    powershell -NoProfile -Command "try { Invoke-WebRequest -Uri '%WAIT_URL%' -UseBasicParsing -TimeoutSec 2 ^| Out-Null; exit 0 } catch { exit 1 }" >nul 2>nul
+    if not errorlevel 1 exit /b 0
+    timeout /t 1 /nobreak >nul
+)
+exit /b 1
 
 :load_env_file
 set "ENV_FILE=%~1"

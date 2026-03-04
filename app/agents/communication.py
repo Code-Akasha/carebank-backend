@@ -39,9 +39,16 @@ class CommunicationAgent(BaseAgent):
         if self._is_balance_question(lowered_message):
             return self._handle_balance_question(user_id)
 
-        purchase_amount = self._extract_purchase_amount(lowered_message)
-        if purchase_amount is not None and self._is_purchase_question(lowered_message):
+        is_purchase_question = self._is_purchase_question(lowered_message)
+        purchase_amount = (
+            self._extract_purchase_amount(lowered_message)
+            if is_purchase_question
+            else None
+        )
+        if is_purchase_question and purchase_amount is not None:
             return self._handle_affordability_question(user_id, purchase_amount)
+        if is_purchase_question:
+            return self._handle_purchase_question_without_amount()
 
         # 3. Get Persona (from Intelligence Agent's health score dataset)
         try:
@@ -103,15 +110,53 @@ class CommunicationAgent(BaseAgent):
 
     @staticmethod
     def _extract_purchase_amount(message: str) -> float | None:
-        normalized = message.replace(",", "")
-        match = re.search(r"(?:rs\.?|₹)?\s*(\d{3,7})(?:\s|$)", normalized)
-        if not match:
-            return None
-        try:
-            amount = float(match.group(1))
-        except ValueError:
-            return None
-        return amount if amount > 0 else None
+        normalized = re.sub(r"\s+", " ", message.replace(",", "").lower()).strip()
+        pattern = re.compile(
+            r"(?:\b(?:rs\.?|inr)\b|₹)?\s*(\d+(?:\.\d+)?)\s*(k|thousand|lakh|lakhs|lac|lacs|crore|crores|cr)?\b"
+        )
+        unit_multipliers = {
+            "k": 1_000,
+            "thousand": 1_000,
+            "lakh": 100_000,
+            "lakhs": 100_000,
+            "lac": 100_000,
+            "lacs": 100_000,
+            "crore": 10_000_000,
+            "crores": 10_000_000,
+            "cr": 10_000_000,
+        }
+
+        for match in pattern.finditer(normalized):
+            try:
+                amount = float(match.group(1))
+            except ValueError:
+                continue
+
+            unit = (match.group(2) or "").lower()
+            if unit:
+                multiplier = unit_multipliers.get(unit)
+                if multiplier:
+                    parsed_amount = amount * multiplier
+                    return parsed_amount if parsed_amount > 0 else None
+
+            if amount >= 100:
+                return amount
+
+        return None
+
+    def _handle_purchase_question_without_amount(self) -> AgentOutput:
+        return AgentOutput(
+            response=(
+                "I can help with that. Share the purchase amount in ₹ (for example, ₹50,000), "
+                "and I’ll check affordability against your available balance."
+            ),
+            agent_name=self.name,
+            confidence=0.9,
+            metadata={
+                "intent_handled": "affordability_clarification",
+                "is_nudge": False,
+            },
+        )
 
     def _handle_balance_question(self, user_id: str) -> AgentOutput:
         try:

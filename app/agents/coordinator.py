@@ -53,6 +53,10 @@ def _get_history(user_id: str) -> list[dict]:
     return _conversation_store.setdefault(user_id, [])
 
 
+def get_conversation_history(user_id: str) -> list[dict]:
+    return list(_get_history(user_id))
+
+
 def _add_to_history(user_id: str, role: str, content: str) -> None:
     history = _get_history(user_id)
     history.append({"role": role, "content": content})

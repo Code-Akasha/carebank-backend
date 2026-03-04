@@ -45,6 +45,7 @@ def get_llm_provider(
     """
     settings = get_settings()
     gemini_model = settings.gemini_model or "gemini-2.5-flash"
+    ollama_model = settings.ollama_model or "llama3.2"
 
     # 1. Try Ollama (Local LLM)
     if settings.ollama_base_url:
@@ -54,10 +55,10 @@ def get_llm_provider(
 
                 llm = ChatOllama(
                     base_url=settings.ollama_base_url,
-                    model="llama3.2",
+                    model=ollama_model,
                     temperature=temperature,
                 )
-                return llm, "ollama:llama3.2"
+                return llm, f"ollama:{ollama_model}"
             logger.info(
                 "Ollama is not reachable at %s. Trying Gemini provider.",
                 settings.ollama_base_url,

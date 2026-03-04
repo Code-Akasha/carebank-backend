@@ -1,5 +1,6 @@
 from app.agents.communication import CommunicationAgent
 from app.agents.base import AgentInput
+from app.agents import communication as communication_module
 from app.compliance.guard import validate_and_refine
 from app.services.nlg import generate_response
 from app.services.nudge import can_send_nudge, record_nudge, _user_nudge_history
@@ -130,3 +131,47 @@ class TestCommunicationAgent:
         )
         assert "Nudge Blocked" in output.response
         assert output.metadata["nudge"] == "blocked"
+
+    def test_extract_purchase_amount_supports_indian_units(self):
+        assert CommunicationAgent._extract_purchase_amount("can i buy this for 50k") == 50000
+        assert (
+            CommunicationAgent._extract_purchase_amount("can i buy this for 50 thousand")
+            == 50000
+        )
+        assert (
+            CommunicationAgent._extract_purchase_amount("can i buy this for 1.5 lakh")
+            == 150000
+        )
+
+    def test_purchase_question_without_amount_returns_clarification(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user123",
+                message="can i buy a laptop?",
+                intent="general",
+                context={},
+            )
+        )
+        assert "Share the purchase amount in ₹" in output.response
+        assert output.metadata["intent_handled"] == "affordability_clarification"
+
+    def test_purchase_question_with_thousand_uses_affordability_flow(self, monkeypatch):
+        monkeypatch.setattr(
+            communication_module,
+            "get_balance_sync",
+            lambda _user_id: {"available_balance": 24297.0},
+        )
+
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user123",
+                message="can i buy a laptop of 50 thousand ?",
+                intent="general",
+                context={},
+            )
+        )
+
+        assert "Purchase amount: ₹50,000" in output.response
+        assert output.metadata["intent_handled"] == "affordability_check"
