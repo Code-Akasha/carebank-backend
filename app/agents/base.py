@@ -21,6 +21,18 @@ class BaseAgent(ABC):
     @abstractmethod
     def name(self) -> str: ...
 
+    @property
+    @abstractmethod
+    def description(self) -> str:
+        """Human-readable description of what this agent does."""
+        ...
+
+    @property
+    @abstractmethod
+    def capabilities(self) -> list[str]:
+        """List of specific capabilities/intents this agent can handle."""
+        ...
+
     @abstractmethod
     def _invoke(self, agent_input: AgentInput) -> AgentOutput: ...
 

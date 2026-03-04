@@ -22,6 +22,23 @@ class OpportunityAgent(BaseAgent):
     def name(self) -> str:
         return "OpportunityAgent"
 
+    @property
+    def description(self) -> str:
+        return (
+            "Identifies and recommends financial products and opportunities like loans, subscriptions, and offers. "
+            "Evaluates user eligibility and provides personalized product recommendations."
+        )
+
+    @property
+    def capabilities(self) -> list[str]:
+        return [
+            "product_recommendations",
+            "loan_eligibility",
+            "subscription_analysis",
+            "offer_evaluation",
+            "eligibility_checks",
+        ]
+
     def _detect_unused_subscriptions(
         self, transactions: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:
