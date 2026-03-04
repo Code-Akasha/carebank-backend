@@ -21,6 +21,10 @@ logger = logging.getLogger(__name__)
 class BankingClientError(RuntimeError):
     """Raised when the Banking API cannot be reached."""
 
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
 
 def _parse_iso(value: str | None) -> datetime | None:
     if not value:
@@ -83,6 +87,19 @@ class BankingClient:
                 )
                 response.raise_for_status()
                 data = response.json()
+            except httpx.HTTPStatusError as exc:
+                status_code = exc.response.status_code
+                detail = exc.response.text
+                logger.error(
+                    "Banking API status error %s for %s %s: %s",
+                    status_code,
+                    method,
+                    url,
+                    detail,
+                )
+                raise BankingClientError(
+                    f"status={status_code}: {detail}", status_code=status_code
+                ) from exc
             except httpx.HTTPError as exc:
                 logger.error("Banking API request failed: %s", exc)
                 raise BankingClientError(str(exc)) from exc
@@ -179,6 +196,20 @@ class BankingClient:
             role="admin",
             json_body={"user_id": user_id, "scenario_type": scenario_type},
         )
+
+    async def get_admin_users(
+        self, *, page: int = 1, per_page: int = 200
+    ) -> list[dict[str, Any]]:
+        data = await self._request(
+            "GET",
+            "/admin/users",
+            user_id="admin",
+            role="admin",
+            params={"page": page, "per_page": per_page},
+        )
+        if isinstance(data, dict):
+            return data.get("users", []) or []
+        return []
 
     @staticmethod
     def _normalize_transaction(data: dict[str, Any]) -> dict[str, Any]:

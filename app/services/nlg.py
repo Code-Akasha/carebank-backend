@@ -74,14 +74,24 @@ def _template_fallback(
     persona: str, data_context: str, task_description: str
 ) -> dict[str, Any]:
     """Fallback generator when LLMs fail or are misconfigured."""
-    text = f"Based on {data_context}, we suggest looking into your options. We currently cannot generate a fully personalized message. "
+    text = (
+        f"I can help with this request: {data_context}. "
+        "Based on your recent financial profile, review your available balance, upcoming bills, and emergency buffer before deciding. "
+        f"Recommended next step: {task_description}"
+    )
 
     if "Cautious" in persona:
-        text = f"Your safety is priority. {data_context} indicates you should stay the course. "
+        text = (
+            f"For this request ({data_context}), prioritize stability first. "
+            "Confirm essential expenses and keep a safety buffer before committing. "
+            f"Recommended next step: {task_description}"
+        )
     elif "Social" in persona:
-        text = f"Looks like fun! Just a heads up regarding {data_context}. Enjoy responsibly! "
-
-    text += f"(Action: {task_description})"
+        text = (
+            f"For this request ({data_context}), aim for a choice that fits your budget without increasing stress. "
+            "Keep monthly obligations and savings goals on track before finalizing. "
+            f"Recommended next step: {task_description}"
+        )
 
     return {
         "text": text,

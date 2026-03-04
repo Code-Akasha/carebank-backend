@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -52,14 +54,32 @@ async def admin_list_users(
     )
 
     client = get_banking_client()
-    user_list = []
-    for u in users:
+    bulk_balances: dict[str, dict] = {}
+    try:
+        upstream_users = await client.get_admin_users(page=1, per_page=500)
+        bulk_balances = {
+            str(item.get("user_id")): item
+            for item in upstream_users
+            if isinstance(item, dict) and item.get("user_id")
+        }
+    except BankingClientError:
+        bulk_balances = {}
+
+    async def build_user_entry(u: User) -> dict:
         entry = {
             "user_id": u.user_id,
             "email": u.email,
             "full_name": u.full_name,
             "is_active": u.is_active,
         }
+        if u.user_id in bulk_balances:
+            entry["current_balance"] = bulk_balances[u.user_id].get(
+                "current_balance", 0.0
+            )
+            entry["available_balance"] = bulk_balances[u.user_id].get(
+                "available_balance", 0.0
+            )
+            return entry
         try:
             balance = await client.get_balance(u.user_id)
             entry["current_balance"] = balance.get("current_balance", 0.0)
@@ -67,7 +87,9 @@ async def admin_list_users(
         except BankingClientError:
             entry["current_balance"] = None
             entry["available_balance"] = None
-        user_list.append(entry)
+        return entry
+
+    user_list = await asyncio.gather(*(build_user_entry(u) for u in users))
 
     return {"total": total, "page": page, "per_page": per_page, "users": user_list}
 
@@ -197,7 +219,8 @@ async def admin_simulation_toggle(
         return result
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=exc.status_code or 503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
 
@@ -211,7 +234,8 @@ async def admin_simulation_status(
         return result
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=exc.status_code or 503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
 
@@ -226,5 +250,6 @@ async def admin_trigger_scenario(
         return result
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=exc.status_code or 503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc

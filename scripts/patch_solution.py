@@ -1,4 +1,3 @@
-
 file_path = "d:/PycharmProjects/carebank-backend/.agent/project/SOLUTION.md"
 with open(file_path, "r", encoding="utf-8") as f:
     content = f.read()
@@ -61,7 +60,10 @@ new_roles = """| **Coordinator** | Routes requests natively scoped to user_id co
 content = content.replace(old_roles, new_roles)
 
 # Change Architecture slide note
-content = content.replace("- Architecture slide showing 5 agents + Coordinator", "- Architecture slide highlighting Auth, Task Queue, Admin Dashboard, and 5 Agents")
+content = content.replace(
+    "- Architecture slide showing 5 agents + Coordinator",
+    "- Architecture slide highlighting Auth, Task Queue, Admin Dashboard, and 5 Agents",
+)
 
 # Update Tech Stack
 old_stack = """| **Backend** | FastAPI | Fast to build, easy to demo |
