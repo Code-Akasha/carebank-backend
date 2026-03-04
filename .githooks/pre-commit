@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+set -eu
+
+PYTHON=".venv/Scripts/python.exe"
+if [ ! -x "$PYTHON" ]; then
+  PYTHON="python"
+fi
+
+echo "Running backend pre-commit checks..."
+"$PYTHON" -m ruff format --check app/ tests/
+"$PYTHON" -m ruff check app/ tests/
