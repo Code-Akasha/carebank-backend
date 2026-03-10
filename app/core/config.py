@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expiry_hours: int = 24
     cors_origins: str = ""
+    environment: str = "development"
+
+    # Financial thresholds (configurable, previously hardcoded)
+    whatif_low_threshold: float = 70.0
+    whatif_medium_threshold: float = 30.0
+    affordability_safe_buffer: float = 10000.0
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @model_validator(mode="after")
