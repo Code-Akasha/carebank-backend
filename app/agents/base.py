@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, PrivateAttr
 
 
 class AgentStatus(str, Enum):
@@ -18,6 +18,7 @@ class AgentContext(BaseModel):
     """Typed context passed between agents. Replaces loose dict."""
 
     model_config = {"extra": "allow"}
+    _extra_data: dict[str, Any] = PrivateAttr(default_factory=dict)
 
     history: list[dict[str, Any]] = Field(default_factory=list)
     persona: str | None = None
@@ -28,6 +29,36 @@ class AgentContext(BaseModel):
     agent_results: list[dict[str, Any]] = Field(default_factory=list)
     data: str | None = None
     task: str | None = None
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        known_fields = set(self.__class__.model_fields.keys())
+        # Collect and remove unknown attributes from __dict__
+        extras = {
+            key: value
+            for key, value in list(self.__dict__.items())
+            if key not in known_fields
+        }
+        if extras:
+            for key in extras:
+                self.__dict__.pop(key, None)
+            self._extra_data.update(extras)
+            existing = getattr(self, "__pydantic_extra__", None) or {}
+            existing.update(self._extra_data)
+            object.__setattr__(self, "__pydantic_extra__", existing)
+
+    @property
+    def model_extra(self) -> dict[str, Any]:
+        extra = getattr(self, "__pydantic_extra__", None)
+        if extra is None:
+            return dict(self._extra_data)
+        return dict(extra)
+
+    def __getattr__(self, item: str) -> Any:
+        extra_data = object.__getattribute__(self, "_extra_data")
+        if item in extra_data:
+            raise AttributeError(item)
+        raise AttributeError(item)
 
 
 class AgentInput(BaseModel):
