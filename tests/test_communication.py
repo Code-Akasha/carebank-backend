@@ -1,6 +1,5 @@
 from app.agents.communication import CommunicationAgent
 from app.agents.base import AgentInput
-from app.agents import communication as communication_module
 from app.compliance.guard import validate_and_refine
 from app.services.nlg import generate_response
 from app.services.nudge import can_send_nudge, record_nudge, _user_nudge_history
@@ -11,7 +10,6 @@ from app.services.nudge import can_send_nudge, record_nudge, _user_nudge_history
 
 class TestNudgeFatigue:
     def setup_method(self):
-        # Clear history before each test
         _user_nudge_history.clear()
 
     def test_can_send_first_nudge(self):
@@ -25,7 +23,6 @@ class TestNudgeFatigue:
         assert "cooldown" in reason.lower()
 
     def test_daily_limit(self):
-        # Manually set history to simulate 2 nudges past cooldown but within 24h
         from datetime import datetime, timedelta, timezone
 
         now = datetime.now(timezone.utc)
@@ -96,26 +93,60 @@ class TestComplianceGuard:
         assert metadata["numbers_verified"] is False
 
 
-# ── Communication Agent Tests ─────────────────────────────────────────
+# ── Communication Agent (Pure NLG) Tests ──────────────────────────────
 
 
 class TestCommunicationAgent:
     def setup_method(self):
         _user_nudge_history.clear()
 
-    def test_agent_invokes_nlg(self):
+    def test_agent_handles_structured_agent_results(self):
+        """CommunicationAgent takes structured JSON agent_results and generates NLG."""
         agent = CommunicationAgent()
+        agent_results = [
+            {
+                "agent_name": "IntelligenceAgent",
+                "status": "success",
+                "metadata": {
+                    "intent_handled": "health_score",
+                    "score": 75,
+                    "persona": "Balanced Manager",
+                    "top_factor": "savings",
+                    "weak_factor": "liquidity",
+                },
+            }
+        ]
         output = agent.invoke(
             AgentInput(
                 user_id="user123",
-                message="Explain my score",
-                intent="general",
-                context={"data": "Score is 75", "task": "explain"},
+                message="What is my health score?",
+                intent="health_score",
+                context={
+                    "agent_results": agent_results,
+                    "task": "Summarize the health score data.",
+                },
             )
         )
         assert output.agent_name == "CommunicationAgent"
         assert len(output.response) > 0
         assert "provider" in output.metadata
+
+    def test_agent_handles_general_query(self):
+        """CommunicationAgent handles general queries without agent_results."""
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user123",
+                message="Tell me something helpful",
+                intent="general",
+                context={
+                    "data": "General financial inquiry",
+                    "task": "Be helpful",
+                },
+            )
+        )
+        assert output.agent_name == "CommunicationAgent"
+        assert len(output.response) > 0
 
     def test_agent_blocks_nudge(self):
         agent = CommunicationAgent()
@@ -140,51 +171,58 @@ class TestCommunicationAgent:
         assert "Nudge Blocked" in output.response
         assert output.metadata["nudge"] == "blocked"
 
-    def test_extract_purchase_amount_supports_indian_units(self):
-        assert (
-            CommunicationAgent._extract_purchase_amount("can i buy this for 50k")
-            == 50000
-        )
-        assert (
-            CommunicationAgent._extract_purchase_amount(
-                "can i buy this for 50 thousand"
-            )
-            == 50000
-        )
-        assert (
-            CommunicationAgent._extract_purchase_amount("can i buy this for 1.5 lakh")
-            == 150000
-        )
-
-    def test_purchase_question_without_amount_returns_clarification(self):
+    def test_multi_agent_results_synthesis(self):
+        """CommunicationAgent handles results from multiple agents."""
         agent = CommunicationAgent()
+        agent_results = [
+            {
+                "agent_name": "IntelligenceAgent",
+                "status": "success",
+                "metadata": {
+                    "intent_handled": "balance",
+                    "current_balance": 25000,
+                    "available_balance": 20000,
+                },
+            },
+            {
+                "agent_name": "IntelligenceAgent",
+                "status": "success",
+                "metadata": {
+                    "intent_handled": "what_if",
+                    "expense_amount": 5000,
+                    "simulated_balance": 20000,
+                    "risk_level": "low",
+                },
+            },
+        ]
         output = agent.invoke(
             AgentInput(
                 user_id="user123",
-                message="can i buy a laptop?",
-                intent="general",
-                context={},
+                message="Balance and what if I spend 5000?",
+                intent="balance",
+                context={
+                    "agent_results": agent_results,
+                    "task": "Synthesize balance and what-if results.",
+                },
             )
         )
-        assert "Share the purchase amount in ₹" in output.response
-        assert output.metadata["intent_handled"] == "affordability_clarification"
+        assert output.agent_name == "CommunicationAgent"
+        assert len(output.response) > 0
 
-    def test_purchase_question_with_thousand_uses_affordability_flow(self, monkeypatch):
-        monkeypatch.setattr(
-            communication_module,
-            "get_balance_sync",
-            lambda _user_id: {"available_balance": 24297.0},
-        )
-
+    def test_enriched_metadata_returned(self):
+        """CommunicationAgent returns model and tokens in metadata via NLG service."""
         agent = CommunicationAgent()
         output = agent.invoke(
             AgentInput(
-                user_id="user123",
-                message="can i buy a laptop of 50 thousand ?",
+                user_id="user_metadata",
+                message="Tell me a fun fact",
                 intent="general",
-                context={},
+                context={"task": "Answer the question"},
             )
         )
 
-        assert "Purchase amount: ₹50,000" in output.response
-        assert output.metadata["intent_handled"] == "affordability_check"
+        assert output.status == "success"
+        # Since we use actual NLG or fallback here, we assert the keys exist
+        assert "provider" in output.metadata
+        assert "model" in output.metadata
+        assert "tokens" in output.metadata
