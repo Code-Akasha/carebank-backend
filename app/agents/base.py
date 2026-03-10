@@ -99,4 +99,5 @@ class BaseAgent(ABC):
                 confidence=0.0,
                 metadata={"error": str(exc)},
                 latency_ms=elapsed,
+                status=AgentStatus.error,
             )
