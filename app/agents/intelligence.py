@@ -1,11 +1,14 @@
 import logging
+from dataclasses import dataclass
 
-from app.agents.base import BaseAgent, AgentInput, AgentOutput
+from app.agents.base import BaseAgent, AgentInput, AgentOutput, AgentStatus
 from app.services.forecast import forecast_balance
 from app.services.anomaly import detect_anomaly
 from app.services.health_score import compute_health_score
 from app.services.data import generate_mock_transactions
 from app.core.finance import forecast_impact
+from app.core.config_thresholds import get_risk_thresholds
+from app.core.config import get_settings
 from app.services.banking_client import (
     get_transactions_sync,
     get_balance_sync,
@@ -13,6 +16,14 @@ from app.services.banking_client import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class _FinancialData:
+    """Bundle for deduplicated fetch results."""
+
+    transactions: list[dict]
+    balance: float
 
 
 class IntelligenceAgent(BaseAgent):
@@ -23,8 +34,8 @@ class IntelligenceAgent(BaseAgent):
     @property
     def description(self) -> str:
         return (
-            "Analyzes financial data to provide insights, forecasts, health scores, and what-if scenarios. "
-            "Uses transaction history and balance data to predict future financial states and assess financial wellness."
+            "Analyzes financial data to provide insights, forecasts, health scores, what-if scenarios, "
+            "balance inquiries, and affordability checks. Returns structured data for NLG synthesis."
         )
 
     @property
@@ -36,12 +47,14 @@ class IntelligenceAgent(BaseAgent):
             "spending_analysis",
             "anomaly_detection",
             "future_predictions",
+            "balance_inquiry",
+            "affordability_check",
         ]
 
     def _invoke(self, agent_input: AgentInput) -> AgentOutput:
         intent = agent_input.intent
         user_id = agent_input.user_id
-        context = agent_input.context
+        ctx = agent_input.context
 
         if intent == "health_score":
             return self._handle_health_score(user_id)
@@ -50,23 +63,30 @@ class IntelligenceAgent(BaseAgent):
             return self._handle_forecast(user_id)
 
         if intent == "what_if":
-            expense_amount = context.get("expense_amount", 5000.0)
-            return self._handle_what_if(user_id, expense_amount)
+            return self._handle_what_if(user_id, ctx)
 
         if intent == "anomaly_check":
-            amount = context.get("amount", 0.0)
+            amount = ctx.amount or 0.0
             return self._handle_anomaly(user_id, amount)
 
-        # Default: return health score
+        if intent == "balance":
+            return self._handle_balance(user_id)
+
+        if intent == "affordability":
+            return self._handle_affordability(user_id, ctx)
+
+        # Default: return health score data
         return self._handle_health_score(user_id)
 
+    # ------------------------------------------------------------------
+    # Health Score — returns structured data only
+    # ------------------------------------------------------------------
     def _handle_health_score(self, user_id: str) -> AgentOutput:
-        transactions = self._fetch_transactions(user_id)
-        current_balance = self._fetch_balance(user_id)
+        fin = self._fetch_financial_data(user_id)
         result = compute_health_score(
             user_id,
-            transactions=transactions,
-            current_balance=current_balance,
+            transactions=fin.transactions,
+            current_balance=fin.balance,
         )
         score = result["score"]
         persona = result.get("persona", {}).get("persona", "Balanced Manager")
@@ -83,15 +103,7 @@ class IntelligenceAgent(BaseAgent):
             else "liquidity"
         )
 
-        response = (
-            f"Your Financial Health Score is {score}/100. "
-            f"Strongest area: {top_factor} ({factors.get(top_factor, {}).get('label', 'Good')}). "
-            f"Area to improve: {weak_factor} ({factors.get(weak_factor, {}).get('label', 'Needs Work')}). "
-            f'Your spending persona is "{persona}".'
-        )
-
         return AgentOutput(
-            response=response,
             agent_name=self.name,
             confidence=0.85,
             metadata={
@@ -99,27 +111,25 @@ class IntelligenceAgent(BaseAgent):
                 "score": score,
                 "persona": persona,
                 "factors": factors,
+                "top_factor": top_factor,
+                "weak_factor": weak_factor,
             },
         )
 
+    # ------------------------------------------------------------------
+    # Forecast — returns structured data only
+    # ------------------------------------------------------------------
     def _handle_forecast(self, user_id: str) -> AgentOutput:
-        """Handle balance forecast queries."""
-        transactions = self._fetch_transactions(user_id)
-        current_balance = self._fetch_balance(user_id)
+        fin = self._fetch_financial_data(user_id)
+        transactions = fin.transactions
+        current_balance = fin.balance
 
         forecast_result = forecast_balance(transactions, periods=30)
         predicted_balance = forecast_result.get("predicted_balance", current_balance)
         lower_bound = forecast_result.get("lower_bound", predicted_balance * 0.9)
         upper_bound = forecast_result.get("upper_bound", predicted_balance * 1.1)
 
-        response = (
-            f"Based on your current spending patterns and income, your forecasted balance at the end of the month is "
-            f"₹{predicted_balance:,.0f} (range: ₹{lower_bound:,.0f} - ₹{upper_bound:,.0f}). "
-            f"Your current balance is ₹{current_balance:,.0f}."
-        )
-
         return AgentOutput(
-            response=response,
             agent_name=self.name,
             confidence=0.82,
             metadata={
@@ -131,17 +141,33 @@ class IntelligenceAgent(BaseAgent):
             },
         )
 
-    def _handle_what_if(self, user_id: str, expense_amount: float) -> AgentOutput:
-        transactions = self._fetch_transactions(user_id)
-        current_balance = self._fetch_balance(user_id)
+    # ------------------------------------------------------------------
+    # What-If — enforces required parameters
+    # ------------------------------------------------------------------
+    def _handle_what_if(self, user_id: str, ctx) -> AgentOutput:
+        expense_amount = ctx.expense_amount
+        if expense_amount is None:
+            return AgentOutput(
+                agent_name=self.name,
+                status=AgentStatus.needs_input,
+                confidence=0.0,
+                required_params=["expense_amount"],
+                metadata={
+                    "intent_handled": "what_if",
+                    "error": "Missing expense_amount for simulation",
+                },
+            )
+
+        expense_amount = float(expense_amount)
+        fin = self._fetch_financial_data(user_id)
 
         # Current forecast
-        current = forecast_balance(transactions)
-        predicted_balance = current.get("predicted_balance", current_balance)
+        current = forecast_balance(fin.transactions)
+        predicted_balance = current.get("predicted_balance", fin.balance)
 
-        # Simulated forecast (using Deterministic Core for impact)
+        # Simulated forecast
         simulated_balance = forecast_impact(
-            current_balance=current_balance,
+            current_balance=fin.balance,
             scheduled_expenses=0,
             simulated_expense=expense_amount,
         )
@@ -153,58 +179,168 @@ class IntelligenceAgent(BaseAgent):
             else 0
         )
 
-        if retained_pct > 70:
+        thresholds = get_risk_thresholds()
+        if retained_pct > thresholds.what_if_low:
             risk_level = "low"
-        elif retained_pct > 30:
+        elif retained_pct > thresholds.what_if_medium:
             risk_level = "medium"
         else:
             risk_level = "high"
 
-        response = (
-            f"Current forecast: ₹{predicted_balance:,.0f} end-of-month. "
-            f"After this expense: ₹{simulated_balance:,.0f} (impact: ₹{impact:,.0f}). "
-            f"Risk level: {risk_level}."
-        )
-
         return AgentOutput(
-            response=response,
             agent_name=self.name,
             confidence=0.82,
             metadata={
                 "intent_handled": "what_if",
-                "current_forecast": current_balance,
-                "simulated_forecast": simulated_balance,
+                "expense_amount": expense_amount,
+                "current_balance": fin.balance,
+                "predicted_balance": predicted_balance,
+                "simulated_balance": simulated_balance,
                 "impact": impact,
                 "risk_level": risk_level,
+                "retained_pct": round(retained_pct, 1),
             },
         )
 
+    # ------------------------------------------------------------------
+    # Anomaly — returns structured data only
+    # ------------------------------------------------------------------
     def _handle_anomaly(self, user_id: str, amount: float) -> AgentOutput:
         transactions = self._fetch_transactions(user_id)
         history = [abs(t["amount"]) for t in transactions if t["amount"] < 0]
 
         result = detect_anomaly(abs(amount), history)
 
-        if result["is_anomaly"]:
-            response = (
-                f"⚠️ This transaction of ₹{abs(amount):,.0f} is unusual. "
-                f"Severity: {result['severity']}. "
-                "It's significantly different from your typical spending pattern."
-            )
-        else:
-            response = f"This transaction of ₹{abs(amount):,.0f} looks normal based on your spending history."
-
         return AgentOutput(
-            response=response,
             agent_name=self.name,
             confidence=0.9,
-            metadata={"intent_handled": "anomaly_check", **result},
+            metadata={
+                "intent_handled": "anomaly_check",
+                "amount": abs(amount),
+                **result,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # Balance — moved from CommunicationAgent
+    # ------------------------------------------------------------------
+    def _handle_balance(self, user_id: str) -> AgentOutput:
+        try:
+            balance = get_balance_sync(user_id)
+        except BankingClientError as exc:
+            if _is_production_env():
+                logger.warning("Could not fetch balance for %s: %s", user_id, exc)
+                return AgentOutput(
+                    agent_name=self.name,
+                    status=AgentStatus.error,
+                    confidence=0.3,
+                    metadata={
+                        "intent_handled": "balance",
+                        "error": f"Could not fetch live balance: {exc}",
+                    },
+                )
+            logger.warning(
+                "Falling back to default balance data for %s: %s", user_id, exc
+            )
+            balance = {
+                "current_balance": 25000.0,
+                "available_balance": 24000.0,
+            }
+
+        current_balance = float(balance.get("current_balance", 0.0))
+        available_balance = float(balance.get("available_balance", current_balance))
+        return AgentOutput(
+            agent_name=self.name,
+            confidence=0.98,
+            metadata={
+                "intent_handled": "balance",
+                "current_balance": current_balance,
+                "available_balance": available_balance,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # Affordability — moved from CommunicationAgent
+    # ------------------------------------------------------------------
+    def _handle_affordability(self, user_id: str, ctx) -> AgentOutput:
+        purchase_amount = ctx.purchase_amount
+        if purchase_amount is None:
+            return AgentOutput(
+                agent_name=self.name,
+                status=AgentStatus.needs_input,
+                confidence=0.0,
+                required_params=["purchase_amount"],
+                metadata={
+                    "intent_handled": "affordability",
+                    "error": "Missing purchase_amount for affordability check",
+                },
+            )
+
+        purchase_amount = float(purchase_amount)
+        try:
+            balance = get_balance_sync(user_id)
+        except BankingClientError as exc:
+            if _is_production_env():
+                logger.warning(
+                    "Could not fetch affordability data for %s: %s", user_id, exc
+                )
+                return AgentOutput(
+                    agent_name=self.name,
+                    status=AgentStatus.error,
+                    confidence=0.3,
+                    metadata={
+                        "intent_handled": "affordability",
+                        "purchase_amount": purchase_amount,
+                        "error": f"Could not fetch live balance: {exc}",
+                    },
+                )
+            logger.warning(
+                "Falling back to default affordability data for %s: %s", user_id, exc
+            )
+            balance = {"available_balance": 25000.0}
+
+        available_balance = float(balance.get("available_balance", 0.0))
+        post_purchase_balance = available_balance - purchase_amount
+
+        thresholds = get_risk_thresholds()
+        if post_purchase_balance >= thresholds.affordability_safe_buffer:
+            verdict = "affordable"
+        elif post_purchase_balance >= 0:
+            verdict = "tight_buffer"
+        else:
+            verdict = "not_recommended"
+
+        return AgentOutput(
+            agent_name=self.name,
+            confidence=0.97,
+            metadata={
+                "intent_handled": "affordability",
+                "purchase_amount": purchase_amount,
+                "available_balance": available_balance,
+                "post_purchase_balance": post_purchase_balance,
+                "verdict": verdict,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # Data fetching helpers
+    # ------------------------------------------------------------------
+    def _fetch_financial_data(self, user_id: str) -> _FinancialData:
+        """Fetch transactions and balance once, avoiding duplicate API calls."""
+        return _FinancialData(
+            transactions=self._fetch_transactions(user_id),
+            balance=self._fetch_balance(user_id),
         )
 
     def _fetch_transactions(self, user_id: str) -> list[dict]:
         try:
             return get_transactions_sync(user_id=user_id)
         except BankingClientError as exc:
+            if _is_production_env():
+                logger.error(
+                    "Transaction fetch failed in production for %s: %s", user_id, exc
+                )
+                raise
             logger.warning(
                 "Falling back to generated transactions for %s: %s", user_id, exc
             )
@@ -215,5 +351,15 @@ class IntelligenceAgent(BaseAgent):
             balance = get_balance_sync(user_id)
             return float(balance.get("current_balance", 25000.0))
         except BankingClientError as exc:
+            if _is_production_env():
+                logger.error(
+                    "Balance fetch failed in production for %s: %s", user_id, exc
+                )
+                raise
             logger.warning("Falling back to default balance for %s: %s", user_id, exc)
             return 25000.0
+
+
+def _is_production_env() -> bool:
+    settings = get_settings()
+    return settings.environment.lower() == "production"

@@ -1,3 +1,6 @@
+import respx
+from httpx import Response
+
 from app.services.data import (
     generate_mock_transactions,
     aggregate_spending_profile,
@@ -9,6 +12,7 @@ from app.services.anomaly import detect_anomaly
 from app.services.health_score import compute_health_score
 from app.agents.intelligence import IntelligenceAgent
 from app.agents.base import AgentInput
+from app.core.config import get_settings
 
 
 # ── Data helpers ──────────────────────────────────────────────────────
@@ -25,7 +29,7 @@ class TestDataHelpers:
         profile = aggregate_spending_profile(txns)
         assert len(profile) > 0
         total = sum(profile.values())
-        assert 0.99 <= total <= 1.01  # percentages sum ~1.0
+        assert 0.99 <= total <= 1.01
 
     def test_calculate_monthly_stats(self):
         txns = generate_mock_transactions("test_user")
@@ -184,7 +188,7 @@ class TestAnomalyDetection:
             118,
             102,
         ]
-        result = detect_anomaly(10000, history)  # 100x normal
+        result = detect_anomaly(10000, history)
         assert result["is_anomaly"] is True
         assert result["severity"] in ("medium", "high")
 
@@ -210,20 +214,33 @@ class TestHealthScore:
         assert "predicted_balance" in result["forecast"]
 
 
-# ── Intelligence Agent (full integration) ─────────────────────────────
+# ── Intelligence Agent (new structured output tests) ──────────────────
 
 
 class TestIntelligenceAgent:
-    def test_health_score_intent(self):
+    def test_health_score_returns_data_only(self):
         agent = IntelligenceAgent()
         output = agent.invoke(
             AgentInput(user_id="u1", message="score", intent="health_score")
         )
         assert output.agent_name == "IntelligenceAgent"
-        assert "Health Score" in output.response
+        assert output.status == "success"
+        # No text in response — data is in metadata
         assert output.metadata.get("score") is not None
+        assert output.metadata.get("top_factor") is not None
+        assert output.metadata.get("weak_factor") is not None
+        assert output.metadata.get("persona") is not None
 
-    def test_what_if_intent(self):
+    def test_forecast_returns_data_only(self):
+        agent = IntelligenceAgent()
+        output = agent.invoke(
+            AgentInput(user_id="u1", message="forecast", intent="forecast")
+        )
+        assert output.status == "success"
+        assert output.metadata.get("predicted_balance") is not None
+        assert output.metadata.get("current_balance") is not None
+
+    def test_what_if_with_amount_returns_data(self):
         agent = IntelligenceAgent()
         output = agent.invoke(
             AgentInput(
@@ -233,8 +250,24 @@ class TestIntelligenceAgent:
                 context={"expense_amount": 5000},
             )
         )
-        assert "risk" in output.response.lower() or "impact" in output.response.lower()
+        assert output.status == "success"
         assert output.metadata.get("risk_level") in ("low", "medium", "high")
+        assert output.metadata.get("expense_amount") == 5000
+        assert output.metadata.get("simulated_balance") is not None
+
+    def test_what_if_missing_amount_returns_needs_input(self):
+        agent = IntelligenceAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="u1",
+                message="what if I buy something",
+                intent="what_if",
+                context={},
+            )
+        )
+        assert output.status == "needs_input"
+        assert "expense_amount" in output.required_params
+        assert output.confidence == 0.0
 
     def test_anomaly_intent(self):
         agent = IntelligenceAgent()
@@ -248,3 +281,83 @@ class TestIntelligenceAgent:
         )
         assert output.agent_name == "IntelligenceAgent"
         assert "is_anomaly" in output.metadata
+
+    def test_balance_returns_structured_data(self):
+        agent = IntelligenceAgent()
+        output = agent.invoke(
+            AgentInput(user_id="u1", message="balance", intent="balance")
+        )
+        assert output.agent_name == "IntelligenceAgent"
+        assert output.metadata.get("intent_handled") == "balance"
+        assert output.metadata.get("current_balance") is not None
+
+    def test_affordability_with_amount(self):
+        agent = IntelligenceAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="u1",
+                message="can i buy",
+                intent="affordability",
+                context={"purchase_amount": 5000},
+            )
+        )
+        assert output.metadata.get("intent_handled") == "affordability"
+        assert output.metadata.get("verdict") in (
+            "affordable",
+            "tight_buffer",
+            "not_recommended",
+        )
+        assert output.metadata.get("purchase_amount") == 5000
+
+    def test_affordability_missing_amount_returns_needs_input(self):
+        agent = IntelligenceAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="u1",
+                message="can i buy a laptop?",
+                intent="affordability",
+                context={},
+            )
+        )
+        assert output.status == "needs_input"
+        assert "purchase_amount" in output.required_params
+
+    @respx.mock
+    def test_production_mock_guard_balance(self, monkeypatch):
+        """Test that in production, a banking error raises instead of mocking."""
+        monkeypatch.setenv("ENVIRONMENT", "production")
+        get_settings.cache_clear()  # Clear cache to reload env vars
+
+        agent = IntelligenceAgent()
+        respx.get("http://localhost:8001/balances").mock(
+            return_value=Response(500, json={"detail": "Bank Offline"})
+        )
+        respx.get("http://localhost:8001/transactions").mock(
+            return_value=Response(500, json={"detail": "Bank Offline"})
+        )
+
+        output = agent.invoke(
+            AgentInput(user_id="u1", message="balance", intent="balance")
+        )
+        assert output.status == "error"
+        assert "Bank Offline" in str(output.metadata.get("error", ""))
+
+    @respx.mock
+    def test_production_mock_guard_transactions(self, monkeypatch):
+        """Test that in production, a banking error raises instead of mocking."""
+        monkeypatch.setenv("ENVIRONMENT", "production")
+        get_settings.cache_clear()
+
+        agent = IntelligenceAgent()
+        respx.get("http://localhost:8001/transactions").mock(
+            return_value=Response(500, json={"detail": "Bank Offline"})
+        )
+        respx.get("http://localhost:8001/balances").mock(
+            return_value=Response(500, json={"detail": "Bank Offline"})
+        )
+
+        output = agent.invoke(
+            AgentInput(user_id="u1", message="analysis", intent="spending_analysis")
+        )
+        assert output.status == "error"
+        assert "Bank Offline" in str(output.metadata.get("error", ""))

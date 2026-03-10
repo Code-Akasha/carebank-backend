@@ -80,27 +80,29 @@ if exist "%BACKEND_DIR%\.venv\Scripts\activate" (
     start "CareBank Backend" cmd /k "cd /d %BACKEND_DIR% && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 )
 
-REM --- Start Frontend ---
-echo Starting CareBank Frontend on port 5173...
-if exist "%FRONTEND_DIR%\node_modules" (
-    start "CareBank Frontend" cmd /k "cd /d %FRONTEND_DIR% && set VITE_API_BASE_URL=http://localhost:8000 && npm run dev -- --host 0.0.0.0 --port 5173"
+REM --- Wait for Backend before starting Frontend ---
+echo Waiting for backend to become ready...
+call :wait_for_backend
+if errorlevel 1 (
+    echo [WARN] Backend not responding yet, starting frontend anyway...
 ) else (
-    start "CareBank Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm install && set VITE_API_BASE_URL=http://localhost:8000 && npm run dev -- --host 0.0.0.0 --port 5173"
+    echo [OK] Backend is ready!
 )
 
-echo Waiting for services to start...
-timeout /t 6 /nobreak >nul
-
+REM --- Seed demo users before frontend starts ---
 echo Seeding demo users ^(skips existing^)...
 cd /d "%BACKEND_DIR%"
 if exist ".venv\Scripts\activate" (
     call .venv\Scripts\activate
 )
-call :wait_for_backend
-if errorlevel 1 (
-    echo [WARN] Backend not ready yet; skipping demo user seeding.
+python scripts\register_demo_users.py
+
+REM --- Start Frontend (after backend is confirmed ready) ---
+echo Starting CareBank Frontend on port 5173...
+if exist "%FRONTEND_DIR%\node_modules" (
+    start "CareBank Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm run dev -- --host 0.0.0.0 --port 5173"
 ) else (
-    python scripts\register_demo_users.py
+    start "CareBank Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm install && npm run dev -- --host 0.0.0.0 --port 5173"
 )
 
 echo Launching CareBank Dashboard CLI...
