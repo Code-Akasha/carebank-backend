@@ -5,6 +5,12 @@ from app.schemas.models import (
     ProductResponse,
     HealthScoreResponse,
 )
+from app.schemas.action_engine import (
+    ActionRequestCreate,
+    ActionRequestResponse,
+    ActionExecutionResponse,
+    ActionDecisionRequest,
+)
 
 __all__ = [
     "TransactionCreate",
@@ -12,4 +18,8 @@ __all__ = [
     "BalanceResponse",
     "ProductResponse",
     "HealthScoreResponse",
+    "ActionRequestCreate",
+    "ActionRequestResponse",
+    "ActionExecutionResponse",
+    "ActionDecisionRequest",
 ]

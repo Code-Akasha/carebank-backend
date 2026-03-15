@@ -1,5 +1,5 @@
 from app.agents.communication import CommunicationAgent
-from app.agents.base import AgentInput
+from app.agents.base import AgentInput, AgentStatus
 from app.compliance.guard import validate_and_refine
 from app.services.nlg import generate_response
 from app.services.nudge import can_send_nudge, record_nudge, _user_nudge_history
@@ -226,3 +226,31 @@ class TestCommunicationAgent:
         assert "provider" in output.metadata
         assert "model" in output.metadata
         assert "tokens" in output.metadata
+
+    def test_balance_template_includes_total_and_current(self):
+        agent = CommunicationAgent()
+        agent_results = [
+            {
+                "agent_name": "IntelligenceAgent",
+                "status": AgentStatus.success,
+                "metadata": {
+                    "intent_handled": "balance",
+                    "current_balance": 25540.52,
+                    "available_balance": 24297.15,
+                },
+            }
+        ]
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_balance",
+                message="What's my balance?",
+                intent="balance",
+                context={
+                    "agent_results": agent_results,
+                    "task": "Summarize the user's balance.",
+                },
+            )
+        )
+        assert "Total balance ₹ 24,297.15" in output.response
+        assert "Current balance ₹ 25,540.52" in output.response
+        assert output.metadata.get("provider") == "balance_template"

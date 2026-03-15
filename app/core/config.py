@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     banking_api_url: str
     banking_api_secret: str
+    backend_public_url: str = "http://localhost:8000"
+    mockbank_webhook_secret: str = ""
+    mockbank_webhook_signature_tolerance_seconds: int = 300
     openai_api_key: str = ""
     ollama_base_url: str | None = "http://localhost:11434"
     ollama_model: str = "llama3.2"
@@ -39,6 +42,9 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def ensure_runtime_secrets(self):
+        if not self.mockbank_webhook_secret:
+            self.mockbank_webhook_secret = self.banking_api_secret
+
         if not self.jwt_secret:
             if self.banking_api_secret:
                 self.jwt_secret = hashlib.sha256(
