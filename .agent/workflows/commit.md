@@ -14,7 +14,14 @@ This workflow automates the process of committing and pushing changes to the cor
 
 ### Steps:
 
-1. **Verify Current State & Fetch Develop**
+// turbo
+1. **Fetch Latest Changes (MANDATORY)**
+   - Always fetch the latest remote state before anything else: `git fetch origin`
+   - Check if the current branch is behind its remote: `git status -uno`
+   - If behind, rebase onto the latest: `git pull --rebase origin <current-branch>` or `git rebase origin/develop` if on a feature branch
+   - **This step prevents merge conflicts on push and ensures we're always working on the latest code.**
+
+2. **Verify Current State & Branch**
    - Check the git status to see what has changed.
    - Run `git fetch origin` to ensure you have the latest remote state.
    - Determine the correct feature branch based on the modified files and `GEMINI.md` branching rules.
@@ -25,22 +32,22 @@ This workflow automates the process of committing and pushing changes to the cor
    - **Remember: No direct commits to `main`.**
 
 // turbo
-2. **Add Files**
+3. **Add Files**
    - Stage the changes using `git add <files>` or `git add .` if appropriate.
 
 // turbo
-3. **Commit Changes (Always GPG Sign)**
+4. **Commit Changes (Always GPG Sign)**
    - Generate a conventional commit message (format: `<type>(<scope>): <subject>`) based on the staged changes.
    - ALWAYS commit the changes with a GPG signature using `git commit -S -m "..."`.
    - **GPG Troubleshooting**: If GPG signing fails (e.g., "socket file removed"), kill the agent by running `gpgconf --kill gpg-agent` and try committing again. If it continues to fail consistently, you can momentarily use `--no-gpg-sign` to bypass, but this is highly discouraged.
 
 // turbo
-4. **Push to Remote**
+5. **Push to Remote**
    - Push the branch to the remote repository.
    - If the branch is new on the remote, set the upstream: `git push -u origin <branch-name>`
    - Otherwise, just push: `git push`
 
-5. **Provide PR Instructions**
+6. **Provide PR Instructions**
    - Notify the user of the successful push.
    - Remind the user that a Pull Request is required to merge into `develop` (and eventually `main`).
 
@@ -58,6 +65,8 @@ This workflow automates the process of committing and pushing changes to the cor
 
 ## Caution
 
+- **Always fetch before committing** — stale branches cause merge conflicts.
 - Always strictly observe the project's branch naming conventions.
 - Never commit to `main` directly.
 - Ensure the commit message format strictly follows conventional commits.
+- If rebase conflicts occur, resolve them before proceeding.
