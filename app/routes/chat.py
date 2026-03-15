@@ -1,17 +1,21 @@
-from fastapi import APIRouter, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session as DBSession
 
 from app.agents.coordinator import coordinator_graph, get_conversation_history
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.audit_log import AuditLog
+from app.models.user import User
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 
 class ChatRequest(BaseModel):
-    user_id: str
     message: str
+    user_id: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -21,12 +25,20 @@ class ChatResponse(BaseModel):
 
 
 @router.post("", response_model=ChatResponse)
-def chat(request: ChatRequest, db: DBSession = Depends(get_db)):
-    history = get_conversation_history(request.user_id)
+def chat(
+    request: ChatRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: DBSession = Depends(get_db),
+):
+    if request.user_id and request.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Cannot chat as another user")
+
+    user_id = current_user.user_id
+    history = get_conversation_history(user_id)
 
     result = coordinator_graph.invoke(
         {
-            "user_id": request.user_id,
+            "user_id": user_id,
             "message": request.message,
             "audit_log": [],
             "conversation_history": history,
@@ -35,7 +47,7 @@ def chat(request: ChatRequest, db: DBSession = Depends(get_db)):
 
     # Persist audit log entry
     audit_entry = AuditLog(
-        user_id=request.user_id,
+        user_id=user_id,
         user_message=request.message,
         intent=result.get("intent", "unknown"),
         agent_used=result.get("agent_used", "unknown"),

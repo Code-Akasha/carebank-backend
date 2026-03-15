@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from datetime import datetime
+from datetime import date, datetime
 from threading import Lock
 from typing import Any
 
@@ -114,6 +114,7 @@ class BankingClient:
         start_date: datetime | None = None,
         end_date: datetime | None = None,
         category: str | None = None,
+        settlement_status: str | None = None,
     ) -> list[dict[str, Any]]:
         params: dict[str, Any] = {}
         if start_date:
@@ -122,6 +123,8 @@ class BankingClient:
             params["end_date"] = end_date.isoformat()
         if category:
             params["category"] = category
+        if settlement_status:
+            params["settlement_status"] = settlement_status
 
         data = await self._request(
             "GET", "/transactions", user_id=user_id, params=params
@@ -140,9 +143,133 @@ class BankingClient:
         data = await self._request("GET", "/products", user_id=user_id or "system")
         return data
 
+    async def get_bank_plans(self, user_id: str | None = None) -> dict[str, Any]:
+        data = await self._request("GET", "/banking/plans", user_id=user_id or "system")
+        return data
+
+    async def get_banking_policies(self, user_id: str | None = None) -> dict[str, Any]:
+        data = await self._request(
+            "GET", "/banking/policies", user_id=user_id or "system"
+        )
+        return data
+
+    async def get_action_policy(
+        self, action_type: str, user_id: str | None = None
+    ) -> dict[str, Any]:
+        data = await self._request(
+            "GET",
+            f"/banking/policies/actions/{action_type}",
+            user_id=user_id or "system",
+        )
+        return data
+
     async def get_accounts(self, user_id: str) -> list[dict[str, Any]]:
         data = await self._request("GET", "/accounts", user_id=user_id)
         return data
+
+    async def get_beneficiaries(self, user_id: str) -> list[dict[str, Any]]:
+        data = await self._request("GET", "/beneficiaries", user_id=user_id)
+        if isinstance(data, list):
+            return data
+        return []
+
+    async def create_beneficiary(
+        self, user_id: str, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        return await self._request(
+            "POST", "/beneficiaries", user_id=user_id, json_body=payload
+        )
+
+    async def verify_beneficiary(
+        self,
+        user_id: str,
+        beneficiary_id: str,
+    ) -> dict[str, Any]:
+        return await self._request(
+            "PUT",
+            f"/beneficiaries/{beneficiary_id}/verify",
+            user_id=user_id,
+        )
+
+    async def get_settlement_windows(
+        self,
+        user_id: str,
+        *,
+        for_date: date | None = None,
+    ) -> dict[str, Any]:
+        params: dict[str, Any] | None = None
+        if for_date:
+            params = {"for_date": for_date.isoformat()}
+        return await self._request(
+            "GET",
+            "/settlement-windows",
+            user_id=user_id,
+            params=params,
+        )
+
+    async def get_schedules(
+        self,
+        user_id: str,
+        *,
+        include_inactive: bool = False,
+    ) -> list[dict[str, Any]]:
+        data = await self._request(
+            "GET",
+            "/schedules",
+            user_id=user_id,
+            params={"include_inactive": str(include_inactive).lower()},
+        )
+        if isinstance(data, list):
+            return data
+        return []
+
+    async def create_schedule(
+        self,
+        user_id: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        return await self._request(
+            "POST",
+            "/schedules",
+            user_id=user_id,
+            json_body=payload,
+        )
+
+    async def run_schedule(
+        self,
+        user_id: str,
+        schedule_id: str,
+        *,
+        force: bool = False,
+    ) -> dict[str, Any]:
+        return await self._request(
+            "POST",
+            f"/schedules/{schedule_id}/run",
+            user_id=user_id,
+            params={"force": str(force).lower()},
+        )
+
+    async def cancel_schedule(
+        self,
+        user_id: str,
+        schedule_id: str,
+    ) -> dict[str, Any]:
+        return await self._request(
+            "DELETE",
+            f"/schedules/{schedule_id}",
+            user_id=user_id,
+        )
+
+    async def get_transaction_lifecycle(
+        self,
+        user_id: str,
+        transaction_id: int,
+    ) -> dict[str, Any]:
+        return await self._request(
+            "GET",
+            f"/transactions/{transaction_id}/lifecycle",
+            user_id=user_id,
+        )
 
     async def get_providers(self) -> list[dict[str, Any]]:
         data = await self._request("GET", "/providers", user_id="system")
@@ -253,6 +380,7 @@ def get_transactions_sync(
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     category: str | None = None,
+    settlement_status: str | None = None,
 ) -> list[dict[str, Any]]:
     client = get_banking_client()
     return _run_sync(
@@ -261,6 +389,7 @@ def get_transactions_sync(
             start_date=start_date,
             end_date=end_date,
             category=category,
+            settlement_status=settlement_status,
         )
     )
 
@@ -275,11 +404,43 @@ def get_products_sync(user_id: str | None = None) -> list[dict[str, Any]]:
     return _run_sync(client.get_products(user_id))
 
 
+def get_bank_plans_sync(user_id: str | None = None) -> dict[str, Any]:
+    client = get_banking_client()
+    return _run_sync(client.get_bank_plans(user_id))
+
+
+def get_banking_policies_sync(user_id: str | None = None) -> dict[str, Any]:
+    client = get_banking_client()
+    return _run_sync(client.get_banking_policies(user_id))
+
+
+def get_action_policy_sync(
+    action_type: str, user_id: str | None = None
+) -> dict[str, Any]:
+    client = get_banking_client()
+    return _run_sync(client.get_action_policy(action_type, user_id=user_id))
+
+
 def get_accounts_sync(user_id: str) -> list[dict[str, Any]]:
     client = get_banking_client()
     return _run_sync(client.get_accounts(user_id))
 
 
+def get_beneficiaries_sync(user_id: str) -> list[dict[str, Any]]:
+    client = get_banking_client()
+    return _run_sync(client.get_beneficiaries(user_id))
+
+
 def get_providers_sync() -> list[dict[str, Any]]:
     client = get_banking_client()
     return _run_sync(client.get_providers())
+
+
+def trigger_transaction_sync(payload: dict[str, Any]) -> dict[str, Any]:
+    client = get_banking_client()
+    return _run_sync(client.trigger_transaction(payload))
+
+
+def get_transaction_lifecycle_sync(user_id: str, transaction_id: int) -> dict[str, Any]:
+    client = get_banking_client()
+    return _run_sync(client.get_transaction_lifecycle(user_id, transaction_id))

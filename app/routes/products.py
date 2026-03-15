@@ -50,6 +50,30 @@ def _persist_products(db: Session, products: list[dict]) -> None:
     db.commit()
 
 
+@router.get("/bank-policies")
+async def get_bank_policies() -> dict:
+    """Return MockBank regulatory policy catalog (India-first rails + action caps)."""
+    client = get_banking_client()
+    try:
+        return await client.get_banking_policies()
+    except BankingClientError as exc:
+        raise HTTPException(
+            status_code=503, detail=f"Banking API unavailable: {exc}"
+        ) from exc
+
+
+@router.get("/bank-plans")
+async def get_bank_plans() -> dict:
+    """Return MockBank account plan catalog as the source of truth."""
+    client = get_banking_client()
+    try:
+        return await client.get_bank_plans()
+    except BankingClientError as exc:
+        raise HTTPException(
+            status_code=503, detail=f"Banking API unavailable: {exc}"
+        ) from exc
+
+
 @router.get("/")
 async def list_products(db: Session = Depends(get_db)) -> list:
     """Return products from the mock bank, persisting locally for caching."""
