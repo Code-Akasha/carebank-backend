@@ -4,6 +4,8 @@ from app.agents.communication import CommunicationAgent
 from app.agents.opportunity import OpportunityAgent
 from app.agents.auto_savings import AutoSavingsAgent
 from app.agents.coordinator import (
+    ActionIntentResult,
+    ClassificationResult,
     build_coordinator_graph,
     classify_intent,
     plan_tasks,
@@ -115,6 +117,130 @@ class TestKeywordClassification:
     def test_balance_keyword_detected(self):
         result = _classify_intent_keywords("What is my balance?")
         assert result.intent == "balance"
+
+    def test_schedule_query_detected_as_planning(self):
+        result = _classify_intent_keywords(
+            "create a shedule to pay rent on next moth 5th"
+        )
+        assert result.intent == "planning"
+
+    def test_balance_plus_savings_sets_secondary_intent(self):
+        result = _classify_intent_keywords(
+            "what is my balance and how can i improve my savings"
+        )
+        assert result.intent == "balance"
+        assert result.secondary_intent == "auto_savings"
+
+
+class TestContextualIntentOverride:
+    def test_amount_only_after_schedule_routes_to_planning(self):
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "5000",
+            "audit_log": [],
+            "conversation_history": [
+                {
+                    "role": "user",
+                    "content": "create a shedule to pay rent on next moth 5th",
+                },
+                {
+                    "role": "assistant",
+                    "content": "Please share the rent amount as well.",
+                },
+            ],
+        }
+        result = classify_intent(state)
+        assert result["intent"] == "planning"
+        assert result["agent_name"] == "CommunicationAgent"
+
+    def test_stale_pending_planning_does_not_hijack_unrelated_query(self, monkeypatch):
+        import app.agents.coordinator as coordinator_module
+
+        monkeypatch.setattr(
+            coordinator_module,
+            "_detect_action_request",
+            lambda _message, _history: None,
+        )
+        monkeypatch.setattr(
+            coordinator_module,
+            "_classify_intent_with_llm",
+            lambda _message, _history: ClassificationResult(
+                intent="balance",
+                confidence=0.91,
+                parameters={},
+                secondary_intent="auto_savings",
+            ),
+        )
+
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "what is my balance how can i improve my savings",
+            "audit_log": [],
+            "conversation_history": [
+                {
+                    "role": "user",
+                    "content": "create a shedule to pay rent on next moth 5th",
+                },
+                {
+                    "role": "assistant",
+                    "content": "Please share the rent amount as well.",
+                },
+            ],
+            "conversation_state": {
+                "pending_intent": "planning",
+                "planning": {
+                    "flow": "schedule_from_text",
+                    "source_text": "create a shedule to pay rent on next moth 5th",
+                    "day_of_month": 5,
+                    "amount": None,
+                },
+            },
+        }
+
+        result = classify_intent(state)
+        assert result["intent"] == "balance"
+        assert result["classification_secondary_intent"] == "auto_savings"
+        assert result["pending_intent_ignored"] is True
+
+
+class TestActionIntentRouting:
+    def test_action_style_bill_query_routes_to_planning(self, monkeypatch):
+        import app.agents.coordinator as coordinator_module
+
+        monkeypatch.setattr(
+            coordinator_module,
+            "_classify_intent_with_llm",
+            lambda _message, _history: ClassificationResult(
+                intent="balance",
+                confidence=0.9,
+                parameters={"amount": 2000},
+            ),
+        )
+        monkeypatch.setattr(
+            coordinator_module,
+            "_detect_action_request",
+            lambda _message, _history: ActionIntentResult(
+                is_action_request=True,
+                action_family="schedule_payment",
+                confidence=0.86,
+                amount=2000,
+                day_of_month=20,
+                recurring=True,
+            ),
+        )
+
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "pay my electricity bills of 2000 on 20",
+            "audit_log": [],
+            "conversation_history": [],
+            "conversation_state": {},
+        }
+        result = classify_intent(state)
+        assert result["intent"] == "planning"
+        assert result["agent_name"] == "CommunicationAgent"
+        assert result["classification_parameters"]["amount"] == 2000
+        assert result["classification_parameters"]["day_of_month"] == 20
 
 
 # ── Intent classification node tests ──────────────────────────────────
@@ -389,6 +515,32 @@ class TestCoordinatorGraph:
         )
         assert len(result["audit_log"]) >= 1
         assert result["audit_log"][0]["agent_used"] == "IntelligenceAgent"
+
+    def test_end_to_end_schedule_followup_amount_keeps_day_context(self):
+        graph = build_coordinator_graph()
+        user_id = "schedule_followup_graph_test"
+
+        first = graph.invoke(
+            {
+                "user_id": user_id,
+                "message": "create a shedule to pay rent on next moth 5th",
+                "audit_log": [],
+                "conversation_history": [],
+            }
+        )
+
+        second = graph.invoke(
+            {
+                "user_id": user_id,
+                "message": "5000",
+                "audit_log": [],
+                "conversation_history": first.get("conversation_history", []),
+            }
+        )
+
+        response = second.get("agent_response", "").lower()
+        assert "day 5" in response
+        assert "please share the day" not in response
 
     def test_error_handling_graceful(self):
         """Agent base class wraps exceptions gracefully."""
