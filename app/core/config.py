@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     mockbank_webhook_signature_tolerance_seconds: int = 300
     openai_api_key: str = ""
     ollama_base_url: str | None = "http://localhost:11434"
-    ollama_model: str = "llama3.2"
+    ollama_model: str = "qwen3:8b"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
     jwt_secret: str = ""
