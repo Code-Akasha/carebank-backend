@@ -173,3 +173,105 @@ def test_schedule_from_text_creates_recurring_rule(client):
     assert payload["rule"]["amount"] == 25000
     assert payload["rule"]["reminder_days_before"] == 3
     assert payload["extracted"]["day_of_month"] == 10
+
+
+def test_chat_creates_schedule_directly(client):
+    token, _ = _register_and_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    turn1 = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": "create a shedule to pay rent on next moth 5th"},
+    )
+    assert turn1.status_code == 200
+    assert "amount" in turn1.json()["response"].lower()
+
+    turn2 = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": "5000"},
+    )
+    assert turn2.status_code == 200
+    assert "done" in turn2.json()["response"].lower()
+    assert "day 5" in turn2.json()["response"].lower()
+
+    rules = client.get("/api/planning/recurring-rules", headers=headers)
+    assert rules.status_code == 200
+    payload = rules.json()
+    assert any(
+        int(item["day_of_month"]) == 5 and float(item["amount"]) == 5000.0
+        for item in payload
+    )
+
+
+def test_chat_pending_schedule_not_hijacked_by_balance_savings_query(
+    client, monkeypatch
+):
+    token, _ = _register_and_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    turn1 = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": "create a shedule to pay rent on next moth 5th"},
+    )
+    assert turn1.status_code == 200
+    assert "amount" in turn1.json()["response"].lower()
+
+    from app.agents.coordinator import ClassificationResult
+    import app.agents.coordinator as coordinator_module
+
+    monkeypatch.setattr(
+        coordinator_module,
+        "_detect_action_request",
+        lambda _message, _history: None,
+    )
+    monkeypatch.setattr(
+        coordinator_module,
+        "_classify_intent_with_llm",
+        lambda _message, _history: ClassificationResult(
+            intent="balance",
+            confidence=0.9,
+            parameters={},
+            secondary_intent="auto_savings",
+        ),
+    )
+
+    turn2 = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": "what is my balance how can i improve my savings"},
+    )
+    assert turn2.status_code == 200
+    turn2_text = turn2.json()["response"].lower()
+    assert "created your recurring schedule" not in turn2_text
+
+    rules = client.get("/api/planning/recurring-rules", headers=headers)
+    assert rules.status_code == 200
+    assert rules.json() == []
+
+
+def test_chat_creates_electricity_schedule_directly(client):
+    token, _ = _register_and_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": "pay my electricity bills of 2000 on 20"},
+    )
+    assert response.status_code == 200
+    text = response.json()["response"].lower()
+    assert "done" in text
+    assert "day 20" in text
+
+    rules = client.get("/api/planning/recurring-rules", headers=headers)
+    assert rules.status_code == 200
+    payload = rules.json()
+    assert any(
+        int(item["day_of_month"]) == 20
+        and float(item["amount"]) == 2000.0
+        and item["category"] in {"bill", "custom"}
+        for item in payload
+    )

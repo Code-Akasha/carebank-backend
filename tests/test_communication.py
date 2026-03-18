@@ -254,3 +254,137 @@ class TestCommunicationAgent:
         assert "Total balance ₹ 24,297.15" in output.response
         assert "Current balance ₹ 25,540.52" in output.response
         assert output.metadata.get("provider") == "balance_template"
+
+    def test_schedule_query_not_hijacked_by_balance_template(self):
+        agent = CommunicationAgent()
+        agent_results = [
+            {
+                "agent_name": "IntelligenceAgent",
+                "status": AgentStatus.success,
+                "metadata": {
+                    "intent_handled": "balance",
+                    "current_balance": 25540.52,
+                    "available_balance": 24297.15,
+                },
+            }
+        ]
+
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_schedule",
+                message="create a shedule to pay rent on next moth 5th",
+                intent="planning",
+                context={
+                    "agent_results": agent_results,
+                    "task": "Help create recurring rent schedule",
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") != "balance_template"
+        assert (
+            "schedule" in output.response.lower() or "rent" in output.response.lower()
+        )
+
+    def test_schedule_query_prompts_for_missing_amount(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_schedule_missing_amount",
+                message="create a shedule to pay rent on next moth 5th",
+                intent="planning",
+                context={
+                    "task": "Create recurring rent schedule",
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") == "planning_executor"
+        assert "amount" in output.response.lower()
+        pending = output.metadata.get("pending_state") or {}
+        assert pending.get("pending_intent") == "planning"
+
+    def test_schedule_followup_amount_uses_history_day(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_schedule_followup",
+                message="5000",
+                intent="planning",
+                context={
+                    "conversation_state": {
+                        "pending_intent": "planning",
+                        "planning": {
+                            "flow": "schedule_from_text",
+                            "source_text": "create a shedule to pay rent on next moth 5th",
+                            "day_of_month": 5,
+                            "amount": None,
+                        },
+                    },
+                    "history": [
+                        {
+                            "role": "user",
+                            "content": "create a shedule to pay rent on next moth 5th",
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "Please share the rent amount",
+                        },
+                    ],
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") == "planning_executor"
+        assert output.metadata.get("clear_pending") is True
+        action = output.metadata.get("action") or {}
+        assert action.get("type") == "create_schedule_from_text"
+        assert "day 5" in output.response.lower()
+        assert "5,000.00" in output.response
+
+    def test_stale_pending_planning_not_applied_to_balance_query(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_pending_guard",
+                message="what is my balance how can i improve my savings",
+                intent="balance",
+                context={
+                    "conversation_state": {
+                        "pending_intent": "planning",
+                        "planning": {
+                            "flow": "schedule_from_text",
+                            "source_text": "create a shedule to pay rent on next moth 5th",
+                            "day_of_month": 5,
+                            "amount": None,
+                        },
+                    },
+                    "history": [
+                        {
+                            "role": "user",
+                            "content": "create a shedule to pay rent on next moth 5th",
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "Please share the rent amount",
+                        },
+                    ],
+                    "agent_results": [
+                        {
+                            "agent_name": "IntelligenceAgent",
+                            "status": AgentStatus.success,
+                            "metadata": {
+                                "intent_handled": "balance",
+                                "current_balance": 25540.52,
+                                "available_balance": 24297.15,
+                            },
+                        }
+                    ],
+                    "task": "Answer balance and savings question",
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") == "balance_template"
+        assert output.metadata.get("action") is None
+        assert "creating recurring payment schedule" not in output.response.lower()

@@ -32,6 +32,18 @@ def get_conversation_history(user_id: str) -> list[dict]:
     return _conversation_store.get(user_id)
 
 
+def get_conversation_state(user_id: str) -> dict:
+    return _conversation_store.get_state(user_id)
+
+
+def set_conversation_state(user_id: str, state: dict) -> None:
+    _conversation_store.set_state(user_id, state)
+
+
+def clear_conversation_state(user_id: str) -> None:
+    _conversation_store.clear_state(user_id)
+
+
 # ---------------------------------------------------------------------------
 # Lazy agent registry — classes stored, instantiated on first access
 # ---------------------------------------------------------------------------
@@ -85,7 +97,7 @@ class ClassificationResult(BaseModel):
     """Structured output from LLM intent classification."""
 
     intent: str = Field(
-        description="One of: balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, general"
+        description="One of: balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, planning, general"
     )
     confidence: float = Field(description="0.0 to 1.0 confidence in classification")
     parameters: dict = Field(
@@ -96,6 +108,45 @@ class ClassificationResult(BaseModel):
         default=None,
         description="Optional secondary intent if the query contains multiple requests",
     )
+
+
+class ActionIntentResult(BaseModel):
+    """Signal that user is asking the assistant to perform an action, not just answer."""
+
+    is_action_request: bool = Field(
+        description="True when user asks assistant to execute or schedule a task"
+    )
+    action_family: str = Field(
+        default="none",
+        description="One of: schedule_payment, manage_beneficiary, manage_schedule, action_approval, none",
+    )
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    amount: float | None = None
+    day_of_month: int | None = None
+    recurring: bool | None = None
+
+
+ACTION_INTENT_PROMPT = """You are classifying whether a user message is an actionable instruction.
+
+Classify as is_action_request=true when user asks to DO something (pay, schedule, set up recurring payment, approve/reject an action, create beneficiary, run/cancel schedule).
+Classify as is_action_request=false when user only asks for information (balance, forecast, analysis, score).
+
+User message: "{user_message}"
+Recent context: {conversation_summary}
+
+Return JSON with:
+- is_action_request: boolean
+- action_family: schedule_payment | manage_beneficiary | manage_schedule | action_approval | none
+- confidence: 0-1
+- amount: number or null
+- day_of_month: integer 1-31 or null
+- recurring: boolean or null
+
+Guidelines:
+- Bills/rent/utility payment instructions should be schedule_payment.
+- If there is due day/date language like "on 20", extract day_of_month where possible.
+- If wording implies monthly/recurring/autopay, set recurring=true.
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -110,6 +161,7 @@ _INTENT_TO_AGENT: dict[str, str] = {
     "affordability": "IntelligenceAgent",
     "auto_savings": "AutoSavingsAgent",
     "opportunity": "OpportunityAgent",
+    "planning": "CommunicationAgent",
     "general": "CommunicationAgent",
 }
 
@@ -131,6 +183,7 @@ Intent codes (use these exactly):
 - affordability: "Can I afford...", "should I buy..." purchase questions
 - auto_savings: Savings advice and micro-savings
 - opportunity: Product recommendations and offers
+- planning: Scheduling, recurring payment setup, reminder/checklist planning requests
 - general: Non-financial questions or small talk
 
 User query: "{user_message}"
@@ -151,6 +204,16 @@ Now analyze the query:"""
 
 # Keyword matching (safety net when LLM is unavailable)
 _INTENT_KEYWORDS: dict[str, list[str]] = {
+    "planning": [
+        "schedule",
+        "shedule",
+        "recurring",
+        "autopay",
+        "every month",
+        "monthly",
+        "pay rent",
+        "due on",
+    ],
     "balance": [
         "balance",
         "current balance",
@@ -186,6 +249,141 @@ _INTENT_KEYWORDS: dict[str, list[str]] = {
         "eligible",
     ],
 }
+
+_SCHEDULE_SIGNAL_HINTS = {
+    "schedule",
+    "shedule",
+    "recurring",
+    "autopay",
+    "every month",
+    "monthly",
+    "rent",
+    "due",
+}
+
+_PLANNING_FOLLOW_UP_CONFIRMATIONS = {
+    "yes",
+    "y",
+    "ok",
+    "okay",
+    "sure",
+    "go ahead",
+    "proceed",
+    "continue",
+    "confirm",
+    "do it",
+}
+
+
+def _looks_like_schedule_request(message: str) -> bool:
+    lower = message.lower()
+    return any(hint in lower for hint in _SCHEDULE_SIGNAL_HINTS)
+
+
+_AMOUNT_ONLY_PATTERN = re.compile(
+    r"^\s*(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:k|thousand|lakh|lakhs|lac|lacs|crore|crores|cr)?\s*$"
+)
+
+
+def _is_amount_only_message(message: str) -> bool:
+    normalized = message.replace(",", "").strip().lower()
+    if not normalized:
+        return False
+    return bool(_AMOUNT_ONLY_PATTERN.match(normalized))
+
+
+def _history_has_schedule_context(history: list[dict]) -> bool:
+    # Only consider the most recent turn pair to avoid stale schedule carry-over.
+    for msg in reversed(history[-2:]):
+        content = str(msg.get("content") or "")
+        role = str(msg.get("role") or "").lower()
+        lowered = content.lower()
+
+        if role == "user" and _looks_like_schedule_request(content):
+            return True
+
+        if role == "assistant" and (
+            "schedule" in lowered
+            or "recurring" in lowered
+            or ("rent" in lowered and "amount" in lowered)
+        ):
+            return True
+
+    return False
+
+
+def _contextual_intent_override(
+    message: str,
+    history: list[dict],
+) -> ClassificationResult | None:
+    if _looks_like_schedule_request(message):
+        return ClassificationResult(
+            intent="planning",
+            confidence=0.8,
+            parameters={},
+        )
+
+    if _is_amount_only_message(message) and _history_has_schedule_context(history):
+        amount = _extract_amount_from_text(message)
+        parameters: dict = {}
+        if amount is not None:
+            parameters["amount"] = amount
+        return ClassificationResult(
+            intent="planning",
+            confidence=0.78,
+            parameters=parameters,
+        )
+
+    return None
+
+
+def _ordered_keyword_intents(message_lower: str) -> list[str]:
+    scored: list[tuple[int, str]] = []
+    for intent, keywords in _INTENT_KEYWORDS.items():
+        hits = [
+            message_lower.find(keyword)
+            for keyword in keywords
+            if keyword in message_lower
+        ]
+        if hits:
+            scored.append((min(hits), intent))
+
+    scored.sort(key=lambda item: item[0])
+    return [intent for _, intent in scored]
+
+
+def _is_pending_planning_follow_up(message: str, history: list[dict]) -> bool:
+    normalized = re.sub(r"\s+", " ", message.lower()).strip()
+    if not normalized:
+        return False
+
+    if _is_amount_only_message(normalized):
+        return True
+
+    if _extract_day_of_month_from_text(normalized) is not None:
+        return True
+
+    if _looks_like_schedule_request(normalized):
+        return True
+
+    if (
+        normalized in _PLANNING_FOLLOW_UP_CONFIRMATIONS
+        and _history_has_schedule_context(history)
+    ):
+        return True
+
+    return False
+
+
+def _should_resume_pending_intent(
+    pending_intent: str,
+    *,
+    message: str,
+    history: list[dict],
+) -> bool:
+    if pending_intent == "planning":
+        return _is_pending_planning_follow_up(message, history)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +425,137 @@ def _extract_amount_from_text(message: str) -> float | None:
         if amount >= 100:
             return amount
     return None
+
+
+def _extract_day_of_month_from_text(message: str) -> int | None:
+    lowered = message.lower()
+    ordinal = re.search(r"\b(\d{1,2})(?:st|nd|rd|th)\b", lowered)
+    if ordinal:
+        day = int(ordinal.group(1))
+        if 1 <= day <= 31:
+            return day
+
+    on_day = re.search(r"\bon\s+(\d{1,2})\b", lowered)
+    if on_day:
+        day = int(on_day.group(1))
+        if 1 <= day <= 31:
+            return day
+    return None
+
+
+def _is_recurring_signal(message: str) -> bool:
+    lower = message.lower()
+    return any(
+        signal in lower
+        for signal in (
+            "every month",
+            "monthly",
+            "recurring",
+            "autopay",
+            "each month",
+        )
+    )
+
+
+def _classify_action_request_with_llm(
+    message: str,
+    history: list[dict],
+) -> ActionIntentResult | None:
+    llm, provider = get_llm_provider(temperature=0.0)
+    if not llm:
+        return None
+
+    try:
+        structured_llm = llm.with_structured_output(ActionIntentResult)
+
+        conv_summary = "No previous context"
+        if history:
+            recent = history[-3:]
+            conv_summary = " | ".join(
+                [f"{msg['role']}: {msg['content'][:50]}" for msg in recent]
+            )
+
+        prompt = PromptTemplate.from_template(ACTION_INTENT_PROMPT)
+        chain = prompt | structured_llm
+        result: ActionIntentResult = chain.invoke(
+            {
+                "user_message": message,
+                "conversation_summary": conv_summary,
+            }
+        )
+        logger.info(
+            "⚙️ Action-intent classification (%s): is_action=%s family=%s conf=%.2f",
+            provider,
+            result.is_action_request,
+            result.action_family,
+            result.confidence,
+        )
+        return result
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Action-intent LLM classification failed: %s", exc)
+        return None
+
+
+def _classify_action_request_fallback(message: str) -> ActionIntentResult | None:
+    lower = message.lower()
+    amount = _extract_amount_from_text(message)
+    day = _extract_day_of_month_from_text(message)
+
+    action_verbs = (
+        "pay",
+        "schedule",
+        "set up",
+        "setup",
+        "auto",
+        "remind",
+        "book",
+        "create",
+    )
+    payment_objects = (
+        "bill",
+        "bills",
+        "electricity",
+        "utility",
+        "rent",
+        "gas",
+        "emi",
+        "loan",
+        "insurance",
+        "subscription",
+        "fees",
+        "fee",
+    )
+
+    has_action_verb = any(token in lower for token in action_verbs)
+    has_payment_object = any(token in lower for token in payment_objects)
+    recurring = _is_recurring_signal(message)
+
+    if (has_action_verb and has_payment_object and amount is not None) or (
+        has_action_verb and amount is not None and day is not None
+    ):
+        return ActionIntentResult(
+            is_action_request=True,
+            action_family="schedule_payment",
+            confidence=0.74,
+            amount=amount,
+            day_of_month=day,
+            recurring=recurring or day is not None,
+        )
+    return None
+
+
+def _detect_action_request(
+    message: str, history: list[dict]
+) -> ActionIntentResult | None:
+    llm_result = _classify_action_request_with_llm(message, history)
+    if llm_result and llm_result.is_action_request and llm_result.confidence >= 0.65:
+        return llm_result
+
+    fallback_result = _classify_action_request_fallback(message)
+    if fallback_result:
+        return fallback_result
+
+    return llm_result
 
 
 # ---------------------------------------------------------------------------
@@ -287,6 +616,20 @@ def _classify_intent_with_llm(
             result.parameters,
             result.secondary_intent,
         )
+
+        # Guardrail: schedule/planning phrasing should not be routed as balance.
+        heuristic = _classify_intent_keywords(message)
+        if heuristic.intent == "planning" and result.intent == "balance":
+            logger.info(
+                "🛟 Heuristic override: schedule-like query rerouted from balance to planning"
+            )
+            return ClassificationResult(
+                intent="planning",
+                confidence=max(heuristic.confidence, 0.75),
+                parameters=result.parameters,
+                secondary_intent=result.secondary_intent,
+            )
+
         return result
 
     except Exception as e:
@@ -300,31 +643,51 @@ def _classify_intent_keywords(message: str) -> ClassificationResult:
     """Fallback keyword-based classification with regex entity extraction."""
     message_lower = message.lower()
 
-    detected_intent = "general"
-    for intent, keywords in _INTENT_KEYWORDS.items():
-        if any(kw in message_lower for kw in keywords):
-            detected_intent = intent
-            break
+    if _looks_like_schedule_request(message):
+        return ClassificationResult(
+            intent="planning",
+            confidence=0.72,
+            parameters={},
+        )
+
+    matched_intents = _ordered_keyword_intents(message_lower)
+    detected_intent = matched_intents[0] if matched_intents else "general"
+    secondary_intent = matched_intents[1] if len(matched_intents) > 1 else None
 
     # Extract amount via regex for intents that need it
     parameters: dict = {}
-    if detected_intent in ("what_if", "affordability"):
+    amount_target_intent = detected_intent
+    if amount_target_intent not in (
+        "what_if",
+        "affordability",
+    ) and secondary_intent in (
+        "what_if",
+        "affordability",
+    ):
+        amount_target_intent = secondary_intent
+
+    if amount_target_intent in ("what_if", "affordability"):
         amount = _extract_amount_from_text(message)
         if amount is not None:
             param_key = (
-                "expense_amount" if detected_intent == "what_if" else "purchase_amount"
+                "expense_amount"
+                if amount_target_intent == "what_if"
+                else "purchase_amount"
             )
             parameters[param_key] = amount
 
     logger.info(
-        "🔑 Keyword matched: intent='%s', confidence=0.6, params=%s",
+        "🔑 Keyword matched: intent='%s', secondary='%s', confidence=%.2f, params=%s",
         detected_intent,
+        secondary_intent,
+        0.62 if secondary_intent else 0.6,
         parameters,
     )
     return ClassificationResult(
         intent=detected_intent,
-        confidence=0.6,
+        confidence=0.62 if secondary_intent else 0.6,
         parameters=parameters,
+        secondary_intent=secondary_intent,
     )
 
 
@@ -354,6 +717,9 @@ class CoordinatorState(TypedDict, total=False):
     agent_results: list
     audit_log: list
     conversation_history: list
+    conversation_state: dict
+    pending_intent_ignored: bool
+    response_metadata: dict
     error: str
 
 
@@ -366,8 +732,59 @@ def classify_intent(state: CoordinatorState) -> CoordinatorState:
     """Classify user intent using structured LLM output, with keyword fallback."""
     message = state["message"]
     history = state.get("conversation_history", [])
+    conversation_state = state.get("conversation_state", {})
 
-    result = _classify_intent_with_llm(message, history)
+    pending_intent_ignored = False
+    pending_intent = conversation_state.get("pending_intent")
+    should_resume_pending = (
+        isinstance(pending_intent, str)
+        and pending_intent in _INTENT_TO_AGENT
+        and _should_resume_pending_intent(
+            pending_intent,
+            message=message,
+            history=history,
+        )
+    )
+
+    if should_resume_pending:
+        parameters: dict = {}
+        amount = _extract_amount_from_text(message)
+        if amount is not None:
+            parameters["amount"] = amount
+        result = ClassificationResult(
+            intent=pending_intent,
+            confidence=0.96,
+            parameters=parameters,
+        )
+    else:
+        if isinstance(pending_intent, str) and pending_intent in _INTENT_TO_AGENT:
+            pending_intent_ignored = True
+            logger.info(
+                "Ignoring stale pending intent '%s' for message '%s'",
+                pending_intent,
+                message,
+            )
+
+        action_signal = _detect_action_request(message, history)
+        if (
+            action_signal
+            and action_signal.is_action_request
+            and action_signal.action_family == "schedule_payment"
+        ):
+            parameters: dict = {"source_text": message}
+            if action_signal.amount is not None:
+                parameters["amount"] = float(action_signal.amount)
+            if action_signal.day_of_month is not None:
+                parameters["day_of_month"] = int(action_signal.day_of_month)
+            result = ClassificationResult(
+                intent="planning",
+                confidence=max(float(action_signal.confidence), 0.78),
+                parameters=parameters,
+            )
+        else:
+            result = _contextual_intent_override(message, history)
+            if result is None:
+                result = _classify_intent_with_llm(message, history)
 
     # Deterministic routing: intent → agent (code decides, not LLM)
     agent_name = _INTENT_TO_AGENT.get(result.intent, "CommunicationAgent")
@@ -379,6 +796,7 @@ def classify_intent(state: CoordinatorState) -> CoordinatorState:
         "classification_confidence": result.confidence,
         "classification_parameters": result.parameters,
         "classification_secondary_intent": result.secondary_intent,
+        "pending_intent_ignored": pending_intent_ignored,
     }
 
 
@@ -452,6 +870,7 @@ def execute_task(state: CoordinatorState) -> CoordinatorState:
     # Build typed context with extracted parameters
     context = AgentContext(
         history=state.get("conversation_history", []),
+        conversation_state=state.get("conversation_state", {}),
         **parameters,
     )
 
@@ -529,6 +948,18 @@ def synthesize_response(state: CoordinatorState) -> CoordinatorState:
             "agent_used": agent_results[-1].get("agent_name", "Coordinator"),
         }
 
+    # If CommunicationAgent already handled a single-turn request, reuse output directly.
+    if (
+        len(agent_results) == 1
+        and agent_results[0].get("agent_name") == "CommunicationAgent"
+    ):
+        return {
+            **state,
+            "agent_response": agent_results[0].get("response", ""),
+            "agent_used": "CommunicationAgent",
+            "response_metadata": agent_results[0].get("metadata", {}),
+        }
+
     # Route through CommunicationAgent for NLG
     comm_agent = _get_agent("CommunicationAgent")
     if comm_agent is None:
@@ -541,6 +972,7 @@ def synthesize_response(state: CoordinatorState) -> CoordinatorState:
         message=state["message"],
         intent=state.get("intent", "general"),
         context=AgentContext(
+            history=state.get("conversation_history", []),
             agent_results=agent_results,
             task="Summarize the financial data for the user in a helpful way.",
         ),
@@ -551,6 +983,7 @@ def synthesize_response(state: CoordinatorState) -> CoordinatorState:
     return {
         **state,
         "agent_response": comm_output.response,
+        "response_metadata": comm_output.metadata,
     }
 
 
