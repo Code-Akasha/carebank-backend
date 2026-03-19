@@ -74,6 +74,7 @@ class AutoSavingsAgent(BaseAgent):
                     agent_name=self.name,
                     confidence=0.9,
                     metadata={
+                        "intent_handled": "auto_savings",
                         "suggested_amount": suggested_amount,
                         "goal_progress": goal_progress,
                         "safety_threshold": safety_threshold,
@@ -90,6 +91,7 @@ class AutoSavingsAgent(BaseAgent):
             agent_name=self.name,
             confidence=0.9,
             metadata={
+                "intent_handled": "auto_savings",
                 "suggested_amount": 0,
                 "goal_progress": self._estimate_goal_progress(
                     profile, suggested_amount=0

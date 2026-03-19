@@ -630,6 +630,14 @@ def _classify_intent_with_llm(
                 secondary_intent=result.secondary_intent,
             )
 
+        # Secondary intent fallback: if LLM missed a secondary intent, check keywords
+        if not result.secondary_intent and heuristic.secondary_intent:
+            logger.info(
+                "📌 Secondary intent detected by keywords: '%s' (LLM missed it)",
+                heuristic.secondary_intent,
+            )
+            result.secondary_intent = heuristic.secondary_intent
+
         return result
 
     except Exception as e:
@@ -789,6 +797,19 @@ def classify_intent(state: CoordinatorState) -> CoordinatorState:
     # Deterministic routing: intent → agent (code decides, not LLM)
     agent_name = _INTENT_TO_AGENT.get(result.intent, "CommunicationAgent")
 
+    # ENHANCED: Check if LLM result doesn't match keyword findings
+    # If keywords suggest multiple intents but LLM only found one, trust keywords
+    keyword_result = _classify_intent_keywords(message)
+    if keyword_result.secondary_intent and not result.secondary_intent:
+        # LLM missed the secondary intent, use keyword fallback
+        if keyword_result.secondary_intent != result.intent:
+            logger.info(
+                "📌 Secondary intent detection (keyword fallback): primary='%s', secondary='%s'",
+                result.intent,
+                keyword_result.secondary_intent,
+            )
+            result.secondary_intent = keyword_result.secondary_intent
+
     return {
         **state,
         "intent": result.intent,
@@ -822,10 +843,26 @@ def plan_tasks(state: CoordinatorState) -> CoordinatorState:
                 }
             )
             logger.info(
-                "📋 Multi-intent detected: primary='%s', secondary='%s'",
+                "📋 Multi-intent detected: primary='%s' (%s), secondary='%s' (%s)",
                 intent,
+                agent_name,
                 secondary_intent,
+                secondary_agent,
             )
+    else:
+        if secondary_intent:
+            logger.info(
+                "ℹ️ Secondary intent same as primary, not creating additional task"
+            )
+
+    logger.info("📋 Tasks to execute: %d tasks", len(tasks))
+    for idx, task in enumerate(tasks):
+        logger.info(
+            "   Task %d: intent='%s', agent='%s'",
+            idx + 1,
+            task["intent"],
+            task["agent_name"],
+        )
 
     return {
         **state,
