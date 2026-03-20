@@ -19,6 +19,7 @@ from app.routes.admin import router as admin_router
 from app.routes.profile import router as profile_router
 from app.routes.planning import router as planning_router
 from app.routes.actions import router as actions_router
+from app.routes.notifications import router as notifications_router
 from app.core.database import init_db
 from app.core.config import get_settings
 
@@ -77,6 +78,7 @@ app.include_router(admin_router)
 app.include_router(profile_router)
 app.include_router(planning_router)
 app.include_router(actions_router)
+app.include_router(notifications_router)
 app.include_router(transactions_router)
 app.include_router(balances_router)
 app.include_router(products_router)

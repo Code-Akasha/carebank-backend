@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from langgraph.graph import StateGraph, END
 from langchain_core.prompts import PromptTemplate
@@ -20,6 +20,14 @@ from app.services.llm import get_llm_provider
 from app.services.conversation_store import InMemoryConversationStore
 
 logger = logging.getLogger(__name__)
+
+
+if TYPE_CHECKING:  # pragma: no cover
+    from sqlalchemy.orm import Session as DBSession
+    from app.models.user import User
+else:  # LangGraph introspects type hints at runtime
+    DBSession = Any  # type: ignore[assignment]
+    User = Any  # type: ignore[assignment]
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +105,7 @@ class ClassificationResult(BaseModel):
     """Structured output from LLM intent classification."""
 
     intent: str = Field(
-        description="One of: balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, planning, general"
+        description="One of: actions, balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, planning, general"
     )
     confidence: float = Field(description="0.0 to 1.0 confidence in classification")
     parameters: dict = Field(
@@ -154,6 +162,7 @@ Guidelines:
 # ---------------------------------------------------------------------------
 
 _INTENT_TO_AGENT: dict[str, str] = {
+    "actions": "CommunicationAgent",
     "balance": "IntelligenceAgent",
     "forecast": "IntelligenceAgent",
     "health_score": "IntelligenceAgent",
@@ -176,6 +185,7 @@ Available capabilities:
 {agent_descriptions}
 
 Intent codes (use these exactly):
+- actions: Execute or approve actions (pay/transfer/approve/reject)
 - balance: Account balance and transaction queries
 - forecast: Future balance predictions
 - health_score: Financial health assessment
@@ -257,8 +267,10 @@ _SCHEDULE_SIGNAL_HINTS = {
     "autopay",
     "every month",
     "monthly",
-    "rent",
-    "due",
+    "due on",
+    "remind",
+    "add bill",
+    "add a bill",
 }
 
 _PLANNING_FOLLOW_UP_CONFIRMATIONS = {
@@ -272,6 +284,30 @@ _PLANNING_FOLLOW_UP_CONFIRMATIONS = {
     "continue",
     "confirm",
     "do it",
+}
+
+_ACTIONS_FOLLOW_UP_CONFIRMATIONS = {
+    "yes",
+    "y",
+    "ok",
+    "okay",
+    "sure",
+    "go ahead",
+    "proceed",
+    "continue",
+    "confirm",
+    "approve",
+    "do it",
+}
+
+_ACTIONS_FOLLOW_UP_REJECTIONS = {
+    "no",
+    "n",
+    "cancel",
+    "stop",
+    "reject",
+    "don't",
+    "do not",
 }
 
 
@@ -383,7 +419,113 @@ def _should_resume_pending_intent(
 ) -> bool:
     if pending_intent == "planning":
         return _is_pending_planning_follow_up(message, history)
+    if pending_intent == "actions":
+        return _is_pending_actions_follow_up(message)
     return True
+
+
+def _is_pending_actions_follow_up(message: str) -> bool:
+    normalized = re.sub(r"\s+", " ", message.lower()).strip()
+    if not normalized:
+        return False
+
+    if _is_amount_only_message(normalized):
+        return True
+
+    if normalized in _ACTIONS_FOLLOW_UP_CONFIRMATIONS:
+        return True
+
+    if normalized in {"pay now", "later", "not now", "snooze", "remind later"}:
+        return True
+
+    if normalized in _ACTIONS_FOLLOW_UP_REJECTIONS:
+        return True
+
+    if re.match(r"^(approve|reject|cancel)\b", normalized):
+        return True
+
+    if _extract_amount_from_text(normalized) is not None and any(
+        token in normalized for token in ("actually", "change", "update", "instead")
+    ):
+        return True
+
+    return False
+
+
+def _detect_tool_action_request(message: str) -> dict | None:
+    """Deterministic detection for action-engine tool requests (pay/transfer/note).
+
+    This is intentionally conservative: it triggers only for imperative phrasing and
+    avoids schedule/recurring language which is handled by the planning flow.
+    """
+
+    lower = message.lower().strip()
+    if not lower:
+        return None
+
+    # Avoid hijacking advisory questions.
+    if any(
+        token in lower for token in ("can i ", "should i ", "could i ", "how do i ")
+    ):
+        return None
+
+    imperative = (
+        lower.startswith(("pay ", "transfer ", "move ", "send ", "note ", "record "))
+        or "please" in lower
+        or "can you" in lower
+        or "could you" in lower
+    )
+    if not imperative:
+        return None
+
+    # Recurring/scheduled payments belong to the planning flow.
+    if _looks_like_schedule_request(message):
+        return None
+    if _is_recurring_signal(message):
+        return None
+    if _extract_day_of_month_from_text(message) is not None:
+        return None
+
+    action_type: str | None = None
+    if "transfer" in lower and (
+        "savings" in lower or "to savings" in lower or "save" in lower
+    ):
+        action_type = "transfer_savings"
+    elif "pay" in lower and "rent" in lower:
+        action_type = "pay_rent"
+    elif "pay" in lower and ("gas" in lower or "lpg" in lower):
+        action_type = "pay_gas"
+    elif "pay" in lower and (
+        "utility" in lower
+        or "electric" in lower
+        or "electricity" in lower
+        or "water" in lower
+    ):
+        action_type = "pay_utility"
+    elif "pay" in lower and "bill" in lower:
+        action_type = "pay_bill"
+    elif "note" in lower or "remember" in lower or "record" in lower:
+        action_type = "record_note"
+
+    if not action_type:
+        return None
+
+    payload: dict = {}
+
+    if action_type == "record_note":
+        payload["message"] = message.strip()
+        return {"action_type": action_type, "action_payload": payload}
+
+    amount = _extract_amount_from_text(message)
+    if amount is not None:
+        payload["amount"] = float(amount)
+
+    if action_type in {"pay_rent", "pay_bill", "pay_gas", "pay_utility"}:
+        payload.setdefault("description", "Payment requested via chat")
+    if action_type == "transfer_savings":
+        payload.setdefault("description", "Savings transfer requested via chat")
+
+    return {"action_type": action_type, "action_payload": payload}
 
 
 # ---------------------------------------------------------------------------
@@ -729,6 +871,21 @@ class CoordinatorState(TypedDict, total=False):
     pending_intent_ignored: bool
     response_metadata: dict
     error: str
+    db: DBSession
+    current_user: User
+
+
+def _extract_planned_action_metadata(
+    agent_results: list[dict],
+) -> dict[str, Any] | None:
+    for result in reversed(agent_results):
+        metadata = result.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        action = metadata.get("action")
+        if isinstance(action, dict):
+            return metadata
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -773,42 +930,51 @@ def classify_intent(state: CoordinatorState) -> CoordinatorState:
                 message,
             )
 
-        action_signal = _detect_action_request(message, history)
-        if (
-            action_signal
-            and action_signal.is_action_request
-            and action_signal.action_family == "schedule_payment"
-        ):
-            parameters: dict = {"source_text": message}
-            if action_signal.amount is not None:
-                parameters["amount"] = float(action_signal.amount)
-            if action_signal.day_of_month is not None:
-                parameters["day_of_month"] = int(action_signal.day_of_month)
+        tool_action = _detect_tool_action_request(message)
+        if tool_action is not None:
             result = ClassificationResult(
-                intent="planning",
-                confidence=max(float(action_signal.confidence), 0.78),
-                parameters=parameters,
+                intent="actions",
+                confidence=0.86,
+                parameters=tool_action,
             )
         else:
-            result = _contextual_intent_override(message, history)
-            if result is None:
-                result = _classify_intent_with_llm(message, history)
+            action_signal = _detect_action_request(message, history)
+            if (
+                action_signal
+                and action_signal.is_action_request
+                and action_signal.action_family == "schedule_payment"
+            ):
+                parameters: dict = {"source_text": message}
+                if action_signal.amount is not None:
+                    parameters["amount"] = float(action_signal.amount)
+                if action_signal.day_of_month is not None:
+                    parameters["day_of_month"] = int(action_signal.day_of_month)
+                result = ClassificationResult(
+                    intent="planning",
+                    confidence=max(float(action_signal.confidence), 0.78),
+                    parameters=parameters,
+                )
+            else:
+                result = _contextual_intent_override(message, history)
+                if result is None:
+                    result = _classify_intent_with_llm(message, history)
 
     # Deterministic routing: intent → agent (code decides, not LLM)
     agent_name = _INTENT_TO_AGENT.get(result.intent, "CommunicationAgent")
 
     # ENHANCED: Check if LLM result doesn't match keyword findings
     # If keywords suggest multiple intents but LLM only found one, trust keywords
-    keyword_result = _classify_intent_keywords(message)
-    if keyword_result.secondary_intent and not result.secondary_intent:
-        # LLM missed the secondary intent, use keyword fallback
-        if keyword_result.secondary_intent != result.intent:
-            logger.info(
-                "📌 Secondary intent detection (keyword fallback): primary='%s', secondary='%s'",
-                result.intent,
-                keyword_result.secondary_intent,
-            )
-            result.secondary_intent = keyword_result.secondary_intent
+    if result.intent != "actions":
+        keyword_result = _classify_intent_keywords(message)
+        if keyword_result.secondary_intent and not result.secondary_intent:
+            # LLM missed the secondary intent, use keyword fallback
+            if keyword_result.secondary_intent != result.intent:
+                logger.info(
+                    "📌 Secondary intent detection (keyword fallback): primary='%s', secondary='%s'",
+                    result.intent,
+                    keyword_result.secondary_intent,
+                )
+                result.secondary_intent = keyword_result.secondary_intent
 
     return {
         **state,
@@ -1017,10 +1183,75 @@ def synthesize_response(state: CoordinatorState) -> CoordinatorState:
 
     comm_output = comm_agent.invoke(comm_input)
 
+    response_metadata = (
+        comm_output.metadata if isinstance(comm_output.metadata, dict) else {}
+    )
+    planned_metadata = _extract_planned_action_metadata(agent_results)
+    if planned_metadata:
+        if not isinstance(response_metadata.get("action"), dict) and isinstance(
+            planned_metadata.get("action"), dict
+        ):
+            response_metadata = {
+                **response_metadata,
+                "action": planned_metadata.get("action"),
+            }
+
+        if (
+            response_metadata.get("pending_state") is None
+            and planned_metadata.get("pending_state") is not None
+        ):
+            response_metadata = {
+                **response_metadata,
+                "pending_state": planned_metadata.get("pending_state"),
+            }
+
+        if (
+            "clear_pending" not in response_metadata
+            and "clear_pending" in planned_metadata
+        ):
+            response_metadata = {
+                **response_metadata,
+                "clear_pending": planned_metadata.get("clear_pending"),
+            }
+
+    agent_used = state.get("agent_used") or comm_output.agent_name
     return {
         **state,
         "agent_response": comm_output.response,
-        "response_metadata": comm_output.metadata,
+        "agent_used": agent_used,
+        "response_metadata": response_metadata,
+    }
+
+
+def apply_actions(state: CoordinatorState) -> CoordinatorState:
+    """Execute planner-emitted actions within the graph so compliance validates final text."""
+
+    current_user = state.get("current_user")
+    db = state.get("db")
+    if current_user is None or db is None:
+        return state
+
+    metadata = state.get("response_metadata")
+    if not isinstance(metadata, dict):
+        return state
+
+    try:
+        from app.services.chat_action_executor import apply_planned_chat_action
+
+        updated_response, updated_metadata = apply_planned_chat_action(
+            agent_response=state.get("agent_response", ""),
+            response_metadata=metadata,
+            current_user=current_user,
+            db=db,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("Failed to apply planned chat action")
+        return state
+
+    return {
+        **state,
+        "agent_response": updated_response,
+        "response_metadata": updated_metadata,
     }
 
 
@@ -1073,6 +1304,7 @@ def build_coordinator_graph():
     graph.add_node("plan_tasks", plan_tasks)
     graph.add_node("execute_task", execute_task)
     graph.add_node("synthesize", synthesize_response)
+    graph.add_node("apply_actions", apply_actions)
     graph.add_node("validate", validate_response)
     graph.add_node("respond", format_response)
 
@@ -1080,7 +1312,8 @@ def build_coordinator_graph():
     graph.add_edge("classify", "plan_tasks")
     graph.add_edge("plan_tasks", "execute_task")
     graph.add_conditional_edges("execute_task", check_remaining)
-    graph.add_edge("synthesize", "validate")
+    graph.add_edge("synthesize", "apply_actions")
+    graph.add_edge("apply_actions", "validate")
     graph.add_edge("validate", "respond")
     graph.add_edge("respond", END)
 

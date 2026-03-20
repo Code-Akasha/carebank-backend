@@ -388,3 +388,109 @@ class TestCommunicationAgent:
         assert output.metadata.get("provider") == "balance_template"
         assert output.metadata.get("action") is None
         assert "creating recurring payment schedule" not in output.response.lower()
+
+    def test_action_query_prompts_for_missing_amount(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_action_missing_amount",
+                message="transfer to savings",
+                intent="actions",
+                context={
+                    "task": "Create action request",
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") == "action_engine_planner"
+        assert "amount" in output.response.lower()
+        pending = output.metadata.get("pending_state") or {}
+        assert pending.get("pending_intent") == "actions"
+        actions_state = pending.get("actions") or {}
+        assert actions_state.get("action_type") == "transfer_savings"
+
+    def test_action_followup_amount_emits_create_action_request(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_action_followup_amount",
+                message="5000",
+                intent="actions",
+                context={
+                    "conversation_state": {
+                        "pending_intent": "actions",
+                        "actions": {
+                            "flow": "action_request",
+                            "action_type": "transfer_savings",
+                            "action_payload": {"amount": None},
+                        },
+                    },
+                    "history": [
+                        {"role": "user", "content": "transfer to savings"},
+                        {
+                            "role": "assistant",
+                            "content": "How much should I transfer?",
+                        },
+                    ],
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") == "action_engine_planner"
+        assert output.metadata.get("clear_pending") is True
+        action = output.metadata.get("action") or {}
+        assert action.get("type") == "create_action_request"
+        assert action.get("action_type") == "transfer_savings"
+        assert action.get("action_payload", {}).get("amount") == 5000
+
+    def test_action_approval_followup_emits_approve(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_action_approval",
+                message="yes",
+                intent="actions",
+                context={
+                    "conversation_state": {
+                        "pending_intent": "actions",
+                        "actions": {
+                            "flow": "action_approval",
+                            "request_id": 123,
+                            "action_type": "pay_bill",
+                            "action_payload": {"amount": 2000},
+                        },
+                    }
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") == "action_engine_planner"
+        action = output.metadata.get("action") or {}
+        assert action.get("type") == "approve_action_request"
+        assert action.get("request_id") == 123
+
+    def test_action_rejection_followup_emits_reject(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_action_rejection",
+                message="no",
+                intent="actions",
+                context={
+                    "conversation_state": {
+                        "pending_intent": "actions",
+                        "actions": {
+                            "flow": "action_approval",
+                            "request_id": 124,
+                            "action_type": "pay_bill",
+                            "action_payload": {"amount": 2000},
+                        },
+                    }
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") == "action_engine_planner"
+        action = output.metadata.get("action") or {}
+        assert action.get("type") == "reject_action_request"
+        assert action.get("request_id") == 124

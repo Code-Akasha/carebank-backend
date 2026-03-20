@@ -243,6 +243,121 @@ class TestActionIntentRouting:
         assert result["classification_parameters"]["day_of_month"] == 20
 
 
+class TestToolActionRouting:
+    def test_transfer_savings_routes_to_actions(self, monkeypatch):
+        import app.agents.coordinator as coordinator_module
+
+        monkeypatch.setattr(
+            coordinator_module,
+            "_detect_action_request",
+            lambda _message, _history: None,
+        )
+        monkeypatch.setattr(
+            coordinator_module,
+            "_classify_intent_with_llm",
+            lambda _message, _history: ClassificationResult(
+                intent="auto_savings",
+                confidence=0.9,
+                parameters={},
+            ),
+        )
+
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "transfer 5000 to savings",
+            "audit_log": [],
+            "conversation_history": [],
+            "conversation_state": {},
+        }
+
+        result = classify_intent(state)
+        assert result["intent"] == "actions"
+        assert result["agent_name"] == "CommunicationAgent"
+        params = result["classification_parameters"]
+        assert params["action_type"] == "transfer_savings"
+        assert params["action_payload"]["amount"] == 5000
+
+    def test_question_form_does_not_force_actions(self, monkeypatch):
+        import app.agents.coordinator as coordinator_module
+
+        monkeypatch.setattr(
+            coordinator_module,
+            "_detect_action_request",
+            lambda _message, _history: None,
+        )
+        monkeypatch.setattr(
+            coordinator_module,
+            "_classify_intent_with_llm",
+            lambda _message, _history: ClassificationResult(
+                intent="auto_savings",
+                confidence=0.9,
+                parameters={},
+            ),
+        )
+
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "should i transfer 5000 to savings?",
+            "audit_log": [],
+            "conversation_history": [],
+            "conversation_state": {},
+        }
+
+        result = classify_intent(state)
+        assert result["intent"] != "actions"
+
+
+class TestPendingActionsResumeGuard:
+    def test_pending_actions_resume_on_yes(self):
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "yes",
+            "audit_log": [],
+            "conversation_history": [],
+            "conversation_state": {
+                "pending_intent": "actions",
+                "actions": {"flow": "action_approval", "request_id": 123},
+            },
+        }
+
+        result = classify_intent(state)
+        assert result["intent"] == "actions"
+        assert result["agent_name"] == "CommunicationAgent"
+
+    def test_stale_pending_actions_does_not_hijack_balance(self, monkeypatch):
+        import app.agents.coordinator as coordinator_module
+
+        monkeypatch.setattr(
+            coordinator_module,
+            "_detect_action_request",
+            lambda _message, _history: None,
+        )
+        monkeypatch.setattr(
+            coordinator_module,
+            "_classify_intent_with_llm",
+            lambda _message, _history: ClassificationResult(
+                intent="balance",
+                confidence=0.91,
+                parameters={},
+            ),
+        )
+
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "what is my balance",
+            "audit_log": [],
+            "conversation_history": [],
+            "conversation_state": {
+                "pending_intent": "actions",
+                "actions": {"flow": "action_approval", "request_id": 123},
+            },
+        }
+
+        result = classify_intent(state)
+        assert result["intent"] == "balance"
+        assert result["pending_intent_ignored"] is True
+
+
 # ── Intent classification node tests ──────────────────────────────────
 
 
