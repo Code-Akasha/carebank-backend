@@ -13,6 +13,30 @@ logger = logging.getLogger(__name__)
 
 
 class CommunicationAgent(BaseAgent):
+    _ACTION_CONFIRMATIONS = {
+        "yes",
+        "y",
+        "ok",
+        "okay",
+        "sure",
+        "go ahead",
+        "proceed",
+        "continue",
+        "confirm",
+        "approve",
+        "do it",
+    }
+
+    _ACTION_REJECTIONS = {
+        "no",
+        "n",
+        "cancel",
+        "stop",
+        "reject",
+        "don't",
+        "do not",
+    }
+
     @property
     def name(self) -> str:
         return "CommunicationAgent"
@@ -53,6 +77,34 @@ class CommunicationAgent(BaseAgent):
         persona = ctx.persona
         if not persona:
             persona = self._get_persona(user_id)
+
+        action_plan = self._plan_action_engine_action(
+            requested_intent=agent_input.intent,
+            user_message=agent_input.message,
+            history=ctx.history,
+            conversation_state=self._conversation_state_from_context(ctx),
+            parsed_parameters=self._action_parameters_from_context(ctx),
+        )
+        if action_plan:
+            if ctx.is_nudge:
+                record_nudge(user_id)
+            return AgentOutput(
+                response=action_plan["response"],
+                agent_name=self.name,
+                confidence=float(action_plan.get("confidence", 0.93)),
+                metadata={
+                    "provider": "action_engine_planner",
+                    "model": "deterministic",
+                    "persona": persona,
+                    "is_nudge": ctx.is_nudge,
+                    "pending_state": action_plan.get("pending_state"),
+                    "clear_pending": bool(action_plan.get("clear_pending", False)),
+                    "action": action_plan.get("action"),
+                    "ui_actions": action_plan.get("ui_actions")
+                    if isinstance(action_plan.get("ui_actions"), list)
+                    else [],
+                },
+            )
 
         planning_result = self._plan_schedule_action(
             requested_intent=agent_input.intent,
@@ -262,6 +314,493 @@ class CommunicationAgent(BaseAgent):
             if "source_text" in extras:
                 params["source_text"] = extras.get("source_text")
         return params
+
+    @staticmethod
+    def _action_parameters_from_context(ctx) -> dict[str, Any]:
+        extras = ctx.model_extra if hasattr(ctx, "model_extra") else {}
+        params: dict[str, Any] = {}
+
+        if ctx.amount is not None:
+            params["amount"] = ctx.amount
+
+        if isinstance(extras, dict):
+            if "action_type" in extras:
+                params["action_type"] = extras.get("action_type")
+            if "action_payload" in extras:
+                params["action_payload"] = extras.get("action_payload")
+        return params
+
+    def _plan_action_engine_action(
+        self,
+        *,
+        requested_intent: str,
+        user_message: str,
+        history: list[dict],
+        conversation_state: dict[str, Any],
+        parsed_parameters: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        pending_intent = str(conversation_state.get("pending_intent") or "").lower()
+        if requested_intent != "actions" and pending_intent != "actions":
+            return None
+
+        if (
+            pending_intent == "actions"
+            and requested_intent != "actions"
+            and not self._is_action_follow_up_message(user_message)
+        ):
+            return None
+
+        pending = conversation_state.get("actions")
+        if not isinstance(pending, dict):
+            pending = {}
+
+        flow = str(pending.get("flow") or "").strip().lower()
+
+        if flow == "bill_picker":
+            candidates = pending.get("candidates")
+            if not isinstance(candidates, list) or not candidates:
+                return {
+                    "response": "I lost the bill list. Please re-send what you want to pay.",
+                    "confidence": 0.9,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": None,
+                    "ui_actions": [],
+                }
+
+            normalized = re.sub(r"\s+", " ", user_message.lower()).strip()
+            match = re.search(r"\b(\d{1,2})\b", normalized)
+            if not match:
+                return {
+                    "response": "Please reply with the number (1, 2, ...).",
+                    "confidence": 0.9,
+                    "pending_state": None,
+                    "clear_pending": False,
+                    "action": None,
+                    "ui_actions": [],
+                }
+
+            choice = int(match.group(1))
+            if choice < 1 or choice > len(candidates):
+                return {
+                    "response": "That number doesn't match the list. Reply with 1, 2, ...",
+                    "confidence": 0.9,
+                    "pending_state": None,
+                    "clear_pending": False,
+                    "action": None,
+                    "ui_actions": [],
+                }
+
+            candidate = candidates[choice - 1]
+            if not isinstance(candidate, dict):
+                return {
+                    "response": "I couldn't read that selection. Please try again.",
+                    "confidence": 0.9,
+                    "pending_state": None,
+                    "clear_pending": False,
+                    "action": None,
+                    "ui_actions": [],
+                }
+
+            title = str(candidate.get("title") or "Payment")
+            due_date = str(candidate.get("due_date") or "").strip()
+            amount = candidate.get("amount")
+            amount_clause = ""
+            try:
+                if amount is not None:
+                    amount_clause = f" for INR {float(amount):,.2f}"
+            except (TypeError, ValueError):
+                amount_clause = ""
+
+            due_clause = f" due {due_date}" if due_date else ""
+            return {
+                "response": f"Got it: {title}{due_clause}{amount_clause}. What do you want to do?",
+                "confidence": 0.94,
+                "pending_state": {
+                    "pending_intent": "actions",
+                    "actions": {
+                        "flow": "bill_suggestion",
+                        "candidate": candidate,
+                    },
+                },
+                "clear_pending": False,
+                "action": None,
+                "ui_actions": [
+                    {"label": "Pay now", "message": "pay now"},
+                    {"label": "Later", "message": "later"},
+                ],
+            }
+
+        if flow == "bill_suggestion":
+            candidate = pending.get("candidate")
+            if not isinstance(candidate, dict):
+                return {
+                    "response": "I lost the bill context. Please re-send what you want to pay.",
+                    "confidence": 0.9,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": None,
+                    "ui_actions": [],
+                }
+
+            normalized = re.sub(r"\s+", " ", user_message.lower()).strip()
+            if normalized in {"pay now", "pay"}:
+                candidate_action_type = (
+                    str(candidate.get("action_type") or "").strip().lower()
+                )
+                amount = candidate.get("amount")
+                try:
+                    amount_value = float(amount) if amount is not None else 0.0
+                except (TypeError, ValueError):
+                    amount_value = 0.0
+
+                if not candidate_action_type or amount_value <= 0:
+                    label = self._format_action_label(candidate_action_type)
+                    return {
+                        "response": f"Understood. How much should I {label}? Please share the amount.",
+                        "confidence": 0.93,
+                        "pending_state": {
+                            "pending_intent": "actions",
+                            "actions": {
+                                "flow": "action_request",
+                                "action_type": candidate_action_type,
+                                "action_payload": {
+                                    "amount": None,
+                                    "description": "Payment requested via chat",
+                                },
+                            },
+                        },
+                        "clear_pending": False,
+                        "action": None,
+                        "ui_actions": [],
+                    }
+
+                title = str(candidate.get("title") or "Payment")
+                due_date = str(candidate.get("due_date") or "").strip()
+                source_type = str(candidate.get("source_type") or "").strip().lower()
+                source_id = candidate.get("source_id")
+                try:
+                    source_id_int = int(source_id)
+                except (TypeError, ValueError):
+                    source_id_int = None
+
+                idempotency_key = None
+                if source_id_int is not None and source_type and due_date:
+                    idempotency_key = f"bill:{source_type}:{source_id_int}:{due_date}:{candidate_action_type}"
+
+                description = title
+                if due_date:
+                    description = f"{title} due {due_date}"
+
+                action_payload: dict[str, Any] = {
+                    "amount": amount_value,
+                    "description": description,
+                    "source_type": source_type,
+                    "source_id": source_id_int,
+                    "due_date": due_date or None,
+                }
+                category = candidate.get("category")
+                if isinstance(category, str) and category.strip():
+                    action_payload["category"] = category.strip()
+
+                label = self._format_action_label(candidate_action_type)
+                return {
+                    "response": f"Got it. Creating an approval request to {label} for INR {amount_value:,.2f} now.",
+                    "confidence": 0.95,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": {
+                        "type": "create_action_request",
+                        "action_type": candidate_action_type,
+                        "action_payload": action_payload,
+                        "expires_in_hours": 24,
+                        "idempotency_key": idempotency_key,
+                    },
+                    "ui_actions": [],
+                }
+
+            if normalized in {"later", "not now", "snooze", "remind later"}:
+                source_type = str(candidate.get("source_type") or "").strip().lower()
+                source_id_raw = candidate.get("source_id")
+                try:
+                    source_id = int(source_id_raw)
+                except (TypeError, ValueError):
+                    source_id = None
+
+                if not source_type or source_id is None:
+                    return {
+                        "response": "Okay. I'll remind you later.",
+                        "confidence": 0.9,
+                        "pending_state": None,
+                        "clear_pending": True,
+                        "action": None,
+                        "ui_actions": [],
+                    }
+
+                return {
+                    "response": "Okay. Snoozing that for later.",
+                    "confidence": 0.94,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": {
+                        "type": "snooze_bill",
+                        "source_type": source_type,
+                        "source_id": source_id,
+                        "hours": 24,
+                    },
+                    "ui_actions": [],
+                }
+
+            return {
+                "response": "Reply 'Pay now' or 'Later'.",
+                "confidence": 0.9,
+                "pending_state": None,
+                "clear_pending": False,
+                "action": None,
+                "ui_actions": [
+                    {"label": "Pay now", "message": "pay now"},
+                    {"label": "Later", "message": "later"},
+                ],
+            }
+
+        pending_request_id = pending.get("request_id")
+        if pending_request_id is not None:
+            decision = self._parse_action_decision(user_message)
+            try:
+                request_id = int(pending_request_id)
+            except (TypeError, ValueError):
+                request_id = None
+
+            if request_id is None:
+                return {
+                    "response": (
+                        "I had a pending action approval, but I lost the request reference. "
+                        "Please re-send the action you want to perform."
+                    ),
+                    "confidence": 0.9,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": None,
+                }
+
+            if decision == "approve":
+                return {
+                    "response": "Understood. Approving and executing that now.",
+                    "confidence": 0.94,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": {
+                        "type": "approve_action_request",
+                        "request_id": request_id,
+                    },
+                }
+
+            if decision == "reject":
+                return {
+                    "response": "Okay. Cancelling that action request.",
+                    "confidence": 0.94,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": {
+                        "type": "reject_action_request",
+                        "request_id": request_id,
+                    },
+                }
+
+            return {
+                "response": (
+                    "You have a pending action approval. Reply 'yes' to approve or 'no' to cancel."
+                ),
+                "confidence": 0.9,
+                "pending_state": None,
+                "clear_pending": False,
+                "action": None,
+            }
+
+        action_type = parsed_parameters.get("action_type") or pending.get("action_type")
+        inferred = self._infer_action_type(user_message)
+        if not action_type and inferred:
+            action_type = inferred
+
+        action_payload: dict[str, Any] = {}
+        pending_payload = pending.get("action_payload")
+        if isinstance(pending_payload, dict):
+            action_payload.update(pending_payload)
+
+        parsed_payload = parsed_parameters.get("action_payload")
+        if isinstance(parsed_payload, dict):
+            action_payload.update(parsed_payload)
+
+        amount = self._coerce_amount(parsed_parameters.get("amount"))
+        if amount is None:
+            amount = self._coerce_amount(action_payload.get("amount"))
+        if amount is None:
+            amount = self._extract_amount(user_message)
+        if amount is not None:
+            action_payload["amount"] = amount
+
+        if not action_type:
+            return {
+                "response": (
+                    "What would you like me to do? For example: 'transfer 5000 to savings' "
+                    "or 'pay rent 25000'."
+                ),
+                "confidence": 0.86,
+                "pending_state": None,
+                "clear_pending": False,
+                "action": None,
+            }
+
+        normalized_type = str(action_type).strip().lower()
+        label = self._format_action_label(normalized_type)
+
+        if normalized_type == "record_note":
+            if not action_payload.get("message"):
+                action_payload["message"] = user_message.strip()
+            return {
+                "response": "Got it. Recording that note now.",
+                "confidence": 0.95,
+                "pending_state": None,
+                "clear_pending": True,
+                "action": {
+                    "type": "create_action_request",
+                    "action_type": normalized_type,
+                    "action_payload": action_payload,
+                    "expires_in_hours": 24,
+                },
+            }
+
+        if action_payload.get("amount") is None:
+            if normalized_type in {"pay_rent", "pay_bill", "pay_gas", "pay_utility"}:
+                object_map = {
+                    "pay_rent": "rent",
+                    "pay_bill": "bill",
+                    "pay_gas": "gas bill",
+                    "pay_utility": "utility bill",
+                }
+                object_label = object_map.get(normalized_type, "bill")
+                return {
+                    "response": f"Okay. Let me check your pending or scheduled {object_label}.",
+                    "confidence": 0.94,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": {
+                        "type": "discover_bills",
+                        "action_type": normalized_type,
+                    },
+                    "ui_actions": [],
+                }
+
+            return {
+                "response": (
+                    f"Understood. How much should I {label}? Please share the amount."
+                ),
+                "confidence": 0.93,
+                "pending_state": {
+                    "pending_intent": "actions",
+                    "actions": {
+                        "flow": "action_request",
+                        "action_type": normalized_type,
+                        "action_payload": {
+                            **action_payload,
+                            "amount": None,
+                        },
+                    },
+                },
+                "clear_pending": False,
+                "action": None,
+                "ui_actions": [],
+            }
+
+        try:
+            amount_value = float(action_payload.get("amount") or 0)
+        except (TypeError, ValueError):
+            amount_value = 0.0
+
+        return {
+            "response": (
+                f"Got it. Creating an approval request to {label} for INR {amount_value:,.2f} now."
+            ),
+            "confidence": 0.95,
+            "pending_state": None,
+            "clear_pending": True,
+            "action": {
+                "type": "create_action_request",
+                "action_type": normalized_type,
+                "action_payload": action_payload,
+                "expires_in_hours": 24,
+            },
+        }
+
+    @classmethod
+    def _parse_action_decision(cls, message: str) -> str | None:
+        normalized = re.sub(r"\s+", " ", message.lower()).strip()
+        if not normalized:
+            return None
+        if normalized in cls._ACTION_CONFIRMATIONS:
+            return "approve"
+        if normalized in cls._ACTION_REJECTIONS:
+            return "reject"
+        return None
+
+    @classmethod
+    def _is_action_follow_up_message(cls, user_message: str) -> bool:
+        normalized = re.sub(r"\s+", " ", user_message.lower()).strip()
+        if not normalized:
+            return False
+
+        if normalized in cls._ACTION_CONFIRMATIONS:
+            return True
+        if normalized in cls._ACTION_REJECTIONS:
+            return True
+
+        if re.fullmatch(
+            r"(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:k|thousand|lakh|lakhs|crore|crores|cr)?",
+            normalized,
+        ):
+            return True
+
+        if re.match(r"^(approve|reject|cancel)\b", normalized):
+            return True
+
+        return False
+
+    @staticmethod
+    def _infer_action_type(user_message: str) -> str | None:
+        lowered = user_message.lower()
+        if "transfer" in lowered and (
+            "savings" in lowered or "to savings" in lowered or "save" in lowered
+        ):
+            return "transfer_savings"
+        if "pay" in lowered and "rent" in lowered:
+            return "pay_rent"
+        if "pay" in lowered and ("gas" in lowered or "lpg" in lowered):
+            return "pay_gas"
+        if "pay" in lowered and (
+            "utility" in lowered
+            or "electric" in lowered
+            or "electricity" in lowered
+            or "water" in lowered
+        ):
+            return "pay_utility"
+        if "pay" in lowered and "bill" in lowered:
+            return "pay_bill"
+        if "note" in lowered or "remember" in lowered or "record" in lowered:
+            return "record_note"
+        return None
+
+    @staticmethod
+    def _format_action_label(action_type: str) -> str:
+        mapping = {
+            "pay_rent": "pay rent",
+            "pay_bill": "pay a bill",
+            "pay_gas": "pay the gas bill",
+            "pay_utility": "pay the utility bill",
+            "transfer_savings": "transfer to savings",
+            "record_note": "record a note",
+        }
+        normalized = (action_type or "").strip().lower()
+        return mapping.get(normalized, normalized.replace("_", " "))
 
     def _plan_schedule_action(
         self,

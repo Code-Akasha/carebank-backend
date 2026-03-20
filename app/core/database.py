@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -37,11 +39,35 @@ def init_db() -> None:
     import app.models.financial_plan  # noqa: F401
     import app.models.recurring_rule  # noqa: F401
     import app.models.checklist_item  # noqa: F401
+    import app.models.notification  # noqa: F401
+    import app.models.bill_snooze  # noqa: F401
     import app.models.action_request  # noqa: F401
     import app.models.action_execution  # noqa: F401
     import app.models.idempotency_record  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
+    mode = (settings.db_schema_mode or "create_all").strip().lower()
+    if mode in {"create_all", "dev"}:
+        Base.metadata.create_all(bind=engine)
+        return
+
+    if mode in {"alembic", "migrate"}:
+        _run_alembic_upgrade()
+        return
+
+    raise ValueError(f"Unsupported DB_SCHEMA_MODE={settings.db_schema_mode!r}")
+
+
+def _run_alembic_upgrade() -> None:
+    from alembic import command
+    from alembic.config import Config
+
+    repo_root = Path(__file__).resolve().parents[2]
+    alembic_ini = repo_root / "alembic.ini"
+    if not alembic_ini.exists():
+        raise FileNotFoundError(f"alembic.ini not found at {alembic_ini}")
+
+    config = Config(str(alembic_ini))
+    command.upgrade(config, "head")
 
 
 def get_db():

@@ -7,7 +7,25 @@ from alembic import context
 
 from app.core.config import get_settings
 from app.core.database import Base
-from app.models import Transaction, Balance, Product, Session, AuditLog  # noqa: F401 — register models
+
+# Import all models so Alembic autogenerate sees every table.
+import app.models.balance  # noqa: F401
+import app.models.transaction  # noqa: F401
+import app.models.product  # noqa: F401
+import app.models.account  # noqa: F401
+import app.models.provider  # noqa: F401
+import app.models.session  # noqa: F401
+import app.models.audit_log  # noqa: F401
+import app.models.user  # noqa: F401
+import app.models.user_profile  # noqa: F401
+import app.models.financial_plan  # noqa: F401
+import app.models.recurring_rule  # noqa: F401
+import app.models.checklist_item  # noqa: F401
+import app.models.notification  # noqa: F401
+import app.models.bill_snooze  # noqa: F401
+import app.models.action_request  # noqa: F401
+import app.models.action_execution  # noqa: F401
+import app.models.idempotency_record  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -59,6 +59,27 @@ Transitions:
 - running -> failure
 - failure -> rollback (for future compensating flow)
 
+## Banking Provider Lifecycle (MockBank)
+
+MockBank emits transaction lifecycle webhooks to `/api/actions/webhooks/mockbank`.
+
+Lifecycle statuses (webhook `status` field):
+- queued
+- running
+- pending_settlement (deferred rails like NEFT)
+- success
+- failure
+- reversed
+
+Settlement fields included in webhook payload:
+- settlement_status: `pending` | `cleared`
+- settlement_due_at: ISO timestamp (UTC)
+
+Notes:
+- UPI settles immediately (T+0) and skips `pending_settlement`.
+- NEFT may emit `pending_settlement` and later `success` once settlement clears.
+- Webhook signatures are verified using `MOCKBANK_WEBHOOK_SECRET`.
+
 ## Idempotency Rules
 
 Scope keys:

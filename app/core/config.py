@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     environment: str = "development"
 
+    # Schema management
+    # - create_all: dev/test convenience
+    # - alembic: run Alembic migrations on startup (prod)
+    db_schema_mode: str = "create_all"
+
     # Financial thresholds (configurable, previously hardcoded)
     whatif_low_threshold: float = 70.0
     whatif_medium_threshold: float = 30.0
