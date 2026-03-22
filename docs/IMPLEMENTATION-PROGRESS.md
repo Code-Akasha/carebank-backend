@@ -104,6 +104,9 @@ Build a policy-governed action platform with hybrid autonomy (first approval, th
 - Added dead-letter queue storage + admin replay endpoints in MockBank.
 - Added backend execution reconciliation endpoint that maps MockBank lifecycle status back into local execution ledger state.
 - Added cross-repo tests for dead-letter replay and reconciliation paths.
+- Extracted action request lifecycle logic into application services so workers and chat flows no longer call FastAPI route functions directly.
+- Extracted planning and checklist mutation logic into application services and slimmed the planning routes to HTTP wrappers.
+- Hardened auth registration user ID generation to avoid count-based collisions in long-lived test/dev databases.
 
 ## Next Up
 1. Coordinator integration with planner/executor tool actions.
