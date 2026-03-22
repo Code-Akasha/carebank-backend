@@ -255,6 +255,36 @@ class TestCommunicationAgent:
         assert "Current balance ₹ 25,540.52" in output.response
         assert output.metadata.get("provider") == "balance_template"
 
+    def test_affordability_template_returns_plain_english(self):
+        agent = CommunicationAgent()
+        agent_results = [
+            {
+                "agent_name": "IntelligenceAgent",
+                "status": AgentStatus.success,
+                "metadata": {
+                    "intent_handled": "affordability",
+                    "purchase_amount": 50000.0,
+                    "available_balance": 24297.15,
+                    "post_purchase_balance": -25702.85,
+                    "verdict": "not_recommended",
+                },
+            }
+        ]
+
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_affordability",
+                message="can i buy a new laptop of 50 thousand",
+                intent="affordability",
+                context={"agent_results": agent_results},
+            )
+        )
+
+        assert output.metadata.get("provider") == "affordability_template"
+        assert "laptop" in output.response.lower()
+        assert "50,000.00" in output.response
+        assert "[{" not in output.response
+
     def test_schedule_query_not_hijacked_by_balance_template(self):
         agent = CommunicationAgent()
         agent_results = [
@@ -408,6 +438,22 @@ class TestCommunicationAgent:
         assert pending.get("pending_intent") == "actions"
         actions_state = pending.get("actions") or {}
         assert actions_state.get("action_type") == "transfer_savings"
+
+    def test_bill_listing_query_emits_discover_action(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_pending_bills",
+                message="what are my pending bils",
+                intent="general",
+                context={},
+            )
+        )
+
+        assert output.metadata.get("provider") == "action_engine_planner"
+        action = output.metadata.get("action") or {}
+        assert action.get("type") == "discover_bills"
+        assert action.get("action_type") == "pay_bill"
 
     def test_action_followup_amount_emits_create_action_request(self):
         agent = CommunicationAgent()

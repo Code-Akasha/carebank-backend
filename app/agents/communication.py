@@ -156,6 +156,24 @@ class CommunicationAgent(BaseAgent):
                         "is_nudge": ctx.is_nudge,
                     },
                 )
+            affordability_response = self._maybe_render_affordability_response(
+                agent_results,
+                requested_intent=agent_input.intent,
+            )
+            if affordability_response:
+                if ctx.is_nudge:
+                    record_nudge(user_id)
+                return AgentOutput(
+                    response=affordability_response,
+                    agent_name=self.name,
+                    confidence=0.95,
+                    metadata={
+                        "provider": "affordability_template",
+                        "model": "deterministic",
+                        "persona": persona,
+                        "is_nudge": ctx.is_nudge,
+                    },
+                )
         if agent_results and self._can_use_agent_results_for_intent(
             agent_results,
             agent_input.intent,
@@ -242,6 +260,57 @@ class CommunicationAgent(BaseAgent):
             tone = self._persona_opening(persona)
             spend_line = f"You can comfortably spend around {total_str} without dipping into pending funds."
             return f"{tone}Total balance {total_str}. Current balance {current_str}. {spend_line}"
+        return None
+
+    def _maybe_render_affordability_response(
+        self,
+        agent_results: list[dict],
+        *,
+        requested_intent: str,
+    ) -> str | None:
+        if (requested_intent or "").strip().lower() != "affordability":
+            return None
+
+        for result in agent_results:
+            metadata = result.get("metadata") or {}
+            if (
+                str(metadata.get("intent_handled") or "").strip().lower()
+                != "affordability"
+            ):
+                continue
+            status = result.get("status")
+            if status not in (AgentStatus.success, AgentStatus.needs_input):
+                continue
+
+            purchase_amount = self._coerce_float(metadata.get("purchase_amount"))
+            available_balance = self._coerce_float(metadata.get("available_balance"))
+            post_purchase_balance = self._coerce_float(
+                metadata.get("post_purchase_balance")
+            )
+            verdict = str(metadata.get("verdict") or "").strip().lower()
+
+            if purchase_amount is None or available_balance is None:
+                continue
+
+            amount_str = self._format_currency(purchase_amount, "₹")
+            balance_str = self._format_currency(available_balance, "₹")
+            if verdict == "affordable":
+                remaining = self._format_currency(post_purchase_balance or 0.0, "₹")
+                return (
+                    f"Yes, you can afford a laptop for {amount_str}. "
+                    f"You currently have {balance_str} available, and you'd still have about {remaining} left after the purchase."
+                )
+            if verdict == "tight_buffer":
+                remaining = self._format_currency(post_purchase_balance or 0.0, "₹")
+                return (
+                    f"You can technically buy a laptop for {amount_str}, but it would leave you with a tight buffer. "
+                    f"You have {balance_str} available, and you'd be down to about {remaining} afterward."
+                )
+            shortfall = self._format_currency(abs(post_purchase_balance or 0.0), "₹")
+            return (
+                f"I wouldn't recommend buying a laptop for {amount_str} right now. "
+                f"You have {balance_str} available, so you'd fall short by about {shortfall} after the purchase."
+            )
         return None
 
     def _maybe_render_schedule_guidance(
@@ -340,7 +409,12 @@ class CommunicationAgent(BaseAgent):
         parsed_parameters: dict[str, Any],
     ) -> dict[str, Any] | None:
         pending_intent = str(conversation_state.get("pending_intent") or "").lower()
-        if requested_intent != "actions" and pending_intent != "actions":
+        bill_listing_query = self._is_bill_listing_query(user_message)
+        if (
+            requested_intent != "actions"
+            and pending_intent != "actions"
+            and not bill_listing_query
+        ):
             return None
 
         if (
@@ -355,6 +429,19 @@ class CommunicationAgent(BaseAgent):
             pending = {}
 
         flow = str(pending.get("flow") or "").strip().lower()
+
+        if not flow and bill_listing_query:
+            return {
+                "response": "Let me check your pending bills.",
+                "confidence": 0.93,
+                "pending_state": None,
+                "clear_pending": True,
+                "action": {
+                    "type": "discover_bills",
+                    "action_type": "pay_bill",
+                },
+                "ui_actions": [],
+            }
 
         if flow == "bill_picker":
             candidates = pending.get("candidates")
@@ -801,6 +888,31 @@ class CommunicationAgent(BaseAgent):
         }
         normalized = (action_type or "").strip().lower()
         return mapping.get(normalized, normalized.replace("_", " "))
+
+    @staticmethod
+    def _is_bill_listing_query(user_message: str) -> bool:
+        normalized = re.sub(r"\s+", " ", user_message.lower()).strip()
+        if not normalized:
+            return False
+
+        bill_tokens = ("bill", "bills", "bil", "bils")
+        if not any(token in normalized for token in bill_tokens):
+            return False
+
+        if re.search(r"\bpay\b", normalized) and re.search(r"\b\d", normalized):
+            return False
+
+        discovery_hints = (
+            "pending",
+            "due",
+            "upcoming",
+            "scheduled",
+            "what are",
+            "show",
+            "list",
+            "any",
+        )
+        return any(hint in normalized for hint in discovery_hints)
 
     def _plan_schedule_action(
         self,

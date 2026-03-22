@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import calendar
 import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
@@ -11,7 +10,8 @@ from app.models.checklist_item import ChecklistItem
 from app.models.notification import Notification
 from app.models.recurring_rule import RecurringRule
 from app.models.user import User
-from app.routes.actions import create_action_request as create_action_request_api
+from app.services.action_request_service import create_action_request_for_user
+from app.services.planning_service import advance_month, create_checklist_item
 from app.schemas.action_engine import ActionRequestCreate
 
 logger = logging.getLogger(__name__)
@@ -29,44 +29,6 @@ _ACTION_TYPE_BY_CATEGORY: dict[str, str] = {
     "saving": "transfer_savings",
     "savings": "transfer_savings",
 }
-
-
-def _safe_due_date(year: int, month: int, day_of_month: int) -> date:
-    last_day = calendar.monthrange(year, month)[1]
-    return date(year, month, min(day_of_month, last_day))
-
-
-def _advance_month(day_of_month: int, current_due: date) -> date:
-    if current_due.month == 12:
-        return _safe_due_date(current_due.year + 1, 1, day_of_month)
-    return _safe_due_date(current_due.year, current_due.month + 1, day_of_month)
-
-
-def _ensure_checklist_item(
-    db: Session, rule: RecurringRule, due_date: date
-) -> ChecklistItem:
-    existing = (
-        db.query(ChecklistItem)
-        .filter(
-            ChecklistItem.user_id == rule.user_id,
-            ChecklistItem.recurring_rule_id == rule.id,
-            ChecklistItem.due_date == due_date,
-        )
-        .first()
-    )
-    if existing:
-        return existing
-
-    item = ChecklistItem(
-        user_id=rule.user_id,
-        recurring_rule_id=rule.id,
-        title=f"{rule.title} ({due_date.isoformat()})",
-        due_date=due_date,
-        amount=rule.amount,
-        status="pending",
-    )
-    db.add(item)
-    return item
 
 
 def _create_notification_if_missing(
@@ -162,9 +124,9 @@ def run_reminder_worker(
                 .first()
             )
             if before is None:
-                _ensure_checklist_item(db, rule, rule.next_run_date)
+                create_checklist_item(db, rule, rule.next_run_date)
                 materialized += 1
-            rule.next_run_date = _advance_month(rule.day_of_month, rule.next_run_date)
+            rule.next_run_date = advance_month(rule.day_of_month, rule.next_run_date)
 
     db.commit()
 
@@ -277,8 +239,10 @@ def run_reminder_worker(
         )
 
         try:
-            created = create_action_request_api(
-                ActionRequestCreate(
+            created = create_action_request_for_user(
+                db,
+                current_user=current_user,
+                body=ActionRequestCreate(
                     action_type=action_type,
                     action_payload={
                         "amount": amount_value,
@@ -290,8 +254,6 @@ def run_reminder_worker(
                     idempotency_key=idempotency_key,
                     expires_in_hours=72,
                 ),
-                current_user=current_user,
-                db=db,
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning(

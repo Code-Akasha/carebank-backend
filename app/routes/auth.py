@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -44,6 +46,18 @@ class UserResponse(BaseModel):
     is_active: bool
 
 
+def _generate_user_id(db: Session) -> str:
+    for _ in range(10):
+        candidate = f"user_{uuid4().hex[:8]}"
+        existing = db.query(User).filter(User.user_id == candidate).first()
+        if not existing:
+            return candidate
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Could not allocate a unique user ID",
+    )
+
+
 @router.post(
     "/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED
 )
@@ -54,12 +68,7 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
         )
 
-    user_count = db.query(User).filter(User.role == "user").count()
-    user_id = f"user_{user_count + 1:03d}"
-
-    while db.query(User).filter(User.user_id == user_id).first():
-        user_count += 1
-        user_id = f"user_{user_count + 1:03d}"
+    user_id = _generate_user_id(db)
 
     user = User(
         user_id=user_id,
