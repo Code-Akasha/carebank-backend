@@ -7,13 +7,13 @@ from sqlalchemy.orm import Session as DBSession
 
 from app.models.bill_snooze import BillSnooze
 from app.models.user import User
-from app.routes.actions import (
-    approve_action_request as approve_action_request_api,
-    create_action_request as create_action_request_api,
-    reject_action_request as reject_action_request_api,
+from app.services.action_request_service import (
+    approve_action_request_for_user,
+    create_action_request_for_user,
+    reject_action_request_for_user,
 )
-from app.routes.planning import create_schedule_from_text
 from app.services.bill_discovery import discover_bill_candidates
+from app.services.planning_service import create_schedule_from_text_for_user
 from app.schemas.action_engine import ActionDecisionRequest, ActionRequestCreate
 from app.schemas.planning import ScheduleFromTextRequest
 
@@ -256,7 +256,11 @@ def apply_planned_chat_action(
         )
 
         try:
-            created = create_schedule_from_text(body, current_user=current_user, db=db)
+            created = create_schedule_from_text_for_user(
+                db,
+                current_user=current_user,
+                body=body,
+            )
         except Exception as exc:  # noqa: BLE001
             return (
                 f"I parsed your scheduling request, but execution failed. Reason: {exc}",
@@ -343,15 +347,15 @@ def apply_planned_chat_action(
                 idempotency_key = None
 
             try:
-                created = create_action_request_api(
-                    ActionRequestCreate(
+                created = create_action_request_for_user(
+                    db,
+                    current_user=current_user,
+                    body=ActionRequestCreate(
                         action_type=tool_action_type,
                         action_payload=action_payload,
                         idempotency_key=idempotency_key,
                         expires_in_hours=expires_in_hours,
                     ),
-                    current_user=current_user,
-                    db=db,
                 )
             except Exception as exc:  # noqa: BLE001
                 return (
@@ -435,11 +439,11 @@ def apply_planned_chat_action(
 
         if action_type == "approve_action_request":
             try:
-                decided = approve_action_request_api(
-                    request_id,
-                    ActionDecisionRequest(reason="Approved via chat"),
+                decided = approve_action_request_for_user(
+                    db,
+                    request_id=request_id,
+                    body=ActionDecisionRequest(reason="Approved via chat"),
                     current_user=current_user,
-                    db=db,
                 )
             except Exception as exc:  # noqa: BLE001
                 return (
@@ -482,11 +486,11 @@ def apply_planned_chat_action(
 
         if action_type == "reject_action_request":
             try:
-                decided = reject_action_request_api(
-                    request_id,
-                    ActionDecisionRequest(reason="Rejected via chat"),
+                decided = reject_action_request_for_user(
+                    db,
+                    request_id=request_id,
+                    body=ActionDecisionRequest(reason="Rejected via chat"),
                     current_user=current_user,
-                    db=db,
                 )
             except Exception as exc:  # noqa: BLE001
                 return (

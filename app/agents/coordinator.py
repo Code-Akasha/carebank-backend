@@ -4,7 +4,6 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, TypedDict
 
-from langgraph.graph import StateGraph, END
 from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
@@ -20,6 +19,76 @@ from app.services.llm import get_llm_provider
 from app.services.conversation_store import InMemoryConversationStore
 
 logger = logging.getLogger(__name__)
+
+try:
+    from langgraph.graph import StateGraph, END
+except ImportError:  # pragma: no cover - fallback path for lightweight dev/test envs
+    END = "__end__"
+
+    class _CompiledStateGraph:
+        def __init__(
+            self,
+            *,
+            nodes: dict[str, Any],
+            entry_point: str,
+            edges: dict[str, list[str]],
+            conditional_edges: dict[str, Any],
+        ) -> None:
+            self._nodes = nodes
+            self._entry_point = entry_point
+            self._edges = edges
+            self._conditional_edges = conditional_edges
+
+        def invoke(self, state: dict[str, Any]) -> dict[str, Any]:
+            current = self._entry_point
+            working_state = dict(state)
+
+            while current != END:
+                node = self._nodes[current]
+                next_state = node(working_state)
+                if next_state is not None:
+                    working_state = next_state
+
+                if current in self._conditional_edges:
+                    current = self._conditional_edges[current](working_state)
+                    continue
+
+                next_nodes = self._edges.get(current, [])
+                current = next_nodes[0] if next_nodes else END
+
+            return working_state
+
+    class StateGraph:
+        def __init__(self, _state_type: Any) -> None:
+            self._nodes: dict[str, Any] = {}
+            self._edges: dict[str, list[str]] = {}
+            self._conditional_edges: dict[str, Any] = {}
+            self._entry_point: str | None = None
+
+        def add_node(self, name: str, handler: Any) -> None:
+            self._nodes[name] = handler
+
+        def set_entry_point(self, name: str) -> None:
+            self._entry_point = name
+
+        def add_edge(self, source: str, target: str) -> None:
+            self._edges.setdefault(source, []).append(target)
+
+        def add_conditional_edges(self, source: str, router: Any) -> None:
+            self._conditional_edges[source] = router
+
+        def compile(self) -> _CompiledStateGraph:
+            if not self._entry_point:
+                raise ValueError("Coordinator graph entry point is not set")
+            logger.warning(
+                "langgraph is not installed; using a lightweight coordinator graph fallback"
+            )
+            return _CompiledStateGraph(
+                nodes=self._nodes,
+                entry_point=self._entry_point,
+                edges=self._edges,
+                conditional_edges=self._conditional_edges,
+            )
 
 
 if TYPE_CHECKING:  # pragma: no cover
