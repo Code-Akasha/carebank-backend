@@ -6,8 +6,6 @@ from typing import Any
 
 from sqlalchemy.orm import Session as DBSession
 
-logger = logging.getLogger(__name__)
-
 from app.models.bill_snooze import BillSnooze
 from app.models.user import User
 from app.services.action_request_service import (
@@ -19,6 +17,8 @@ from app.services.bill_discovery import discover_bill_candidates
 from app.services.planning_service import create_schedule_from_text_for_user
 from app.schemas.action_engine import ActionDecisionRequest, ActionRequestCreate
 from app.schemas.planning import ScheduleFromTextRequest
+
+logger = logging.getLogger(__name__)
 
 
 def apply_planned_chat_action(

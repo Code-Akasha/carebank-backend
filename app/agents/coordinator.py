@@ -890,6 +890,13 @@ def _classify_intent_keywords(message: str) -> ClassificationResult:
     detected_intent = matched_intents[0] if matched_intents else "general"
     secondary_intent = matched_intents[1] if len(matched_intents) > 1 else None
 
+    if detected_intent == "balance":
+        has_savings_signal = any(
+            keyword in message_lower for keyword in _INTENT_KEYWORDS["auto_savings"]
+        )
+        if has_savings_signal:
+            secondary_intent = "auto_savings"
+
     # Extract amount via regex for intents that need it
     parameters: dict = {}
     amount_target_intent = detected_intent

@@ -1,10 +1,9 @@
 """NL integration scenarios testing the agentic banking features."""
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from tests.helpers.scenario_runner import run_scenario
-from unittest.mock import patch
 from datetime import datetime, timezone
 
 
@@ -216,8 +215,6 @@ def test_payment_above_limit_triggers_approval(mock_dependencies):
 
 def test_nudge_block_fatigue(mock_dependencies):
     # This checks if an agent skips nudging when told to
-    from app.agents.coordinator import coordinator_graph, AgentContext
-
     # We can invoke graph directly with is_nudge=True injected into history or message?
     # Actually, simpler to just test intent that triggers nudges.
     # For now, let's test a simple advice retry.

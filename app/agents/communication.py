@@ -192,6 +192,24 @@ class CommunicationAgent(BaseAgent):
                         "is_nudge": ctx.is_nudge,
                     },
                 )
+            health_response = self._maybe_render_health_response(
+                agent_results,
+                requested_intent=agent_input.intent,
+            )
+            if health_response:
+                if ctx.is_nudge:
+                    record_nudge(user_id)
+                return AgentOutput(
+                    response=health_response,
+                    agent_name=self.name,
+                    confidence=0.95,
+                    metadata={
+                        "provider": "health_template",
+                        "model": "deterministic",
+                        "persona": persona,
+                        "is_nudge": ctx.is_nudge,
+                    },
+                )
         if agent_results and self._can_use_agent_results_for_intent(
             agent_results,
             agent_input.intent,
@@ -373,6 +391,29 @@ class CommunicationAgent(BaseAgent):
             lines.append(f"\nWant me to set a spending alert for {top_cat}?")
 
             return "\n".join(lines)
+        return None
+
+    def _maybe_render_health_response(
+        self,
+        agent_results: list[dict],
+        *,
+        requested_intent: str,
+    ) -> str | None:
+        if (requested_intent or "").strip().lower() != "health_score":
+            return None
+
+        for result in agent_results:
+            metadata = result.get("metadata") or {}
+            if (
+                str(metadata.get("intent_handled") or "").strip().lower()
+                != "health_score"
+            ):
+                continue
+            score = self._coerce_float(metadata.get("score"))
+            if score is None:
+                continue
+            return f"Health Score: {score:.1f}/100."
+
         return None
 
     def _maybe_render_schedule_guidance(
@@ -688,7 +729,7 @@ class CommunicationAgent(BaseAgent):
                     }
                 else:
                     return {
-                        "response": f"This payment of ₹{amount_value:,.2f} exceeds the instant-payment limit (₹{settings.auto_approve_limit:,.0f}). Creating an approval request...",
+                        "response": f"This payment of ₹{amount_value:,.2f} exceeds the instant-payment limit (₹{settings.auto_approve_limit:,.0f}). Creating an action request for approval...",
                         "confidence": 0.95,
                         "pending_state": {
                             "pending_intent": "actions",
@@ -903,7 +944,7 @@ class CommunicationAgent(BaseAgent):
 
         return {
             "response": (
-                f"Got it. Creating an approval request to {label} for INR {amount_value:,.2f} now."
+                f"Got it. Creating an action request for approval to {label} for INR {amount_value:,.2f} now."
             ),
             "confidence": 0.95,
             "pending_state": None,
