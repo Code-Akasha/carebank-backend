@@ -62,12 +62,23 @@ class OpportunityAgent(BaseAgent):
         accounts = self._fetch_accounts(user_id)
         providers = self._fetch_providers()
 
+        # Get Financial Health Score to tailor recommendations
+        try:
+            from app.agents.intelligence import IntelligenceAgent
+
+            intel = IntelligenceAgent()
+            health_output = intel._handle_health_score(user_id)
+            score = health_output.metadata.get("score", 75)
+        except Exception as exc:
+            logger.warning("Failed to get health score for recommendations: %s", exc)
+            score = 75
+
         subscriptions = self._detect_unused_subscriptions(transactions)
 
         if subscriptions:
             sub = subscriptions[0]
             amount = abs(sub["amount"])
-            product = self._select_best_product(products, accounts, providers)
+            product = self._select_best_product(products, accounts, providers, score)
             response = (
                 f"I spotted a recurring charge from {sub['merchant']} for ₹{amount:,.0f}/month. "
                 "If you don't actively use it, redirecting that amount could accelerate your goals. "
@@ -80,7 +91,7 @@ class OpportunityAgent(BaseAgent):
             subs_flagged = 1
         else:
             target_account = self._pick_underutilized_account(accounts)
-            product = self._select_best_product(products, accounts, providers)
+            product = self._select_best_product(products, accounts, providers, score)
             response = "Your recurring spend looks under control. "
             if target_account and product:
                 response += (
@@ -160,6 +171,7 @@ class OpportunityAgent(BaseAgent):
         products: list[dict[str, Any]],
         accounts: list[dict[str, Any]],
         providers: list[dict[str, Any]],
+        health_score: int,
     ) -> dict[str, Any] | None:
         if not products:
             return None
@@ -170,8 +182,40 @@ class OpportunityAgent(BaseAgent):
             if provider_lookup.get(acct["provider_id"], {}).get("status")
             != "maintenance"
         }
+        # Filter products based on health score tier
+        if health_score >= 80:
+            # Score 80-100 (Saver): Growth & high yield
+            target_types = {"fixed_deposit", "sip", "mutual_fund", "high_yield_savings"}
+        elif health_score >= 50:
+            # Score 50-79 (Balanced): Safety & insurance
+            target_types = {
+                "insurance",
+                "emergency_fund",
+                "recurring_deposit",
+                "fixed_deposit",
+            }
+        else:
+            # Score 0-49 (Spender): Relief & restructuring
+            target_types = {
+                "overdraft",
+                "debt_consolidation",
+                "credit_card_bt",
+                "personal_loan",
+            }
+
+        eligible_products = [
+            p
+            for p in products
+            if p.get("type", "").lower() in target_types
+            or p.get("category", "").lower() in target_types
+        ]
+
+        # Fallback to all products if no exact match for tier
+        if not eligible_products:
+            eligible_products = products
+
         ranked = sorted(
-            products,
+            eligible_products,
             key=lambda item: float(item.get("interest_rate", 0.0)),
             reverse=True,
         )

@@ -22,6 +22,12 @@ os.environ.setdefault("CORS_ORIGINS", "http://localhost:5173,http://localhost:30
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
     """Initialize the test database tables."""
+    db_url = os.environ.get("DATABASE_URL", "")
+    if db_url.startswith("sqlite:///"):
+        db_path = db_url.replace("sqlite:///", "", 1)
+        if db_path and os.path.exists(db_path):
+            os.remove(db_path)
+
     from app.core.database import init_db
 
     init_db()

@@ -237,6 +237,7 @@ _INTENT_TO_AGENT: dict[str, str] = {
     "health_score": "IntelligenceAgent",
     "what_if": "IntelligenceAgent",
     "affordability": "IntelligenceAgent",
+    "advice": "IntelligenceAgent",
     "auto_savings": "AutoSavingsAgent",
     "opportunity": "OpportunityAgent",
     "planning": "CommunicationAgent",
@@ -260,6 +261,7 @@ Intent codes (use these exactly):
 - health_score: Financial health assessment
 - what_if: Scenario analysis ("what if I spend...", impact analysis)
 - affordability: "Can I afford...", "should I buy..." purchase questions
+- advice: "How can I save more", "improve my spending", "where am I overspending", "cut back" advice
 - auto_savings: Savings advice and micro-savings
 - opportunity: Product recommendations and offers
 - planning: Scheduling, recurring payment setup, reminder/checklist planning requests
@@ -318,6 +320,21 @@ _INTENT_KEYWORDS: dict[str, list[str]] = {
     ],
     "what_if": ["what if", "what-if", "impact", "simulate", "scenario"],
     "affordability": ["can i buy", "should i buy", "afford", "purchase"],
+    "advice": [
+        "improve",
+        "suggestions",
+        "save more",
+        "cut back",
+        "spend less",
+        "overspending",
+        "how to improve",
+        "ways to save",
+        "spending tips",
+        "financial advice",
+        "better habits",
+        "where am i spending",
+        "where am i overspending",
+    ],
     "auto_savings": ["save", "saving", "savings", "budget", "micro", "transfer"],
     "opportunity": [
         "product",
@@ -872,6 +889,13 @@ def _classify_intent_keywords(message: str) -> ClassificationResult:
     matched_intents = _ordered_keyword_intents(message_lower)
     detected_intent = matched_intents[0] if matched_intents else "general"
     secondary_intent = matched_intents[1] if len(matched_intents) > 1 else None
+
+    if detected_intent == "balance":
+        has_savings_signal = any(
+            keyword in message_lower for keyword in _INTENT_KEYWORDS["auto_savings"]
+        )
+        if has_savings_signal:
+            secondary_intent = "auto_savings"
 
     # Extract amount via regex for intents that need it
     parameters: dict = {}

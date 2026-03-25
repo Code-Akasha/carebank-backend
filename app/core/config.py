@@ -43,6 +43,15 @@ class Settings(BaseSettings):
     whatif_medium_threshold: float = 30.0
     affordability_safe_buffer: float = 10000.0
 
+    # Payments below this limit can be approved with a single "yes" in chat
+    auto_approve_limit: float = 10000.0
+
+    # Telegram and Twilio bot integration
+    telegram_bot_token: str = ""
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_whatsapp_from: str = "whatsapp:+14155238886"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @model_validator(mode="after")

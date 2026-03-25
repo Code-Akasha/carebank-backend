@@ -20,6 +20,7 @@ from app.routes.profile import router as profile_router
 from app.routes.planning import router as planning_router
 from app.routes.actions import router as actions_router
 from app.routes.notifications import router as notifications_router
+from app.routes.bot import router as bot_router
 from app.core.database import init_db
 from app.core.config import get_settings
 
@@ -90,6 +91,7 @@ app.include_router(health_score_router)
 app.include_router(chat_router)
 app.include_router(simulate_router)
 app.include_router(events_router)
+app.include_router(bot_router)
 
 
 @app.get("/")

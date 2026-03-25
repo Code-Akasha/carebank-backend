@@ -174,6 +174,42 @@ class CommunicationAgent(BaseAgent):
                         "is_nudge": ctx.is_nudge,
                     },
                 )
+            advice_response = self._maybe_render_advice_response(
+                agent_results,
+                requested_intent=agent_input.intent,
+            )
+            if advice_response:
+                if ctx.is_nudge:
+                    record_nudge(user_id)
+                return AgentOutput(
+                    response=advice_response,
+                    agent_name=self.name,
+                    confidence=0.95,
+                    metadata={
+                        "provider": "advice_template",
+                        "model": "deterministic",
+                        "persona": persona,
+                        "is_nudge": ctx.is_nudge,
+                    },
+                )
+            health_response = self._maybe_render_health_response(
+                agent_results,
+                requested_intent=agent_input.intent,
+            )
+            if health_response:
+                if ctx.is_nudge:
+                    record_nudge(user_id)
+                return AgentOutput(
+                    response=health_response,
+                    agent_name=self.name,
+                    confidence=0.95,
+                    metadata={
+                        "provider": "health_template",
+                        "model": "deterministic",
+                        "persona": persona,
+                        "is_nudge": ctx.is_nudge,
+                    },
+                )
         if agent_results and self._can_use_agent_results_for_intent(
             agent_results,
             agent_input.intent,
@@ -311,6 +347,73 @@ class CommunicationAgent(BaseAgent):
                 f"I wouldn't recommend buying a laptop for {amount_str} right now. "
                 f"You have {balance_str} available, so you'd fall short by about {shortfall} after the purchase."
             )
+        return None
+
+    def _maybe_render_advice_response(
+        self,
+        agent_results: list[dict],
+        *,
+        requested_intent: str,
+    ) -> str | None:
+        if (requested_intent or "").strip().lower() != "advice":
+            return None
+
+        for result in agent_results:
+            metadata = result.get("metadata") or {}
+            if str(metadata.get("intent_handled") or "").strip().lower() != "advice":
+                continue
+            status = result.get("status")
+            if status not in (AgentStatus.success, AgentStatus.needs_input):
+                continue
+
+            top_spikes = metadata.get("top_spikes", [])
+            total_savings = self._coerce_float(
+                metadata.get("total_savings_opportunity")
+            )
+
+            if not top_spikes:
+                return "Your spending looks very stable compared to last month. Keep up the good work!"
+
+            lines = ["Here are the areas where you spent noticeably more this month:"]
+            for spike in top_spikes:
+                cat = str(spike.get("category", "other")).capitalize()
+                delta = self._format_currency(spike.get("delta", 0), "₹")
+                pct = spike.get("pct_change", 0)
+                lines.append(f"• **{cat}**: up {delta} (+{pct}%)")
+
+            if total_savings and total_savings > 0:
+                savings_str = self._format_currency(total_savings, "₹")
+                lines.append(
+                    f"\nIf you can reduce these spikes by just 30%, you could save an extra {savings_str} this month."
+                )
+
+            top_cat = str(top_spikes[0].get("category", "other")).capitalize()
+            lines.append(f"\nWant me to set a spending alert for {top_cat}?")
+
+            return "\n".join(lines)
+        return None
+
+    def _maybe_render_health_response(
+        self,
+        agent_results: list[dict],
+        *,
+        requested_intent: str,
+    ) -> str | None:
+        if (requested_intent or "").strip().lower() != "health_score":
+            return None
+
+        for result in agent_results:
+            metadata = result.get("metadata") or {}
+            if (
+                str(metadata.get("intent_handled") or "").strip().lower()
+                != "health_score"
+            ):
+                continue
+            score = self._coerce_float(metadata.get("score"))
+            if score is None:
+                continue
+            return f"Health Score: {score:.1f}/100."
+
         return None
 
     def _maybe_render_schedule_guidance(
@@ -531,7 +634,21 @@ class CommunicationAgent(BaseAgent):
                 }
 
             normalized = re.sub(r"\s+", " ", user_message.lower()).strip()
-            if normalized in {"pay now", "pay"}:
+            _PAY_NOW_TRIGGERS = {
+                "pay now",
+                "pay",
+                "yes",
+                "y",
+                "ok",
+                "okay",
+                "sure",
+                "go ahead",
+                "confirm",
+                "proceed",
+                "do it",
+                "approve",
+            }
+            if normalized in _PAY_NOW_TRIGGERS:
                 candidate_action_type = (
                     str(candidate.get("action_type") or "").strip().lower()
                 )
@@ -590,21 +707,42 @@ class CommunicationAgent(BaseAgent):
                 if isinstance(category, str) and category.strip():
                     action_payload["category"] = category.strip()
 
+                from app.core.config import get_settings
+
+                settings = get_settings()
+
                 label = self._format_action_label(candidate_action_type)
-                return {
-                    "response": f"Got it. Creating an approval request to {label} for INR {amount_value:,.2f} now.",
-                    "confidence": 0.95,
-                    "pending_state": None,
-                    "clear_pending": True,
-                    "action": {
-                        "type": "create_action_request",
-                        "action_type": candidate_action_type,
-                        "action_payload": action_payload,
-                        "expires_in_hours": 24,
-                        "idempotency_key": idempotency_key,
-                    },
-                    "ui_actions": [],
-                }
+
+                if amount_value <= settings.auto_approve_limit:
+                    return {
+                        "response": f"Processing payment to {label} for ₹{amount_value:,.2f}…",
+                        "confidence": 0.95,
+                        "pending_state": None,
+                        "clear_pending": True,
+                        "action": {
+                            "type": "execute_direct_payment",
+                            "action_type": candidate_action_type,
+                            "action_payload": action_payload,
+                            "idempotency_key": idempotency_key,
+                        },
+                        "ui_actions": [],
+                    }
+                else:
+                    return {
+                        "response": f"This payment of ₹{amount_value:,.2f} exceeds the instant-payment limit (₹{settings.auto_approve_limit:,.0f}). Creating an action request for approval...",
+                        "confidence": 0.95,
+                        "pending_state": {
+                            "pending_intent": "actions",
+                            "actions": {
+                                "flow": "action_request",
+                                "action_type": candidate_action_type,
+                                "action_payload": action_payload,
+                            },
+                        },
+                        "clear_pending": False,
+                        "action": None,
+                        "ui_actions": [],
+                    }
 
             if normalized in {"later", "not now", "snooze", "remind later"}:
                 source_type = str(candidate.get("source_type") or "").strip().lower()
@@ -806,7 +944,7 @@ class CommunicationAgent(BaseAgent):
 
         return {
             "response": (
-                f"Got it. Creating an approval request to {label} for INR {amount_value:,.2f} now."
+                f"Got it. Creating an action request for approval to {label} for INR {amount_value:,.2f} now."
             ),
             "confidence": 0.95,
             "pending_state": None,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -16,6 +17,8 @@ from app.services.bill_discovery import discover_bill_candidates
 from app.services.planning_service import create_schedule_from_text_for_user
 from app.schemas.action_engine import ActionDecisionRequest, ActionRequestCreate
 from app.schemas.planning import ScheduleFromTextRequest
+
+logger = logging.getLogger(__name__)
 
 
 def apply_planned_chat_action(
@@ -520,5 +523,150 @@ def apply_planned_chat_action(
             )
 
         return agent_response, metadata
+
+    if action_type == "execute_direct_payment":
+        # Fast-path: approve payment in a single "yes" without a pending state.
+        # Safety guard: only allowed for amounts <= auto_approve_limit.
+        tool_action_type = str(action.get("action_type") or "").strip()
+        action_payload = action.get("action_payload")
+        if not tool_action_type or not isinstance(action_payload, dict):
+            return agent_response, metadata
+
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        amount_raw = action_payload.get("amount")
+        try:
+            amount = float(amount_raw or 0.0)
+        except (TypeError, ValueError):
+            amount = 0.0
+
+        label_map = {
+            "pay_rent": "pay rent",
+            "pay_bill": "pay a bill",
+            "pay_gas": "pay the gas bill",
+            "pay_utility": "pay the utility bill",
+            "transfer_savings": "transfer to savings",
+        }
+        action_label = label_map.get(
+            tool_action_type, tool_action_type.replace("_", " ")
+        )
+        amount_str = f"₹{amount:,.2f}" if amount > 0 else ""
+
+        if amount > settings.auto_approve_limit:
+            # Too large — fall back to pending approve flow
+            try:
+                idempotency_key = action.get("idempotency_key")
+                if isinstance(idempotency_key, str):
+                    idempotency_key = idempotency_key.strip() or None
+                else:
+                    idempotency_key = None
+
+                created = create_action_request_for_user(
+                    db,
+                    current_user=current_user,
+                    body=ActionRequestCreate(
+                        action_type=tool_action_type,
+                        action_payload=action_payload,
+                        idempotency_key=idempotency_key,
+                        expires_in_hours=int(action.get("expires_in_hours", 24)),
+                    ),
+                )
+            except Exception as exc:  # noqa: BLE001
+                return (
+                    f"I parsed your payment request, but execution failed. Reason: {exc}",
+                    {**metadata, "clear_pending": False},
+                )
+            request = created.request
+            return (
+                (
+                    f"This payment of {amount_str} exceeds the instant-payment limit "
+                    f"(₹{settings.auto_approve_limit:,.0f}). "
+                    f"I created action request ID {request.id} to {action_label}. "
+                    "Reply 'yes' to approve or 'no' to cancel."
+                ),
+                {
+                    **metadata,
+                    "clear_pending": False,
+                    "pending_state": {
+                        "pending_intent": "actions",
+                        "actions": {
+                            "flow": "action_approval",
+                            "request_id": request.id,
+                            "action_type": request.action_type,
+                            "action_payload": request.action_payload,
+                        },
+                    },
+                    "action_result": {
+                        "type": "create_action_request",
+                        "request_id": request.id,
+                        "request_status": request.status,
+                    },
+                },
+            )
+
+        # Amount is within limit — create + auto-approve atomically
+        try:
+            idempotency_key = action.get("idempotency_key")
+            if isinstance(idempotency_key, str):
+                idempotency_key = idempotency_key.strip() or None
+            else:
+                idempotency_key = None
+
+            created = create_action_request_for_user(
+                db,
+                current_user=current_user,
+                body=ActionRequestCreate(
+                    action_type=tool_action_type,
+                    action_payload=action_payload,
+                    idempotency_key=idempotency_key,
+                    expires_in_hours=24,
+                ),
+            )
+            request = created.request
+
+            # Auto-approve immediately
+            decided = approve_action_request_for_user(
+                db,
+                request_id=request.id,
+                body=ActionDecisionRequest(
+                    reason="Auto-approved via chat (within limit)"
+                ),
+                current_user=current_user,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "execute_direct_payment failed for %s: %s", current_user.user_id, exc
+            )
+            return (
+                f"I tried to process your payment, but it failed. Reason: {exc}",
+                {**metadata, "clear_pending": False},
+            )
+
+        req = decided.request
+        execution = decided.execution
+        exec_status = execution.status if execution else "queued"
+        txn_ref = (
+            f"TXN{req.id:010d}"
+            if req.id
+            else f"TXN{int(datetime.now(timezone.utc).timestamp())}"
+        )
+
+        amount_clause = f" {amount_str}" if amount_str else ""
+        return (
+            f"✅ Payment of{amount_clause} processed. Ref: {txn_ref}. Status: {exec_status}.",
+            {
+                **metadata,
+                "clear_pending": True,
+                "action_result": {
+                    "type": "execute_direct_payment",
+                    "request_id": req.id,
+                    "request_status": req.status,
+                    "execution_id": execution.id if execution else None,
+                    "execution_status": exec_status,
+                    "txn_ref": txn_ref,
+                },
+            },
+        )
 
     return agent_response, metadata

@@ -36,37 +36,34 @@ class NoteTool:
 
 
 class BankTransactionTool:
-    _action_types = {
-        "pay_rent",
-        "pay_bill",
-        "pay_gas",
-        "pay_utility",
-        "transfer_savings",
+    _action_defaults = {
+        "pay_rent": {
+            "merchant": "Monthly Rent",
+            "category": "rent",
+            "payment_rail": "NEFT",
+        },
+        "pay_bill": {
+            "merchant": "Utility Bill",
+            "category": "bills",
+            "payment_rail": "UPI",
+        },
+        "pay_gas": {
+            "merchant": "Gas Service",
+            "category": "gas",
+            "payment_rail": "UPI",
+        },
+        "pay_utility": {
+            "merchant": "Utility Payment",
+            "category": "utilities",
+            "payment_rail": "UPI",
+        },
+        "transfer_savings": {
+            "merchant": "Savings Transfer",
+            "category": "savings",
+            "payment_rail": "IMPS",
+        },
     }
-
-    _default_merchant = {
-        "pay_rent": "Monthly Rent",
-        "pay_bill": "Utility Bill",
-        "pay_gas": "Gas Service",
-        "pay_utility": "Utility Payment",
-        "transfer_savings": "Savings Transfer",
-    }
-
-    _default_category = {
-        "pay_rent": "rent",
-        "pay_bill": "bills",
-        "pay_gas": "gas",
-        "pay_utility": "utilities",
-        "transfer_savings": "savings",
-    }
-
-    _default_payment_rail = {
-        "pay_rent": "NEFT",
-        "pay_bill": "UPI",
-        "pay_gas": "UPI",
-        "pay_utility": "UPI",
-        "transfer_savings": "IMPS",
-    }
+    _action_types = set(_action_defaults)
 
     def can_handle(self, action_type: str) -> bool:
         return action_type in self._action_types
@@ -84,18 +81,18 @@ class BankTransactionTool:
         if amount <= 0:
             raise ValueError("amount must be positive")
 
+        defaults = self._action_defaults.get(action_type, {})
+
         payment_rail = str(
-            payload.get("payment_rail")
-            or self._default_payment_rail.get(action_type, "UPI")
+            payload.get("payment_rail") or defaults.get("payment_rail", "UPI")
         ).upper()
 
         transaction_payload = {
             "user_id": user_id,
             "amount": -abs(amount),
             "merchant": payload.get("merchant")
-            or self._default_merchant.get(action_type, "Action Payment"),
-            "category": payload.get("category")
-            or self._default_category.get(action_type, "payment"),
+            or defaults.get("merchant", "Action Payment"),
+            "category": payload.get("category") or defaults.get("category", "payment"),
             "description": payload.get("description")
             or f"Executed by action engine: {action_type}",
             "action_type": action_type,
