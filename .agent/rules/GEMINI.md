@@ -130,20 +130,6 @@ When user's prompt is NOT in English:
 - Skills: `.agent/skills/` (Project)
 - Runtime Scripts: `.agent/skills/<skill>/scripts/`
 
-### 📖 CareBank Project Context (Hackathon Solution)
-
-> 🔴 **MANDATORY:** Read the project documentation before making architectural or feature decisions to ensure alignment with the 36-hour hackathon constraints.
-
-**Path Awareness:**
-- Problem Statement: `.agent/project/PROBLEM_STATEMENT.md`
-- Solution Architecture: `.agent/project/SOLUTION.md`
-
-**Strict CareBank Rules:**
-- **DO NOT** add new agents outside the 5 core agents (Coordinator, Intelligence, Communication, Opportunity, Auto-Savings) defined in the solution.
-- **DO NOT** change the tech stack (FastAPI, React, pgvector, LangGraph).
-- **DO NOT** invent new features outside the 3 killer features (Financial Health Score, What-If Simulator, Auto-Micro-Savings).
-- **ALWAYS** check `.agent/project/SOLUTION.md` for architectural context.
-
 ### 🧠 Read → Understand → Apply
 
 ```
@@ -283,47 +269,5 @@ When user's prompt is NOT in English:
 - **Scanners**: `security_scan.py`, `dependency_analyzer.py`
 - **Audits**: `ux_audit.py`, `mobile_audit.py`, `lighthouse_audit.py`, `seo_checker.py`
 - **Test**: `playwright_runner.py`, `test_runner.py`
-
----
-
-## TIER 3: GIT WORKFLOW & BRANCHING
-
-> **Keep it simple.** You don’t need GitFlow complexity.
-
-### General Rules
-- **No direct commits to `main`.**
-- **PR required.**
-- **Merge into `develop`.**
-- **When stable → merge to `main`.**
-- **Commit messages:** Use conventional commits (only use `:type,scope,subject`).
-
-### Backend (`carebank-backend`)
-**Main branches:**
-- `main`
-- `develop`
-
-**Feature Branches:**
-- `feature/coordinator-agent`
-- `feature/intelligence-agent`
-- `feature/health-score`
-- `feature/what-if-simulation`
-- `feature/auto-savings`
-- `feature/opportunity-agent`
-- `feature/compliance-guard`
-- `feature/mockbank-integration`
-
-### Frontend (`carebank-frontend`)
-**Main branches:**
-- `main`
-- `develop`
-
-**Feature Branches:**
-- `feature/dashboard-layout`
-- `feature/health-score-meter`
-- `feature/transaction-list`
-- `feature/what-if-ui`
-- `feature/notification-system`
-- `feature/autosavings-approval`
-- `feature/api-integration`
 
 ---

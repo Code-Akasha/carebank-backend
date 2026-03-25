@@ -45,6 +45,7 @@ class IntelligenceAgent(BaseAgent):
             "balance_forecast",
             "what_if_simulation",
             "spending_analysis",
+            "spending_advice",
             "anomaly_detection",
             "future_predictions",
             "balance_inquiry",
@@ -74,6 +75,9 @@ class IntelligenceAgent(BaseAgent):
 
         if intent == "affordability":
             return self._handle_affordability(user_id, ctx)
+
+        if intent == "advice":
+            return self._handle_advice(user_id)
 
         # Default: return health score data
         return self._handle_health_score(user_id)
@@ -319,6 +323,74 @@ class IntelligenceAgent(BaseAgent):
                 "available_balance": available_balance,
                 "post_purchase_balance": post_purchase_balance,
                 "verdict": verdict,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # Spending Advice — current vs previous month category analysis
+    # ------------------------------------------------------------------
+    def _handle_advice(self, user_id: str) -> AgentOutput:
+        """Identify top spending spikes vs last month and quantify savings opportunity."""
+        transactions = self._fetch_transactions(user_id)
+
+        from datetime import datetime, timedelta, timezone
+
+        now = datetime.now(timezone.utc)
+        curr_month = now.strftime("%Y-%m")
+        prev_month_dt = now.replace(day=1) - timedelta(days=1)
+        prev_month = prev_month_dt.strftime("%Y-%m")
+
+        monthly_spending: dict[str, dict[str, float]] = {}
+        for txn in transactions:
+            if txn["amount"] >= 0:
+                continue
+            date_val = txn.get("date")
+            if isinstance(date_val, str):
+                try:
+                    date_val = datetime.fromisoformat(date_val.replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+            elif not hasattr(date_val, "strftime"):
+                continue
+            month_key = date_val.strftime("%Y-%m")
+            cat = txn.get("category", "other")
+            monthly_spending.setdefault(month_key, {}).setdefault(cat, 0.0)
+            monthly_spending[month_key][cat] += abs(txn["amount"])
+
+        curr_cats = monthly_spending.get(curr_month, {})
+        prev_cats = monthly_spending.get(prev_month, {})
+
+        spikes: list[dict] = []
+        for cat, curr_amt in sorted(curr_cats.items(), key=lambda x: -x[1]):
+            prev_amt = prev_cats.get(cat, 0.0)
+            delta = curr_amt - prev_amt
+            pct_change = (delta / prev_amt * 100) if prev_amt > 0 else 100.0
+            spikes.append(
+                {
+                    "category": cat,
+                    "current_month_spend": round(curr_amt, 2),
+                    "previous_month_spend": round(prev_amt, 2),
+                    "delta": round(delta, 2),
+                    "pct_change": round(pct_change, 1),
+                    "savings_if_cut_30pct": round(curr_amt * 0.30, 2),
+                }
+            )
+
+        # Sort by delta descending — biggest increases first
+        spikes.sort(key=lambda x: -x["delta"])
+        top_spikes = spikes[:3]
+
+        total_savings_opportunity = sum(s["savings_if_cut_30pct"] for s in top_spikes)
+
+        return AgentOutput(
+            agent_name=self.name,
+            confidence=0.88,
+            metadata={
+                "intent_handled": "advice",
+                "current_month": curr_month,
+                "previous_month": prev_month,
+                "top_spikes": top_spikes,
+                "total_savings_opportunity": round(total_savings_opportunity, 2),
             },
         )
 
