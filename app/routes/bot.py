@@ -15,11 +15,22 @@ from sqlalchemy.orm import Session as DBSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
+from app.schemas.bot import (
+    TelegramLinkRequest,
+    TelegramLinkResponse,
+    TelegramPairApproveRequest,
+    TelegramPairApproveResponse,
+    TelegramUnlinkResponse,
+)
+from app.services.bot_gateway import TelegramGatewayService
 from app.services.telegram_bot import TelegramBot
 from app.services.whatsapp_bot import WhatsAppBot
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/bot", tags=["bot"])
+telegram_gateway = TelegramGatewayService()
 
 
 def _get_bot() -> TelegramBot:
@@ -58,9 +69,15 @@ def _resolve_carebank_user(telegram_user_id: str, *, db: DBSession) -> Any:
     if user:
         return user
 
-    # Fallback: return the first seeded user so demos always work
-    demo_user = db.query(User).order_by(User.id).first()
-    return demo_user
+    return None
+
+
+def _resolve_whatsapp_user(whatsapp_user_id: str, *, db: DBSession) -> Any:
+    # Temporary demo fallback until dedicated WhatsApp identity linking is introduced.
+    user = db.query(User).filter(User.telegram_user_id == whatsapp_user_id).first()
+    if user:
+        return user
+    return db.query(User).order_by(User.id).first()
 
 
 # ---------------------------------------------------------------------------
@@ -73,93 +90,8 @@ async def _process_update(
     bot: TelegramBot,
     db: DBSession,
 ) -> None:
-    """Handle a single Telegram update: classify intent, run coordinator, reply."""
-    message = bot.extract_message(update)
-    if not message:
-        return
-
-    chat_id = bot.get_chat_id(message)
-    if not chat_id:
-        return
-
-    text = bot.get_text(message)
-    if not text:
-        await bot.send_message(chat_id, "Please type a message to chat with CareBank.")
-        return
-
-    telegram_user_id = bot.get_telegram_user_id(message)
-
-    # Show typing indicator
-    await bot.send_typing(chat_id)
-
-    # Resolve CareBank user
-    current_user = None
-    if telegram_user_id:
-        current_user = _resolve_carebank_user(telegram_user_id, db=db)
-
-    if not current_user:
-        await bot.send_message(
-            chat_id,
-            (
-                "Hi! I'm CareBank's AI assistant. 👋\n"
-                "I couldn't find your linked bank account. "
-                "Please log in via the CareBank app and link your Telegram account first."
-            ),
-        )
-        return
-
-    # Call the coordinator graph (same as web chat)
-    try:
-        from app.agents.coordinator import (
-            coordinator_graph,
-            get_conversation_history,
-            get_conversation_state,
-            set_conversation_state,
-            clear_conversation_state,
-        )
-
-        history = get_conversation_history(telegram_user_id)
-        conversation_state = get_conversation_state(telegram_user_id)
-
-        result = coordinator_graph.invoke(
-            {
-                "user_id": telegram_user_id,
-                "message": text,
-                "audit_log": [],
-                "conversation_history": history,
-                "conversation_state": conversation_state,
-                "db": db,
-                "current_user": current_user,
-            }
-        )
-
-        if result.get("pending_intent_ignored"):
-            clear_conversation_state(telegram_user_id)
-            conversation_state = {}
-
-        response_metadata = result.get("response_metadata") or {}
-        if isinstance(response_metadata, dict):
-            if response_metadata.get("clear_pending"):
-                clear_conversation_state(telegram_user_id)
-            else:
-                pending_state = response_metadata.get("pending_state")
-                if isinstance(pending_state, dict):
-                    next_state = {
-                        **conversation_state,
-                        **pending_state,
-                    }
-                    set_conversation_state(telegram_user_id, next_state)
-
-        reply_text = (
-            result.get("agent_response") or "I'm sorry, I didn't understand that."
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.error(
-            "Coordinator error for telegram user %s: %s", telegram_user_id, exc
-        )
-        reply_text = "⚠️ I ran into a problem processing your request. Please try again."
-
-    await bot.send_message(chat_id, reply_text)
+    """Handle a single Telegram update via dedicated gateway service."""
+    await telegram_gateway.process_update(update=update, bot=bot, db=db)
 
 
 # ---------------------------------------------------------------------------
@@ -210,11 +142,11 @@ async def _process_whatsapp_update(
     # Resolve CareBank user
     current_user = None
     if whatsapp_user_id:
-        current_user = _resolve_carebank_user(whatsapp_user_id, db=db)
+        current_user = _resolve_whatsapp_user(whatsapp_user_id, db=db)
 
     # Fallback identical to resolve algorithm if it returned None
     if not current_user:
-        current_user = _resolve_carebank_user("fallback", db=db)
+        current_user = _resolve_whatsapp_user("fallback", db=db)
 
     # Call the coordinator graph
     try:
@@ -310,3 +242,50 @@ async def delete_webhook(bot: TelegramBot = Depends(_get_bot)) -> dict[str, Any]
     """Unregister the Telegram webhook."""
     result = await bot.delete_webhook()
     return result
+
+
+@router.post("/telegram/link", response_model=TelegramLinkResponse)
+async def link_telegram_id(
+    body: TelegramLinkRequest,
+    db: DBSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TelegramLinkResponse:
+    normalized = telegram_gateway.link_telegram_id(
+        db=db,
+        current_user=current_user,
+        telegram_user_id_raw=body.telegram_user_id,
+    )
+
+    return TelegramLinkResponse(
+        user_id=current_user.user_id,
+        telegram_user_id=normalized,
+        linked=True,
+    )
+
+
+@router.delete("/telegram/link", response_model=TelegramUnlinkResponse)
+async def unlink_telegram_id(
+    db: DBSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TelegramUnlinkResponse:
+    telegram_gateway.unlink_telegram_id(db=db, current_user=current_user)
+    return TelegramUnlinkResponse(user_id=current_user.user_id, unlinked=True)
+
+
+@router.post("/telegram/pair/approve", response_model=TelegramPairApproveResponse)
+async def approve_telegram_pairing(
+    body: TelegramPairApproveRequest,
+    db: DBSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TelegramPairApproveResponse:
+    telegram_user_id = telegram_gateway.approve_pairing(
+        db=db,
+        current_user=current_user,
+        code=body.code,
+    )
+
+    return TelegramPairApproveResponse(
+        user_id=current_user.user_id,
+        telegram_user_id=telegram_user_id,
+        paired=True,
+    )

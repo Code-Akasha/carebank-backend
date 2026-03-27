@@ -48,9 +48,12 @@ class Settings(BaseSettings):
 
     # Telegram and Twilio bot integration
     telegram_bot_token: str = ""
+    telegram_dm_policy: str = "pairing"
+    telegram_allow_from: str = ""
+    telegram_pairing_ttl_seconds: int = 3600
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
-    twilio_whatsapp_from: str = "whatsapp:+14155238886"
+    twilio_whatsapp_from: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
@@ -136,6 +139,33 @@ class Settings(BaseSettings):
             port=self.db_port,
             database=self.db_name.strip(),
         ).render_as_string(hide_password=False)
+
+    def get_telegram_allow_from(self) -> set[str]:
+        """Return normalized allowlist IDs for Telegram DM access control.
+
+        Accepts comma-separated values like:
+        - 123456789
+        - tg_123456789
+        - telegram:123456789
+        """
+        raw = (self.telegram_allow_from or "").strip()
+        if not raw:
+            return set()
+
+        allow: set[str] = set()
+        for part in raw.split(","):
+            item = part.strip().lower()
+            if not item:
+                continue
+            if item.startswith("telegram:"):
+                item = item[len("telegram:") :]
+            if item.startswith("tg:"):
+                item = item[len("tg:") :]
+            if item.startswith("tg_"):
+                allow.add(item)
+            else:
+                allow.add(f"tg_{item}")
+        return allow
 
 
 @lru_cache
