@@ -37,6 +37,7 @@ def init_db() -> None:
     import app.models.session  # noqa: F401
     import app.models.audit_log  # noqa: F401
     import app.models.user  # noqa: F401
+    import app.models.user_mpin  # noqa: F401
     import app.models.user_profile  # noqa: F401
     import app.models.financial_plan  # noqa: F401
     import app.models.recurring_rule  # noqa: F401

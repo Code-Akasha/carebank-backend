@@ -46,14 +46,17 @@ class Settings(BaseSettings):
     # Payments below this limit can be approved with a single "yes" in chat
     auto_approve_limit: float = 10000.0
 
-    # Telegram and Twilio bot integration
+    # Telegram bot integration
     telegram_bot_token: str = ""
+    telegram_webhook_secret: str = ""
     telegram_dm_policy: str = "pairing"
     telegram_allow_from: str = ""
     telegram_pairing_ttl_seconds: int = 3600
-    twilio_account_sid: str = ""
-    twilio_auth_token: str = ""
-    twilio_whatsapp_from: str = ""
+
+    # MPIN verification controls
+    mpin_session_ttl_seconds: int = 900
+    mpin_max_attempts: int = 3
+    mpin_lockout_seconds: int = 300
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

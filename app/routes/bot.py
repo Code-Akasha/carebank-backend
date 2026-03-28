@@ -7,7 +7,6 @@ coordinator graph used by the web chat interface.
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
@@ -15,22 +14,25 @@ from sqlalchemy.orm import Session as DBSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_admin
 from app.models.user import User
 from app.schemas.bot import (
     TelegramLinkRequest,
     TelegramLinkResponse,
     TelegramPairApproveRequest,
     TelegramPairApproveResponse,
+    TelegramSpendingAlertRequest,
+    TelegramSpendingAlertResponse,
     TelegramUnlinkResponse,
 )
 from app.services.bot_gateway import TelegramGatewayService
+from app.services.telegram_alerts import TelegramAlertService
 from app.services.telegram_bot import TelegramBot
-from app.services.whatsapp_bot import WhatsAppBot
 
-logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/bot", tags=["bot"])
 telegram_gateway = TelegramGatewayService()
+telegram_alert_service = TelegramAlertService()
+_TELEGRAM_SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 
 
 def _get_bot() -> TelegramBot:
@@ -40,44 +42,15 @@ def _get_bot() -> TelegramBot:
     return TelegramBot(settings.telegram_bot_token)
 
 
-def _get_whatsapp_bot() -> WhatsAppBot:
+def _verify_telegram_webhook_secret(request: Request) -> None:
     settings = get_settings()
-    if not settings.twilio_account_sid or not settings.twilio_auth_token:
-        raise HTTPException(status_code=503, detail="WhatsApp bot not configured")
-    return WhatsAppBot(
-        account_sid=settings.twilio_account_sid,
-        auth_token=settings.twilio_auth_token,
-        from_number=settings.twilio_whatsapp_from,
-    )
+    expected_secret = settings.telegram_webhook_secret.strip()
+    if not expected_secret:
+        return
 
-
-# ---------------------------------------------------------------------------
-# User lookup / session helpers
-# ---------------------------------------------------------------------------
-
-
-def _resolve_carebank_user(telegram_user_id: str, *, db: DBSession) -> Any:
-    """Look up CareBank user by telegram_user_id stored in metadata.
-
-    Falls back to a demo user (user_001) so the bot is always functional
-    during hackathon — replace with full OAuth flow in production.
-    """
-    from app.models.user import User
-
-    # Try to find user where telegram_user_id is stored in a metadata JSON field
-    user = db.query(User).filter(User.telegram_user_id == telegram_user_id).first()
-    if user:
-        return user
-
-    return None
-
-
-def _resolve_whatsapp_user(whatsapp_user_id: str, *, db: DBSession) -> Any:
-    # Temporary demo fallback until dedicated WhatsApp identity linking is introduced.
-    user = db.query(User).filter(User.telegram_user_id == whatsapp_user_id).first()
-    if user:
-        return user
-    return db.query(User).order_by(User.id).first()
+    provided_secret = request.headers.get(_TELEGRAM_SECRET_HEADER, "").strip()
+    if provided_secret != expected_secret:
+        raise HTTPException(status_code=403, detail="Invalid Telegram webhook secret")
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +80,7 @@ async def telegram_webhook(
     bot: TelegramBot = Depends(_get_bot),
 ) -> dict[str, str]:
     """Receive a Telegram update and queue it for processing."""
+    _verify_telegram_webhook_secret(request)
     try:
         update: dict[str, Any] = await request.json()
     except Exception:
@@ -116,129 +90,31 @@ async def telegram_webhook(
     return {"status": "queued"}
 
 
-async def _process_whatsapp_update(
-    form_data: dict[str, Any],
-    bot: WhatsAppBot,
-    db: DBSession,
-) -> None:
-    """Handle a single WhatsApp update: classify intent, run coordinator, reply."""
-    message = bot.extract_message(form_data)
-    if not message:
-        return
-
-    to_number = bot.get_user_phone(message)
-    if not to_number:
-        return
-
-    text = bot.get_text(message)
-    if not text:
-        await bot.send_message(
-            to_number, "Please type a message to chat with CareBank."
-        )
-        return
-
-    whatsapp_user_id = bot.get_whatsapp_user_id(message)
-
-    # Resolve CareBank user
-    current_user = None
-    if whatsapp_user_id:
-        current_user = _resolve_whatsapp_user(whatsapp_user_id, db=db)
-
-    # Fallback identical to resolve algorithm if it returned None
-    if not current_user:
-        current_user = _resolve_whatsapp_user("fallback", db=db)
-
-    # Call the coordinator graph
-    try:
-        from app.agents.coordinator import (
-            coordinator_graph,
-            get_conversation_history,
-            get_conversation_state,
-            set_conversation_state,
-            clear_conversation_state,
-        )
-
-        history = get_conversation_history(whatsapp_user_id)
-        conversation_state = get_conversation_state(whatsapp_user_id)
-
-        result = coordinator_graph.invoke(
-            {
-                "user_id": whatsapp_user_id,
-                "message": text,
-                "audit_log": [],
-                "conversation_history": history,
-                "conversation_state": conversation_state,
-                "db": db,
-                "current_user": current_user,
-            }
-        )
-
-        if result.get("pending_intent_ignored"):
-            clear_conversation_state(whatsapp_user_id)
-            conversation_state = {}
-
-        response_metadata = result.get("response_metadata") or {}
-        if isinstance(response_metadata, dict):
-            if response_metadata.get("clear_pending"):
-                clear_conversation_state(whatsapp_user_id)
-            else:
-                pending_state = response_metadata.get("pending_state")
-                if isinstance(pending_state, dict):
-                    next_state = {
-                        **conversation_state,
-                        **pending_state,
-                    }
-                    set_conversation_state(whatsapp_user_id, next_state)
-
-        reply_text = (
-            result.get("agent_response") or "I'm sorry, I didn't understand that."
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.error(
-            "Coordinator error for whatsapp user %s: %s", whatsapp_user_id, exc
-        )
-        reply_text = "⚠️ I ran into a problem processing your request. Please try again."
-
-    await bot.send_message(to_number, reply_text)
-
-
-@router.post("/whatsapp/webhook")
-async def whatsapp_webhook(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    db: DBSession = Depends(get_db),
-    bot: WhatsAppBot = Depends(_get_whatsapp_bot),
-) -> dict[str, str]:
-    """Receive a WhatsApp update and queue it for processing."""
-    try:
-        if request.headers.get("Content-Type", "").startswith("application/json"):
-            form_data: dict[str, Any] = await request.json()
-        else:
-            form_payload = await request.form()
-            form_data = dict(form_payload)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid request body")
-
-    background_tasks.add_task(_process_whatsapp_update, form_data, bot, db)
-    return {"status": "queued"}
-
-
 # ---------------------------------------------------------------------------
-# Management helpers (admin only — no auth for hackathon)
+# Management helpers (admin only)
 # ---------------------------------------------------------------------------
 
 
 @router.post("/telegram/set-webhook")
-async def set_webhook(bot: TelegramBot = Depends(_get_bot)) -> dict[str, Any]:
+async def set_webhook(
+    bot: TelegramBot = Depends(_get_bot),
+    _admin: User = Depends(require_admin),
+) -> dict[str, Any]:
     """Register this server's webhook URL with Telegram."""
     settings = get_settings()
     webhook_url = f"{settings.backend_public_url.rstrip('/')}/bot/telegram/webhook"
-    result = await bot.set_webhook(webhook_url)
+    result = await bot.set_webhook(
+        webhook_url,
+        secret_token=settings.telegram_webhook_secret.strip() or None,
+    )
     return {"webhook_url": webhook_url, "telegram_response": result}
 
 
 @router.delete("/telegram/webhook")
-async def delete_webhook(bot: TelegramBot = Depends(_get_bot)) -> dict[str, Any]:
+async def delete_webhook(
+    bot: TelegramBot = Depends(_get_bot),
+    _admin: User = Depends(require_admin),
+) -> dict[str, Any]:
     """Unregister the Telegram webhook."""
     result = await bot.delete_webhook()
     return result
@@ -288,4 +164,28 @@ async def approve_telegram_pairing(
         user_id=current_user.user_id,
         telegram_user_id=telegram_user_id,
         paired=True,
+    )
+
+
+@router.post("/telegram/alerts/spending", response_model=TelegramSpendingAlertResponse)
+async def trigger_spending_alert(
+    body: TelegramSpendingAlertRequest,
+    db: DBSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    bot: TelegramBot = Depends(_get_bot),
+) -> TelegramSpendingAlertResponse:
+    sent, reason = await telegram_alert_service.send_spending_usage_alert(
+        db=db,
+        bot=bot,
+        user=current_user,
+        amount=body.amount,
+        threshold=body.threshold,
+        category=body.category,
+    )
+
+    return TelegramSpendingAlertResponse(
+        user_id=current_user.user_id,
+        telegram_user_id=current_user.telegram_user_id or "",
+        alert_sent=sent,
+        reason=reason,
     )

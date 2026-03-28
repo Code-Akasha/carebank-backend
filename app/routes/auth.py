@@ -15,6 +15,7 @@ from app.core.security import (
 )
 from app.models.user import User
 from app.services.banking_client import get_banking_client
+from app.services.mpin_service import set_mpin
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -44,6 +45,16 @@ class UserResponse(BaseModel):
     full_name: str
     role: str
     is_active: bool
+
+
+class SetMPINRequest(BaseModel):
+    mpin: str
+    confirm_mpin: str
+
+
+class SetMPINResponse(BaseModel):
+    user_id: str
+    mpin_set: bool = True
 
 
 def _generate_user_id(db: Session) -> str:
@@ -132,3 +143,19 @@ async def get_me(current_user: User = Depends(get_current_user)):
         role=current_user.role,
         is_active=current_user.is_active,
     )
+
+
+@router.post("/mpin/set", response_model=SetMPINResponse)
+async def set_user_mpin(
+    body: SetMPINRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if body.mpin != body.confirm_mpin:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MPIN confirmation does not match",
+        )
+
+    set_mpin(db=db, current_user=current_user, mpin=body.mpin)
+    return SetMPINResponse(user_id=current_user.user_id)

@@ -26,3 +26,16 @@ class TelegramPairApproveResponse(BaseModel):
     user_id: str
     telegram_user_id: str
     paired: bool = True
+
+
+class TelegramSpendingAlertRequest(BaseModel):
+    amount: float = Field(..., gt=0)
+    threshold: float = Field(..., gt=0)
+    category: str | None = None
+
+
+class TelegramSpendingAlertResponse(BaseModel):
+    user_id: str
+    telegram_user_id: str
+    alert_sent: bool
+    reason: str
