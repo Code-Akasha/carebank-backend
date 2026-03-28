@@ -17,10 +17,12 @@ class TelegramPollingService:
         *,
         bot_token: str,
         forward_url: str,
+        webhook_secret: str = "",
         request_timeout_seconds: int = 35,
     ) -> None:
         self.bot_token = bot_token
         self.forward_url = forward_url
+        self.webhook_secret = webhook_secret
         self.request_timeout_seconds = request_timeout_seconds
         self._base = f"https://api.telegram.org/bot{bot_token}"
         self._offset: int | None = None
@@ -62,7 +64,17 @@ class TelegramPollingService:
                             self._offset = update_id + 1
 
                         try:
-                            await client.post(self.forward_url, json=update, timeout=20)
+                            headers = {}
+                            if self.webhook_secret:
+                                headers["X-Telegram-Bot-Api-Secret-Token"] = (
+                                    self.webhook_secret
+                                )
+                            await client.post(
+                                self.forward_url,
+                                json=update,
+                                headers=headers,
+                                timeout=20,
+                            )
                         except Exception as exc:  # noqa: BLE001
                             logger.error("Forward to local webhook failed: %s", exc)
 

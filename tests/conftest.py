@@ -2,14 +2,20 @@
 Shared test fixtures and configuration for CareBank backend tests.
 """
 
+import atexit
 import os
+from pathlib import Path
+from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
 
 # ── Environment setup for CI ──────────────────────────────────────────
-# Set test-safe defaults so tests don't require real services
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
+# Set test-safe defaults so tests don't require real services.
+# Use a per-run sqlite file to avoid WinError 32 when another process
+# keeps a handle to a previous test.db.
+_TEST_DB_PATH = Path(f"./test_{os.getpid()}_{uuid4().hex}.db")
+os.environ.setdefault("DATABASE_URL", f"sqlite:///{_TEST_DB_PATH.as_posix()}")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379")
 os.environ.setdefault("OPENAI_API_KEY", "test-key")
 os.environ.setdefault("GEMINI_API_KEY", "test-key")
@@ -26,11 +32,35 @@ def setup_test_db():
     if db_url.startswith("sqlite:///"):
         db_path = db_url.replace("sqlite:///", "", 1)
         if db_path and os.path.exists(db_path):
-            os.remove(db_path)
+            try:
+                os.remove(db_path)
+            except PermissionError:
+                # On Windows, another process may temporarily hold a stale file handle.
+                # Continue with the current file; init_db/create_all still works.
+                pass
 
-    from app.core.database import init_db
+    from app.core.database import engine, init_db
 
     init_db()
+    yield
+    engine.dispose()
+
+    if db_url.startswith("sqlite:///"):
+        db_path = db_url.replace("sqlite:///", "", 1)
+        if db_path and os.path.exists(db_path):
+            try:
+                os.remove(db_path)
+            except PermissionError:
+                pass
+
+
+@atexit.register
+def _cleanup_test_db_file() -> None:
+    try:
+        if _TEST_DB_PATH.exists():
+            _TEST_DB_PATH.unlink()
+    except Exception:
+        pass
 
 
 @pytest.fixture

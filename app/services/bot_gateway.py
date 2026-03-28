@@ -11,9 +11,31 @@ from sqlalchemy.orm import Session as DBSession
 
 from app.core.config import get_settings
 from app.models.user import User
+from app.services.mpin_service import has_active_mpin_session, verify_mpin
 from app.services.telegram_bot import TelegramBot
 
 logger = logging.getLogger(__name__)
+
+_SENSITIVE_BALANCE_KEYWORDS = (
+    "balance",
+    "account balance",
+    "available balance",
+    "saldo",
+)
+_SENSITIVE_SCORE_KEYWORDS = (
+    "score",
+    "health score",
+    "financial health",
+)
+_SENSITIVE_MONEY_KEYWORDS = (
+    "transfer",
+    "pay",
+    "payment",
+    "rent",
+    "bill",
+    "upi",
+    "send money",
+)
 
 
 class TelegramPairingStore:
@@ -87,6 +109,112 @@ class TelegramGatewayService:
         self.pairing_store = pairing_store or TelegramPairingStore()
 
     @staticmethod
+    def _extract_mpin_submission(message_text: str) -> str | None:
+        text = str(message_text or "").strip()
+        if not text:
+            return None
+        lowered = text.lower()
+        if lowered.startswith("mpin "):
+            candidate = text[5:].strip()
+        elif lowered.startswith("/mpin "):
+            candidate = text[6:].strip()
+        else:
+            return None
+        if len(candidate) == 4 and candidate.isdigit():
+            return candidate
+        return ""
+
+    @staticmethod
+    def _is_sensitive_intent(message_text: str) -> bool:
+        lowered = str(message_text or "").strip().lower()
+        if not lowered:
+            return False
+        for keyword in (
+            *_SENSITIVE_BALANCE_KEYWORDS,
+            *_SENSITIVE_SCORE_KEYWORDS,
+            *_SENSITIVE_MONEY_KEYWORDS,
+        ):
+            if keyword in lowered:
+                return True
+        return False
+
+    async def _maybe_handle_mpin_submission(
+        self,
+        *,
+        db: DBSession,
+        bot: TelegramBot,
+        chat_id: int | str,
+        user_key: str,
+        current_user: User,
+        message_text: str,
+        conversation_state: dict[str, Any],
+    ) -> bool:
+        from app.agents.coordinator import set_conversation_state
+
+        submitted_mpin = self._extract_mpin_submission(message_text)
+        if submitted_mpin is None:
+            return False
+
+        pending_message = conversation_state.get("mpin_pending_message")
+        if not pending_message:
+            await bot.send_message(
+                chat_id,
+                "No pending sensitive request. Ask for balance, score, or a payment action first.",
+            )
+            return True
+
+        if submitted_mpin == "":
+            await bot.send_message(
+                chat_id,
+                "Invalid MPIN format. Use exactly 4 digits, for example: MPIN 1234",
+            )
+            return True
+
+        result = verify_mpin(db=db, current_user=current_user, mpin=submitted_mpin)
+        if not result.verified:
+            if result.lockout_until:
+                await bot.send_message(
+                    chat_id,
+                    (
+                        "MPIN temporarily locked due to repeated failures.\n"
+                        f"Try again after: {result.lockout_until.strftime('%Y-%m-%d %H:%M:%S UTC')}"
+                    ),
+                )
+                return True
+
+            await bot.send_message(
+                chat_id,
+                (f"Incorrect MPIN. Remaining attempts: {result.remaining_attempts}."),
+            )
+            return True
+
+        cleaned_state = {
+            key: value
+            for key, value in conversation_state.items()
+            if key not in {"mpin_required", "mpin_pending_message"}
+        }
+        set_conversation_state(user_key, cleaned_state)
+
+        expires_text = (
+            result.verified_until.strftime("%Y-%m-%d %H:%M:%S UTC")
+            if result.verified_until
+            else "soon"
+        )
+        await bot.send_message(
+            chat_id,
+            f"MPIN verified. Sensitive access enabled until {expires_text}.",
+        )
+        await self._run_coordinator(
+            bot=bot,
+            db=db,
+            chat_id=chat_id,
+            user_key=user_key,
+            message_text=str(pending_message),
+            current_user=current_user,
+        )
+        return True
+
+    @staticmethod
     def resolve_carebank_user(telegram_user_id: str, *, db: DBSession) -> User | None:
         return db.query(User).filter(User.telegram_user_id == telegram_user_id).first()
 
@@ -153,6 +281,43 @@ class TelegramGatewayService:
                 normalized_sender=normalized_sender,
             ):
                 return
+
+        from app.agents.coordinator import (
+            get_conversation_state,
+            set_conversation_state,
+        )
+
+        conversation_state = get_conversation_state(normalized_sender)
+        if await self._maybe_handle_mpin_submission(
+            db=db,
+            bot=bot,
+            chat_id=chat_id,
+            user_key=normalized_sender,
+            current_user=current_user,
+            message_text=text,
+            conversation_state=conversation_state,
+        ):
+            return
+
+        if self._is_sensitive_intent(text) and not has_active_mpin_session(
+            db=db,
+            user_id=current_user.user_id,
+        ):
+            next_state = {
+                **conversation_state,
+                "mpin_required": True,
+                "mpin_pending_message": text,
+            }
+            set_conversation_state(normalized_sender, next_state)
+            await bot.send_message(
+                chat_id,
+                (
+                    "This request needs MPIN verification.\n"
+                    "Reply with: <code>MPIN 1234</code>\n"
+                    "(Use your configured 4-digit MPIN.)"
+                ),
+            )
+            return
 
         await self._run_coordinator(
             bot=bot,

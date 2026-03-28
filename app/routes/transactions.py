@@ -81,8 +81,19 @@ async def list_transactions(
 
 
 @router.get("/{transaction_id}", response_model=TransactionResponse)
-async def get_transaction(transaction_id: int, db: Session = Depends(get_db)):
-    txn = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+async def get_transaction(
+    transaction_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Session = Depends(get_db),
+):
+    txn = (
+        db.query(Transaction)
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.user_id,
+        )
+        .first()
+    )
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return txn

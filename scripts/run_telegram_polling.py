@@ -25,8 +25,13 @@ async def _main() -> None:
     forward_url = _read_env(
         "TELEGRAM_POLL_FORWARD_URL", "http://127.0.0.1:8000/bot/telegram/webhook"
     )
+    webhook_secret = _read_env("TELEGRAM_WEBHOOK_SECRET")
 
-    service = TelegramPollingService(bot_token=token, forward_url=forward_url)
+    service = TelegramPollingService(
+        bot_token=token,
+        forward_url=forward_url,
+        webhook_secret=webhook_secret,
+    )
     await service.run_forever()
 
 

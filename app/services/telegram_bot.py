@@ -29,11 +29,20 @@ class TelegramBot:
     # Webhook management
     # ------------------------------------------------------------------
 
-    async def set_webhook(self, url: str) -> dict[str, Any]:
+    async def set_webhook(
+        self, url: str, *, secret_token: str | None = None
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "url": url,
+            "allowed_updates": ["message", "callback_query"],
+        }
+        if secret_token:
+            payload["secret_token"] = secret_token
+
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(
                 f"{self._base}/setWebhook",
-                json={"url": url, "allowed_updates": ["message", "callback_query"]},
+                json=payload,
             )
             return resp.json()
 

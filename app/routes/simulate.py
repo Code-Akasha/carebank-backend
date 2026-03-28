@@ -1,6 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services.data import generate_mock_transactions
 from app.services.forecast import forecast_balance
 from app.core.finance import forecast_impact
@@ -10,7 +14,8 @@ router = APIRouter(prefix="/api/simulate", tags=["simulate"])
 
 
 class SimulateRequest(BaseModel):
-    user_id: str
+    # user_id is intentionally omitted from the request body to avoid
+    # client-controlled user impersonation. The authenticated user is used instead.
     expense_amount: float
     category: str = "general"
     description: str = ""
@@ -25,18 +30,21 @@ class SimulateResponse(BaseModel):
 
 
 @router.post("", response_model=SimulateResponse)
-async def simulate(request: SimulateRequest):
+async def simulate(
+    request: SimulateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
     client = get_banking_client()
     try:
-        transactions = await client.get_transactions(request.user_id)
-        balance = await client.get_balance(request.user_id)
+        transactions = await client.get_transactions(current_user.user_id)
+        balance = await client.get_balance(current_user.user_id)
     except BankingClientError as exc:
         raise HTTPException(
             status_code=503, detail=f"Banking API unavailable: {exc}"
         ) from exc
 
     if not transactions:
-        transactions = generate_mock_transactions(request.user_id)
+        transactions = generate_mock_transactions(current_user.user_id)
 
     current = forecast_balance(transactions)
     base_balance = balance.get("current_balance", current.get("predicted_balance", 0.0))

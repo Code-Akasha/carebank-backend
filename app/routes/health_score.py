@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_admin
 from app.models.user import User
 from app.services.health_score import compute_health_score
 from app.services.banking_client import get_banking_client, BankingClientError
@@ -56,8 +56,11 @@ async def get_my_health_score(
 
 
 @router.get("/{user_id}", response_model=HealthScoreResponse)
-async def get_health_score(user_id: str):
-    """Legacy endpoint for admin use — accepts user_id in path."""
+async def get_health_score(
+    user_id: str,
+    _admin: User = Depends(require_admin),
+):
+    """Legacy endpoint for admin use — now restricted to admins."""
     client = get_banking_client()
     try:
         transactions = await client.get_transactions(user_id)
