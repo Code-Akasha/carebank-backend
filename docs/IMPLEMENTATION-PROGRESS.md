@@ -54,10 +54,12 @@ Build a policy-governed action platform with hybrid autonomy (first approval, th
 - [x] Publish India-first policy + plan catalogs in MockBank and enforce action/rail caps at transaction trigger.
 
 ### Phase 6 - Telegram Gateway (Week 8-11)
-- [ ] Build Telegram adapter with policy-gated command execution.
-- [ ] Add secure account linking.
+- [x] Build Telegram adapter with policy-gated command execution.
+- [x] Add secure account linking.
 - [ ] Add outbound reminders/approvals/distress templates.
-- [ ] Add anti-abuse controls and complete audit logs.
+- [x] Remove WhatsApp runtime integration and Twilio dependency path.
+- [x] Add MPIN secondary verification gate for sensitive Telegram intents.
+- [x] Add anti-abuse controls baseline (MPIN attempt limits + lockout).
 
 ### Phase 7 - Scale + Reliability (Week 10-14)
 - [ ] Add workers for recurring jobs and heavy tasks.
