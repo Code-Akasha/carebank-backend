@@ -13,6 +13,10 @@ class TransactionCreate(TransactionBase):
     user_id: str
 
 
+class TransactionTriggerCreate(TransactionBase):
+    pass
+
+
 class TransactionResponse(TransactionBase):
     id: int
     user_id: str
