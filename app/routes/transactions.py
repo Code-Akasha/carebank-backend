@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.transaction import Transaction
 from app.models.user import User
-from app.schemas.models import TransactionCreate, TransactionResponse
+from app.schemas.models import TransactionResponse, TransactionTriggerCreate
 from app.services.banking_client import get_banking_client, BankingClientError
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
@@ -101,7 +101,7 @@ async def get_transaction(
 
 @router.post("/trigger", response_model=dict)
 async def trigger_transaction_proxy(
-    payload: TransactionCreate,
+    payload: TransactionTriggerCreate,
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     # Ensure user can only trigger for themselves

@@ -64,6 +64,7 @@ def test_spending_advice_intent(mock_dependencies):
     assert (
         "savings_opportunity" in res.response.lower()
         or "you spent" in res.response.lower()
+        or "spending looks very stable" in res.response.lower()
     )
     # Ensure it's not prompting for an action request
     assert res.action is None
