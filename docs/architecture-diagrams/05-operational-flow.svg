@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="950" viewBox="0 0 1600 950">
+<defs>
+<marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+<path d="M0,0 L12,6 L0,12 z" fill="#334155" />
+</marker>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#94A3B8" flood-opacity="0.22"/>
+</filter>
+</defs>
+<rect x="0" y="0" width="1600" height="950" fill="white"/>
+<text x="800.0" y="42" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#0F172A">CareBank Operational Flow</text>
+<rect x="60" y="90" width="1480" height="800" rx="22" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="78" y="118" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Transaction-to-Nudge and Action Flow</text>
+<text x="78" y="140" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">Illustrates how data, decisions, approvals, and bank execution move across the platform</text>
+<rect x="110" y="210" width="220" height="120" rx="18" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="220.0" y="238" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">1. User or Bank Event</text>
+<text x="126" y="262" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">User opens app or a new</text>
+<text x="126" y="280" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">transaction lands in MockBank</text>
+<rect x="370" y="210" width="220" height="120" rx="18" fill="#DCFCE7" stroke="#22C55E" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="480.0" y="238" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">2. Backend Intake</text>
+<text x="386" y="262" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">JWT validated</text>
+<text x="386" y="280" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">user_id scoped</text>
+<text x="386" y="298" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">request/event routed</text>
+<rect x="630" y="210" width="220" height="120" rx="18" fill="#DCFCE7" stroke="#22C55E" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="740.0" y="238" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">3. Coordinator Planning</text>
+<text x="646" y="262" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Intent classified</text>
+<text x="646" y="280" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">tasks decomposed</text>
+<text x="646" y="298" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">agent path selected</text>
+<rect x="890" y="210" width="220" height="120" rx="18" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="1000.0" y="238" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">4. Data Retrieval</text>
+<text x="906" y="262" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Backend fetches balances,</text>
+<text x="906" y="280" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">transactions, products, policies</text>
+<rect x="1150" y="210" width="220" height="120" rx="18" fill="#FCE7F3" stroke="#EC4899" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="1260.0" y="238" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">5. Analysis Layer</text>
+<text x="1166" y="262" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Forecasting / anomaly checks</text>
+<text x="1166" y="280" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">deterministic financial math</text>
+<rect x="1150" y="520" width="220" height="120" rx="18" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="1260.0" y="548" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">6. Decision Output</text>
+<text x="1166" y="572" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Nudge, warning, plan,</text>
+<text x="1166" y="590" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">or savings proposal created</text>
+<rect x="890" y="520" width="220" height="120" rx="18" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="1000.0" y="548" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">7. Approval Gate</text>
+<text x="906" y="572" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">If action required,</text>
+<text x="906" y="590" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">ask user or apply policy</text>
+<rect x="630" y="520" width="220" height="120" rx="18" fill="#DCFCE7" stroke="#22C55E" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="740.0" y="548" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">8. Action Execution</text>
+<text x="646" y="572" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Action engine triggers</text>
+<text x="646" y="590" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">MockBank transfer / schedule</text>
+<rect x="370" y="520" width="220" height="120" rx="18" fill="#FCE7F3" stroke="#EC4899" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="480.0" y="548" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">9. Webhook Reconcile</text>
+<text x="386" y="572" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">MockBank posts signed</text>
+<text x="386" y="590" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">status updates to backend</text>
+<rect x="110" y="520" width="220" height="120" rx="18" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="220.0" y="548" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">10. User Update</text>
+<text x="126" y="572" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">UI/API/SSE refreshed</text>
+<text x="126" y="590" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">audit trail persisted</text>
+<line x1="330" y1="270.0" x2="370" y2="270.0" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="590" y1="270.0" x2="630" y2="270.0" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="850" y1="270.0" x2="890" y2="270.0" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="1110" y1="270.0" x2="1150" y2="270.0" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="1260.0" y1="330" x2="1260.0" y2="520" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1190.0" y="401.0" width="140" height="22" rx="10" fill="white"/>
+<text x="1260.0" y="417.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Decision continues</text>
+<line x1="1150" y1="580.0" x2="1110" y2="580.0" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="890" y1="580.0" x2="850" y2="580.0" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="630" y1="580.0" x2="590" y2="580.0" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="370" y1="580.0" x2="330" y2="580.0" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="1210" y="470" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="14" fill="#475569">If no action is needed, step 6 returns directly to the user with advice only.</text>
+<text x="1210" y="492" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="14" fill="#475569">If approval is required, action engine waits for user confirmation before execution.</text>
+</svg>
