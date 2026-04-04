@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1450" height="900" viewBox="0 0 1450 900">
+<defs>
+<marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+<path d="M0,0 L12,6 L0,12 z" fill="#334155" />
+</marker>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#94A3B8" flood-opacity="0.22"/>
+</filter>
+</defs>
+<rect x="0" y="0" width="1450" height="900" fill="white"/>
+<text x="725.0" y="42" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#0F172A">MockBank Architecture</text>
+<rect x="60" y="90" width="1330" height="740" rx="22" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="78" y="118" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Banking Simulation Layer</text>
+<text x="78" y="140" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">Policy source-of-truth, transaction execution, and lifecycle webhooks</text>
+<rect x="100" y="260" width="220" height="160" rx="18" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="210.0" y="288" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">CareBank Backend</text>
+<text x="116" y="312" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Trusted service client</text>
+<text x="116" y="330" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Short-lived service JWT</text>
+<text x="116" y="348" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Action execution + fetches</text>
+<rect x="390" y="150" width="300" height="220" rx="18" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="540.0" y="178" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">MockBank API</text>
+<text x="406" y="202" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Accounts / balances / txns</text>
+<text x="406" y="220" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Products and policy catalog</text>
+<text x="406" y="238" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Beneficiaries and schedules</text>
+<text x="406" y="256" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Transfer trigger endpoints</text>
+<rect x="390" y="460" width="300" height="220" rx="18" fill="#DCFCE7" stroke="#22C55E" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="540.0" y="488" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">MockBank Policy Engine</text>
+<text x="406" y="512" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Rail limits and action caps</text>
+<text x="406" y="530" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Beneficiary verification</text>
+<text x="406" y="548" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Cooldown and funds checks</text>
+<text x="406" y="566" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Idempotency enforcement</text>
+<rect x="760" y="150" width="280" height="220" rx="18" fill="#FCE7F3" stroke="#EC4899" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="900.0" y="178" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Transaction Lifecycle</text>
+<text x="776" y="202" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">queued -> running -> success</text>
+<text x="776" y="220" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">failure / reversal / rollback</text>
+<text x="776" y="238" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Replay-safe ids</text>
+<text x="776" y="256" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Settlement metadata</text>
+<rect x="760" y="460" width="280" height="220" rx="18" fill="#FCE7F3" stroke="#EC4899" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="900.0" y="488" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Webhook Delivery</text>
+<text x="776" y="512" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">HMAC signed callbacks</text>
+<text x="776" y="530" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Retry with backoff</text>
+<text x="776" y="548" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Dead-letter replay path</text>
+<text x="776" y="566" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Backend reconciliation</text>
+<rect x="1110" y="290" width="220" height="220" rx="18" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="1220.0" y="318" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">MockBank Storage</text>
+<text x="1126" y="342" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">In-memory today / Postgres path</text>
+<text x="1126" y="360" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Schedules</text>
+<text x="1126" y="378" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Beneficiaries</text>
+<text x="1126" y="396" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Dead-letter records</text>
+<line x1="320" y1="340" x2="390" y2="260" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="285.0" y="276.0" width="140" height="22" rx="10" fill="white"/>
+<text x="355.0" y="292.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Fetch / execute</text>
+<line x1="540" y1="370" x2="540" y2="460" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="470.0" y="391.0" width="140" height="22" rx="10" fill="white"/>
+<text x="540.0" y="407.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Policy validation</text>
+<line x1="690" y1="260" x2="760" y2="260" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="655.0" y="236.0" width="140" height="22" rx="10" fill="white"/>
+<text x="725.0" y="252.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Approved transfer</text>
+<line x1="690" y1="570" x2="760" y2="570" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="655.0" y="546.0" width="140" height="22" rx="10" fill="white"/>
+<text x="725.0" y="562.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Emit webhook</text>
+<line x1="1040" y1="260" x2="1110" y2="340" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1005.0" y="276.0" width="140" height="22" rx="10" fill="white"/>
+<text x="1075.0" y="292.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Persist artifacts</text>
+<line x1="1040" y1="570" x2="1110" y2="450" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1005.0" y="486.0" width="140" height="22" rx="10" fill="white"/>
+<text x="1075.0" y="502.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Dead-letter / retries</text>
+<line x1="760" y1="610" x2="320" y2="380" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)" stroke-dasharray="8 6"/>
+<rect x="470.0" y="471.0" width="140" height="22" rx="10" fill="white"/>
+<text x="540.0" y="487.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Signed webhook callback</text>
+</svg>

@@ -19,3 +19,15 @@ htmlcov/
 # Logs
 *.txt
 
+# Local agent/editor artifacts
+.claw/
+.clawd-todos.json
+.codex-word-*.ps1
+.vscode/
+
+# Temporary Office artifacts
+~$*.doc
+~$*.docx
+_word_test.doc
+_word_test.docx
+

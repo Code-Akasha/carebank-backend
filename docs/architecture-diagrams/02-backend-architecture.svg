@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="980" viewBox="0 0 1500 980">
+<defs>
+<marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+<path d="M0,0 L12,6 L0,12 z" fill="#334155" />
+</marker>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#94A3B8" flood-opacity="0.22"/>
+</filter>
+</defs>
+<rect x="0" y="0" width="1500" height="980" fill="white"/>
+<text x="750.0" y="42" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#0F172A">CareBank Backend Architecture</text>
+<rect x="60" y="90" width="1380" height="840" rx="22" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="78" y="118" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Backend Layers</text>
+<text x="78" y="140" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">FastAPI routes, orchestration, services, safety, and persistence</text>
+<rect x="110" y="150" width="260" height="620" rx="18" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="240.0" y="178" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">HTTP / API Layer</text>
+<text x="126" y="202" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Routes for auth, chat, actions,</text>
+<text x="126" y="220" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">planning, products, balances,</text>
+<text x="126" y="238" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">transactions, notifications,</text>
+<text x="126" y="256" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">beneficiaries, schedules,</text>
+<text x="126" y="274" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">admin, bot, events</text>
+<rect x="440" y="150" width="260" height="180" rx="18" fill="#DCFCE7" stroke="#22C55E" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="570.0" y="178" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Coordinator Agent</text>
+<text x="456" y="202" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Intent classification</text>
+<text x="456" y="220" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Task planning</text>
+<text x="456" y="238" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">LangGraph state</text>
+<text x="456" y="256" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Response synthesis</text>
+<rect x="440" y="370" width="260" height="260" rx="18" fill="#DCFCE7" stroke="#22C55E" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="570.0" y="398" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Specialist Agents</text>
+<text x="456" y="422" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Intelligence agent</text>
+<text x="456" y="440" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Opportunity agent</text>
+<text x="456" y="458" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Communication agent</text>
+<text x="456" y="476" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Auto-savings agent</text>
+<text x="456" y="494" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Tool registry integration</text>
+<rect x="770" y="120" width="280" height="220" rx="18" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="910.0" y="148" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Deterministic and Safety Core</text>
+<text x="786" y="172" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Deterministic finance math</text>
+<text x="786" y="190" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Health score and affordability</text>
+<text x="786" y="208" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Compliance guard</text>
+<text x="786" y="226" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Redaction and disclosures</text>
+<rect x="770" y="390" width="280" height="280" rx="18" fill="#FCE7F3" stroke="#EC4899" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="910.0" y="418" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Business Services</text>
+<text x="786" y="442" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Action request / executor</text>
+<text x="786" y="460" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Action policy + idempotency</text>
+<text x="786" y="478" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Banking client</text>
+<text x="786" y="496" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Planning and reminders</text>
+<text x="786" y="514" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Forecast, anomaly, NLG,</text>
+<text x="786" y="532" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">event dispatcher, MPIN</text>
+<rect x="1120" y="160" width="250" height="180" rx="18" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="1245.0" y="188" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">External Integrations</text>
+<text x="1136" y="212" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">MockBank API</text>
+<text x="1136" y="230" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Telegram webhook</text>
+<text x="1136" y="248" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">LLM providers</text>
+<rect x="1120" y="420" width="250" height="180" rx="18" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2.5" filter="url(#shadow)"/>
+<text x="1245.0" y="448" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Persistence and Events</text>
+<text x="1136" y="472" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Postgres models</text>
+<text x="1136" y="490" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Redis Pub/Sub + SSE</text>
+<text x="1136" y="508" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Audit trail</text>
+<text x="1136" y="526" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="13" fill="#1F2937">Worker path planned</text>
+<line x1="370" y1="250" x2="440" y2="240" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="335.0" y="221.0" width="140" height="22" rx="10" fill="white"/>
+<text x="405.0" y="237.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Validated request</text>
+<line x1="570" y1="330" x2="570" y2="370" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="500.0" y="326.0" width="140" height="22" rx="10" fill="white"/>
+<text x="570.0" y="342.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Route tasks</text>
+<line x1="700" y1="240" x2="770" y2="220" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="665.0" y="206.0" width="140" height="22" rx="10" fill="white"/>
+<text x="735.0" y="222.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Exact calculations</text>
+<line x1="700" y1="500" x2="770" y2="500" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="665.0" y="476.0" width="140" height="22" rx="10" fill="white"/>
+<text x="735.0" y="492.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Service calls</text>
+<line x1="910" y1="340" x2="910" y2="390" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="840.0" y="341.0" width="140" height="22" rx="10" fill="white"/>
+<text x="910.0" y="357.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Policy and math</text>
+<line x1="1050" y1="240" x2="1120" y2="240" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1015.0" y="216.0" width="140" height="22" rx="10" fill="white"/>
+<text x="1085.0" y="232.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Outbound APIs</text>
+<line x1="1050" y1="520" x2="1120" y2="510" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1015.0" y="491.0" width="140" height="22" rx="10" fill="white"/>
+<text x="1085.0" y="507.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Read / write state</text>
+<line x1="1245" y1="340" x2="1245" y2="420" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)" stroke-dasharray="8 6"/>
+<rect x="1175.0" y="356.0" width="140" height="22" rx="10" fill="white"/>
+<text x="1245.0" y="372.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Webhooks + events</text>
+<line x1="1120" y1="690" x2="370" y2="690" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="675.0" y="666.0" width="140" height="22" rx="10" fill="white"/>
+<text x="745.0" y="682.0" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Responses / event streams</text>
+</svg>
