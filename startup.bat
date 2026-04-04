@@ -5,6 +5,8 @@ REM --- Directories ---
 set "BACKEND_DIR=%~dp0"
 set "MOCKBANK_DIR=%~dp0..\carebank-mockbank"
 set "FRONTEND_DIR=D:\WebstormProjects\carebank-frontend"
+set "RUN_MOCKBANK=1"
+set "RUN_FRONTEND=1"
 
 if not exist "%BACKEND_DIR%\.env" (
     echo [WARN] Backend .env not found at %BACKEND_DIR%\.env
@@ -38,16 +40,16 @@ set "MOCK_BANK_URL=%BANKING_API_URL%"
 
 if not exist "%MOCKBANK_DIR%\main.py" (
     echo [WARN] Could not find carebank-mockbank at %MOCKBANK_DIR%
-    set /p MOCKBANK_DIR="Enter absolute path to carebank-mockbank: "
+    set "RUN_MOCKBANK=0"
 )
 
 if not exist "%FRONTEND_DIR%\package.json" (
     echo [WARN] Could not find carebank-frontend at %FRONTEND_DIR%
-    set /p FRONTEND_DIR="Enter absolute path to carebank-frontend: "
+    set "RUN_FRONTEND=0"
 )
 
 REM --- Install python-dotenv in mockbank venv if missing ---
-if exist "%MOCKBANK_DIR%\.venv\Scripts\pip.exe" (
+if "%RUN_MOCKBANK%"=="1" if exist "%MOCKBANK_DIR%\.venv\Scripts\pip.exe" (
     "%MOCKBANK_DIR%\.venv\Scripts\pip.exe" install -q python-dotenv
 )
 
@@ -65,11 +67,15 @@ if exist ".venv\Scripts\activate" (
 )
 
 REM --- Start MockBank ---
-echo Starting MockBank API on port 8001...
-if exist "%MOCKBANK_DIR%\.venv\Scripts\activate" (
-    start "MockBank API" cmd /k "cd /d %MOCKBANK_DIR% && call .venv\Scripts\activate && uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+if "%RUN_MOCKBANK%"=="1" (
+    echo Starting MockBank API on port 8001...
+    if exist "%MOCKBANK_DIR%\.venv\Scripts\activate" (
+        start "MockBank API" cmd /k "cd /d %MOCKBANK_DIR% && call .venv\Scripts\activate && uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+    ) else (
+        start "MockBank API" cmd /k "cd /d %MOCKBANK_DIR% && uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+    )
 ) else (
-    start "MockBank API" cmd /k "cd /d %MOCKBANK_DIR% && uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+    echo [WARN] Skipping MockBank startup.
 )
 
 REM --- Start Backend ---
@@ -98,27 +104,18 @@ if exist ".venv\Scripts\activate" (
 python scripts\register_demo_users.py
 
 REM --- Start Frontend (after backend is confirmed ready) ---
-echo Starting CareBank Frontend on port 5173...
-if exist "%FRONTEND_DIR%\node_modules" (
-    start "CareBank Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm run dev -- --host 0.0.0.0 --port 5173"
+if "%RUN_FRONTEND%"=="1" (
+    echo Starting CareBank Frontend on port 5173...
+    if exist "%FRONTEND_DIR%\node_modules" (
+        start "CareBank Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm run dev -- --host 0.0.0.0 --port 5173"
+    ) else (
+        start "CareBank Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    )
 ) else (
-    start "CareBank Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    echo [WARN] Skipping Frontend startup.
 )
 
-echo Launching CareBank Dashboard CLI...
-cd /d "%BACKEND_DIR%"
-if exist ".venv\Scripts\activate" (
-    call .venv\Scripts\activate
-)
-set MOCKBANK_JWT_SECRET=%MOCKBANK_JWT_SECRET%
-set DB_HOST=%DB_HOST%
-set DB_PORT=%DB_PORT%
-set DB_USER=%DB_USER%
-set DB_PASSWORD=%DB_PASSWORD%
-set DB_NAME=%DB_NAME%
-set REDIS_URL=%REDIS_URL%
-set MOCK_BANK_URL=%MOCK_BANK_URL%
-python scripts\dashboard_cli.py
+echo Startup completed without interactive CLI prompts.
 
 goto :eof
 
