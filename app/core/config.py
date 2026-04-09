@@ -107,13 +107,27 @@ class Settings(BaseSettings):
 
             return expanded
 
+        def default_dev_origins() -> list[str]:
+            # Local frontend/dev-server defaults when CORS_ORIGINS is not configured.
+            return expand_dev_aliases(
+                [
+                    "http://localhost:5173",
+                    "http://localhost:3000",
+                    "http://localhost:4173",
+                ]
+            )
+
         value = self.cors_origins
         if value is None or value == "":
-            return []
+            if self.environment.lower() in {"production", "prod"}:
+                return []
+            return default_dev_origins()
         if isinstance(value, str):
             stripped = value.strip()
             if not stripped:
-                return []
+                if self.environment.lower() in {"production", "prod"}:
+                    return []
+                return default_dev_origins()
             if stripped.startswith("["):
                 try:
                     parsed = json.loads(stripped)

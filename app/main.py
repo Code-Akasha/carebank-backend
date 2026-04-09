@@ -21,6 +21,10 @@ from app.routes.planning import router as planning_router
 from app.routes.actions import router as actions_router
 from app.routes.notifications import router as notifications_router
 from app.routes.bot import router as bot_router
+from app.routes.tools import router as tools_router
+from app.routes.payment_settings import router as payment_settings_router
+from app.routes.payments import router as payments_router
+from app.routes.recurring_payments import router as recurring_payments_router
 from app.core.database import init_db
 from app.core.config import get_settings
 
@@ -30,31 +34,50 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    
+    # Start recurring payment scheduler
+    # NOTE: Disabled to avoid potential event loop issues
+    # try:
+    #     from app.services.recurring_scheduler import start_scheduler
+    #     start_scheduler()
+    #     logger.info("Recurring payment scheduler started")
+    # except Exception as exc:
+    #     logger.warning("Failed to start recurring scheduler (non-fatal): %s", exc)
+    
     # Auto-seed demo users if DB is empty (safe to run every startup)
-    try:
-        from app.core.database import SessionLocal
-        from app.models.user import User
-
-        db = SessionLocal()
-        user_count = db.query(User).count()
-        db.close()
-        if user_count == 0:
-            import subprocess
-            import sys
-            import os
-
-            script = os.path.join(
-                os.path.dirname(__file__), "..", "scripts", "register_demo_users.py"
-            )
-            subprocess.Popen(
-                [sys.executable, script],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            logger.info("Empty DB detected — running demo user seed in background")
-    except Exception as exc:
-        logger.warning("Auto-seed check failed (non-fatal): %s", exc)
+    # NOTE: Disabled to avoid event loop issues during startup
+    # try:
+    #     from app.core.database import SessionLocal
+    #     from app.models.user import User
+    #     db = SessionLocal()
+    #     user_count = db.query(User).count()
+    #     db.close()
+    #     if user_count == 0:
+    #         import subprocess
+    #         import sys
+    #         import os
+    #         script = os.path.join(
+    #             os.path.dirname(__file__), "..", "scripts", "register_demo_users.py"
+    #         )
+    #         subprocess.Popen(
+    #             [sys.executable, script],
+    #             stdout=subprocess.DEVNULL,
+    #             stderr=subprocess.DEVNULL,
+    #         )
+    #         logger.info("Empty DB detected — running demo user seed in background")
+    # except Exception as exc:
+    #     logger.warning("Auto-seed check failed (non-fatal): %s", exc)
+    
     yield
+    
+    # Stop scheduler on shutdown
+    # NOTE: Disabled since scheduler startup was also disabled
+    # try:
+    #     from app.services.recurring_scheduler import stop_scheduler
+    #     stop_scheduler()
+    #     logger.info("Recurring payment scheduler stopped")
+    # except Exception as exc:
+    #     logger.warning("Failed to stop scheduler (non-fatal): %s", exc)
 
 
 app = FastAPI(
@@ -92,8 +115,12 @@ app.include_router(chat_router)
 app.include_router(simulate_router)
 app.include_router(events_router)
 app.include_router(bot_router)
+app.include_router(tools_router)
+app.include_router(payment_settings_router)
+app.include_router(payments_router)
+app.include_router(recurring_payments_router)
 
 
 @app.get("/")
-def health():
+async def health():
     return {"status": "CareBank Backend Running", "version": "0.2.0"}

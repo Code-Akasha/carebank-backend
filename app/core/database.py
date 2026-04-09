@@ -47,6 +47,12 @@ def init_db() -> None:
     import app.models.action_request  # noqa: F401
     import app.models.action_execution  # noqa: F401
     import app.models.idempotency_record  # noqa: F401
+    
+    # Payment system models (generic payments + recurring bills)
+    import app.models.payment_settings  # noqa: F401
+    import app.models.beneficiary  # noqa: F401
+    import app.models.recurring_payment_rule  # noqa: F401
+    import app.models.payment_history  # noqa: F401
 
     mode = (settings.db_schema_mode or "create_all").strip().lower()
     if mode in {"create_all", "dev"}:
@@ -97,7 +103,8 @@ def _apply_dev_schema_backfills() -> None:
         )
 
 
-def get_db():
+async def get_db():
+    """Database session dependency - automatically manages connection lifecycle."""
     db = SessionLocal()
     try:
         yield db

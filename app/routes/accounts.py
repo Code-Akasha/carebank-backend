@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -11,6 +12,14 @@ from app.schemas.models import AccountResponse
 from app.services.banking_client import get_banking_client, BankingClientError
 
 router = APIRouter(prefix="/api/accounts", tags=["accounts"])
+
+
+class AccountCreateRequest(BaseModel):
+    account_type: str = Field(default="savings", min_length=3, max_length=40)
+    name: str = Field(default="New Account", min_length=2, max_length=120)
+    provider_id: str = Field(default="carebank_retail", min_length=2, max_length=80)
+    currency: str = Field(default="INR", min_length=3, max_length=3)
+    initial_deposit: float = Field(default=0.0, ge=0.0)
 
 
 def _persist_accounts(db: Session, records: list[dict]) -> None:
@@ -74,3 +83,32 @@ async def list_accounts(
 
     _persist_accounts(db, records)
     return records
+
+
+@router.post("/", response_model=AccountResponse)
+async def create_account(
+    body: AccountCreateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Session = Depends(get_db),
+):
+    client = get_banking_client()
+    payload = body.model_dump()
+    payload["currency"] = body.currency.upper()
+    try:
+        response = await client.create_account(current_user.user_id, payload)
+    except BankingClientError as exc:
+        status_code = exc.status_code or 503
+        raise HTTPException(
+            status_code=status_code,
+            detail=f"Banking API unavailable: {exc}",
+        ) from exc
+
+    created_account = response.get("account") if isinstance(response, dict) else None
+    if not isinstance(created_account, dict):
+        raise HTTPException(
+            status_code=502,
+            detail="Unexpected response from banking provider while creating account",
+        )
+
+    _persist_accounts(db, [created_account])
+    return created_account

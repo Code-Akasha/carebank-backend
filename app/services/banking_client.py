@@ -3,17 +3,15 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from threading import Lock
 from typing import Any
 
 import httpx
 import jwt
-import nest_asyncio
 
 from app.core.config import get_settings
-
-nest_asyncio.apply()
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +164,33 @@ class BankingClient:
     async def get_accounts(self, user_id: str) -> list[dict[str, Any]]:
         data = await self._request("GET", "/accounts", user_id=user_id)
         return data
+
+    async def create_account(
+        self,
+        user_id: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        body = {
+            "user_id": user_id,
+            **payload,
+        }
+        return await self._request(
+            "POST",
+            "/accounts",
+            user_id=user_id,
+            json_body=body,
+        )
+
+    async def delete_account(
+        self,
+        user_id: str,
+        account_id: str,
+    ) -> dict[str, Any]:
+        return await self._request(
+            "DELETE",
+            f"/accounts/{account_id}",
+            user_id=user_id,
+        )
 
     async def get_beneficiaries(self, user_id: str) -> list[dict[str, Any]]:
         data = await self._request("GET", "/beneficiaries", user_id=user_id)
@@ -367,11 +392,14 @@ def get_banking_client() -> BankingClient:
 
 def _run_sync(coro: Any) -> Any:
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop.run_until_complete(coro)
+        return asyncio.run(coro)
+
+    # If we're already inside an event loop, execute in a dedicated thread.
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(asyncio.run, coro)
+        return future.result()
 
 
 def get_transactions_sync(

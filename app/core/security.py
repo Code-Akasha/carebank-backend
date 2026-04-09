@@ -58,7 +58,7 @@ def decode_access_token(token: str) -> dict:
     return payload
 
 
-def get_current_user(
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
     db: Session = Depends(get_db),
 ) -> User:
@@ -81,7 +81,7 @@ def get_current_user(
     return user
 
 
-def require_admin(
+async def require_admin(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     if current_user.role != "admin":
