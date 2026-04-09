@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import Any, Protocol
+
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.services.banking_client import trigger_transaction_sync
@@ -12,9 +14,31 @@ class ToolNotFoundError(KeyError):
 
 
 class ActionTool(Protocol):
-    def can_handle(self, action_type: str) -> bool: ...
+    """Protocol for action tools.
+    
+    Tools are responsible for executing specific action types.
+    All tools must implement:
+    - can_handle(action_type) → bool
+    - execute(user_id, action_type, payload) → dict
+    - get_metadata() → ToolMetadata for discovery
+    - get_schema(action_type) → Pydantic model for payload validation
+    """
 
-    def execute(self, user_id: str, action_type: str, payload: dict) -> dict: ...
+    def can_handle(self, action_type: str) -> bool:
+        """Check if this tool can handle the given action type."""
+        ...
+
+    def execute(self, user_id: str, action_type: str, payload: dict) -> dict:
+        """Execute the action. Returns result dict with 'status' and tool-specific fields."""
+        ...
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Return tool metadata including name, description, action types, and policy info."""
+        ...
+
+    def get_schema(self, action_type: str) -> type[BaseModel] | None:
+        """Return Pydantic model for payload validation. Return None if no schema needed."""
+        ...
 
 
 class NoteTool:
@@ -33,6 +57,32 @@ class NoteTool:
             "message": payload.get("message", ""),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Return metadata for note tool."""
+        from app.schemas.tools import RecordNotePayload
+
+        return {
+            "name": "Note Tool",
+            "description": "Record notes and reminders locally (no external dependencies)",
+            "action_types": list(self._action_types),
+            "timeout_seconds": 5,
+            "max_retries": 0,
+            "is_deterministic": True,
+            "requires_approval": {"record_note": False},
+            "max_amount_per_action": {},
+            "payload_schema": {
+                "record_note": RecordNotePayload.model_json_schema(),
+            },
+        }
+
+    def get_schema(self, action_type: str) -> type[BaseModel] | None:
+        """Return Pydantic model for payload validation."""
+        if action_type == "record_note":
+            from app.schemas.tools import RecordNotePayload
+
+            return RecordNotePayload
+        return None
 
 
 class BankTransactionTool:
@@ -67,6 +117,46 @@ class BankTransactionTool:
 
     def can_handle(self, action_type: str) -> bool:
         return action_type in self._action_types
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Return metadata for bank transaction tool."""
+        from app.services.action_policy import _FALLBACK_POLICY_MATRIX
+
+        return {
+            "name": "Bank Transaction Tool",
+            "description": "Execute bank transactions via MockBank (payments, transfers)",
+            "action_types": list(self._action_types),
+            "timeout_seconds": 15,
+            "max_retries": 2,
+            "is_deterministic": False,  # May depend on MockBank state
+            "requires_approval": {
+                action_type: _FALLBACK_POLICY_MATRIX[action_type].requires_approval
+                for action_type in self._action_types
+            },
+            "max_amount_per_action": {
+                action_type: _FALLBACK_POLICY_MATRIX[action_type].max_amount
+                for action_type in self._action_types
+            },
+        }
+
+    def get_schema(self, action_type: str) -> type[BaseModel] | None:
+        """Return Pydantic model for payload validation."""
+        from app.schemas.tools import (
+            PayBillPayload,
+            PayGasPayload,
+            PayRentPayload,
+            PayUtilityPayload,
+            TransferSavingsPayload,
+        )
+
+        schema_mapping = {
+            "pay_rent": PayRentPayload,
+            "pay_bill": PayBillPayload,
+            "pay_gas": PayGasPayload,
+            "pay_utility": PayUtilityPayload,
+            "transfer_savings": TransferSavingsPayload,
+        }
+        return schema_mapping.get(action_type)
 
     @staticmethod
     def _resolve_webhook_url() -> str | None:
@@ -149,6 +239,147 @@ class ActionToolRegistry:
                 return tool
         raise ToolNotFoundError(f"No tool registered for action_type={action_type}")
 
+    def get_all_tools(self) -> list[ActionTool]:
+        """Return all registered tools."""
+        return self._tools.copy()
+
+    def get_action_types(self) -> set[str]:
+        """Return all supported action types across all tools."""
+        action_types = set()
+        for tool in self._tools:
+            metadata = tool.get_metadata()
+            action_types.update(metadata.get("action_types", []))
+        return action_types
+
+    def get_tool_for_action(self, action_type: str) -> ActionTool | None:
+        """Get the tool that handles an action type, or None if not found."""
+        for tool in self._tools:
+            if tool.can_handle(action_type):
+                return tool
+        return None
+
+    def validate_payload(self, action_type: str, payload: dict) -> tuple[bool, str | None]:
+        """Validate payload against tool schema.
+        
+        Returns: (is_valid, error_message)
+        - is_valid: True if payload matches schema
+        - error_message: Validation error if invalid, None if valid
+        """
+        tool = self.get_tool_for_action(action_type)
+        if tool is None:
+            return False, f"No tool handles action_type: {action_type}"
+
+        schema = tool.get_schema(action_type)
+        if schema is None:
+            # No schema defined, allow any dict
+            return True, None
+
+        try:
+            schema.model_validate(payload)
+            return True, None
+        except Exception as exc:
+            return False, f"Payload validation failed: {str(exc)}"
+
+
+class GenericPaymentTool:
+    """Generic payment tool supporting one-time and recurring payments."""
+
+    _action_types = {"execute_payment", "setup_recurring_payment"}
+
+    def can_handle(self, action_type: str) -> bool:
+        return action_type in self._action_types
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Return metadata for generic payment tool."""
+        from app.schemas.payments import ExecutePaymentPayload, RecurringPaymentCreate
+
+        return {
+            "name": "Generic Payment Tool",
+            "description": "Execute one-time and recurring payments to any beneficiary",
+            "action_types": list(self._action_types),
+            "timeout_seconds": 20,
+            "max_retries": 2,
+            "is_deterministic": False,
+            "requires_approval": {
+                "execute_payment": True,
+                "setup_recurring_payment": False,
+            },
+            "max_amount_per_action": {
+                "execute_payment": 500000.0,  # ₹5 lakh max per payment
+                "setup_recurring_payment": 100000.0,  # ₹1 lakh max per recurring cycle
+            },
+            "payload_schema": {
+                "execute_payment": ExecutePaymentPayload.model_json_schema(),
+                "setup_recurring_payment": RecurringPaymentCreate.model_json_schema(),
+            },
+        }
+
+    def get_schema(self, action_type: str) -> type[BaseModel] | None:
+        """Return Pydantic model for payload validation."""
+        from app.schemas.payments import ExecutePaymentPayload, RecurringPaymentCreate
+
+        schema_mapping = {
+            "execute_payment": ExecutePaymentPayload,
+            "setup_recurring_payment": RecurringPaymentCreate,
+        }
+        return schema_mapping.get(action_type)
+
+    def execute(self, user_id: str, action_type: str, payload: dict) -> dict:
+        """Execute payment action."""
+        from app.core.database import SessionLocal
+        from app.schemas.payments import ExecutePaymentPayload, RecurringPaymentCreate
+        from app.services.payment_execution_service import execute_generic_payment
+        from app.services.recurring_payment_service import create_recurring_payment_rule
+
+        db = SessionLocal()
+        try:
+            if action_type == "execute_payment":
+                # Validate and execute one-time payment
+                payload_obj = ExecutePaymentPayload.model_validate(payload)
+                result = execute_generic_payment(db, user_id, payload_obj)
+
+                return {
+                    "status": "ok",
+                    "action_type": action_type,
+                    "execution_status": result.status,
+                    "message": result.message,
+                    "execution_id": result.execution_id,
+                    "transaction_id": result.transaction_id,
+                    "error_reason": result.error_reason,
+                }
+
+            elif action_type == "setup_recurring_payment":
+                # Create recurring payment rule
+                payload_obj = RecurringPaymentCreate.model_validate(payload)
+                rule = create_recurring_payment_rule(db, user_id, payload_obj)
+
+                return {
+                    "status": "ok",
+                    "action_type": action_type,
+                    "recurring_rule_id": str(rule.id),
+                    "message": f"Recurring payment '{rule.description}' scheduled for {rule.frequency}",
+                    "next_run_date": rule.next_run_date.isoformat(),
+                    "frequency": rule.frequency,
+                    "amount": rule.amount,
+                }
+
+            else:
+                return {
+                    "status": "error",
+                    "action_type": action_type,
+                    "message": f"Unknown action type: {action_type}",
+                }
+
+        except Exception as exc:
+            return {
+                "status": "error",
+                "action_type": action_type,
+                "message": f"Payment execution failed: {str(exc)}",
+                "error_reason": str(exc),
+            }
+        finally:
+            db.close()
+
 
 _registry: ActionToolRegistry | None = None
 
@@ -159,5 +390,6 @@ def get_tool_registry() -> ActionToolRegistry:
         registry = ActionToolRegistry()
         registry.register(NoteTool())
         registry.register(BankTransactionTool())
+        registry.register(GenericPaymentTool())
         _registry = registry
     return _registry

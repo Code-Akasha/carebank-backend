@@ -91,3 +91,177 @@ def sample_transactions():
         {"date": "2025-01-18", "amount": -30.00, "category": "transport"},
         {"date": "2025-01-19", "amount": -200.00, "category": "shopping"},
     ]
+
+
+# ── Payment System Fixtures ──────────────────────────────────────────
+
+@pytest.fixture
+def test_db(client):
+    """Get database session from app"""
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    yield db
+    db.close()
+
+
+@pytest.fixture
+def test_user_data(test_db):
+    """Create a test user with payment settings"""
+    import uuid
+    from app.models.user import User
+    from app.models.payment_settings import PaymentSettings
+    from datetime import datetime
+    
+    # Generate unique email to avoid UNIQUE constraint violations
+    unique_id = str(uuid.uuid4())[:8]
+    user = User(
+        user_id=f"test_user_{unique_id}",
+        email=f"test_{unique_id}@example.com",
+        phone_number="9876543210",
+        full_name="Test User",
+        password_hash="$2b$12$dummy_hash",
+        role="user",
+        is_active=True,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    test_db.add(user)
+    test_db.commit()
+    
+    # Create payment settings
+    settings = PaymentSettings(
+        user_id=user.user_id,
+        mpin_hash="$2b$12$abcdefghijklmnopqrstuvwxyz",  # Dummy hash for testing
+        mpin_threshold=50000,
+        daily_limit=1000000,
+        recurring_payment_max=100000,
+        max_active_recurring_rules=10,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    test_db.add(settings)
+    test_db.commit()
+    
+    return {"user_id": user.user_id, "user": user, "settings": settings}
+
+
+@pytest.fixture
+def test_user_2(test_db):
+    """Create a second test user for isolation testing"""
+    import uuid
+    from app.models.user import User
+    from app.models.payment_settings import PaymentSettings
+    from datetime import datetime
+    
+    # Generate unique email to avoid UNIQUE constraint violations
+    unique_id = str(uuid.uuid4())[:8]
+    user = User(
+        user_id=f"test_user_2_{unique_id}",
+        email=f"test2_{unique_id}@example.com",
+        phone_number="9876543212",
+        full_name="Test User 2",
+        password_hash="$2b$12$dummy_hash",
+        role="user",
+        is_active=True,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    test_db.add(user)
+    test_db.commit()
+    
+    # Create payment settings
+    settings = PaymentSettings(
+        user_id=user.user_id,
+        mpin_hash="$2b$12$abcdefghijklmnopqrstuvwxyz",
+        mpin_threshold=50000,
+        daily_limit=1000000,
+        recurring_payment_max=100000,
+        max_active_recurring_rules=10,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    test_db.add(settings)
+    test_db.commit()
+    
+    return user
+
+
+@pytest.fixture
+def test_beneficiary_data(test_db, test_user_data):
+    """Create test beneficiaries"""
+    from app.models.beneficiary import Beneficiary
+    from datetime import datetime
+    
+    benef1 = Beneficiary(
+        user_id=test_user_data["user_id"],
+        nickname="Mom",
+        identifier_type="phone",
+        identifier_value="9876543211",
+        is_verified=True,
+        verification_method="otp",
+        is_trusted=True,
+        category="family",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    
+    benef2 = Beneficiary(
+        user_id=test_user_data["user_id"],
+        nickname="Dad",
+        identifier_type="account_number",
+        identifier_value="123456789012",
+        is_verified=False,
+        is_trusted=False,
+        category="family",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    
+    test_db.add_all([benef1, benef2])
+    test_db.commit()
+    
+    return {"benef1": benef1, "benef2": benef2}
+
+
+@pytest.fixture
+def test_payment_settings(test_db, test_user_data):
+    """Get or return test user's payment settings"""
+    return test_user_data["settings"]
+
+
+@pytest.fixture
+def test_recurring_rule_data(test_db, test_user_data, test_beneficiary_data):
+    """Create a test recurring payment rule"""
+    from app.models.recurring_payment_rule import RecurringPaymentRule
+    from datetime import datetime, date
+    
+    rule = RecurringPaymentRule(
+        user_id=test_user_data["user_id"],
+        beneficiary_id=test_beneficiary_data["benef1"].id,
+        amount=10000,
+        frequency="daily",
+        day_config={},
+        start_date=date.today(),
+        end_date=None,
+        requires_approval=False,
+        status="active",
+        total_executions=0,
+        last_executed_at=None,
+        last_execution_status=None,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    
+    test_db.add(rule)
+    test_db.commit()
+    
+    return rule
+
+
+# Pytest custom markers
+def pytest_configure(config):
+    """Register custom markers"""
+    config.addinivalue_line("markers", "unit: unit tests")
+    config.addinivalue_line("markers", "integration: integration tests")
+    config.addinivalue_line("markers", "e2e: end-to-end tests")
+    config.addinivalue_line("markers", "slow: slow tests")
