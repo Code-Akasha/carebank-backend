@@ -9,7 +9,7 @@ Allows frontend and other clients to:
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from app.schemas.tools import ActionTypeSchema, ToolDiscoveryResponse, ToolMetadata
 from app.services.action_policy import _FALLBACK_POLICY_MATRIX
@@ -56,9 +56,6 @@ def get_available_tools():
         # Build schema for each action type this tool handles
         for action_type in metadata.get("action_types", []):
             schema_model = tool.get_schema(action_type)
-
-            # Get policy info for this action
-            policy = _FALLBACK_POLICY_MATRIX.get(action_type)
 
             # Build default merchant/category from tool metadata
             defaults = {}

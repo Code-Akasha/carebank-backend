@@ -153,7 +153,7 @@ class TestRecurringPaymentCreation:
             payload=payload,
         )
 
-        assert rule.requires_approval == True
+        assert rule.requires_approval
 
     def test_create_with_end_date(self, test_db, test_user_data, test_beneficiary_data):
         """Test creating recurring payment with end date"""
@@ -294,7 +294,7 @@ class TestRecurringPaymentUpdate:
 
         result = delete_recurring_payment_rule(db=test_db, rule_id=rule_id)
 
-        assert result == True
+        assert result
 
         # Verify soft delete
         deleted_rule = get_recurring_payment_rule(db=test_db, rule_id=rule_id)

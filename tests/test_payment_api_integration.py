@@ -3,7 +3,6 @@ Integration tests for payment API endpoints
 """
 
 import pytest
-import json
 from fastapi.testclient import TestClient
 
 
@@ -15,12 +14,6 @@ class TestBeneficiaryAPI:
         """Test POST /api/beneficiaries"""
         # Note: Requires authentication token in real scenarios
         # This is a mock of what the endpoint should do
-
-        payload = {
-            "name": "Test Beneficiary",
-            "phone": "9876543210",
-            "upi": "test@bank",
-        }
 
         # Would need to include auth token header
         # response = client.post("/api/beneficiaries", json=payload, headers=auth_headers)

@@ -326,7 +326,7 @@ class RecurringPaymentAgent:
 
         elif context.frequency == "monthly" or context.frequency == "quarterly":
             return RecurringSetupResponse(
-                message=f"Which date of the month? (1-31)",
+                message="Which date of the month? (1-31)",
                 context=context,
             )
 

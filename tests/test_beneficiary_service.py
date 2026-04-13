@@ -39,7 +39,7 @@ class TestBeneficiaryService:
         assert benef.name == "Test Beneficiary"
         assert benef.phone == "9876543210"
         assert benef.upi == "test@bank"
-        assert benef.is_verified == False
+        assert not benef.is_verified
 
     def test_create_beneficiary_account(self, test_db, test_user_data):
         """Test creating a bank account beneficiary"""
@@ -125,7 +125,7 @@ class TestBeneficiaryService:
         )
 
         assert updated_benef.name == "Mom Updated"
-        assert updated_benef.is_trusted == True
+        assert updated_benef.is_trusted
 
     def test_delete_beneficiary(self, test_db, test_beneficiary_data):
         """Test soft deleting a beneficiary"""
@@ -134,7 +134,7 @@ class TestBeneficiaryService:
 
         result = delete_beneficiary(db=test_db, beneficiary_id=benef_id)
 
-        assert result == True
+        assert result
 
         # Verify soft delete (record still exists but is_deleted=True)
         benef_check = get_beneficiary(db=test_db, beneficiary_id=benef_id)
@@ -150,7 +150,7 @@ class TestBeneficiaryService:
             verification_method="otp",
         )
 
-        assert updated_benef.is_verified == True
+        assert updated_benef.is_verified
         assert updated_benef.verification_method == "otp"
 
     def test_verify_beneficiary_micro_deposit(self, test_db, test_beneficiary_data):
@@ -163,14 +163,14 @@ class TestBeneficiaryService:
             verification_method="micro_deposit",
         )
 
-        assert updated_benef.is_verified == True
+        assert updated_benef.is_verified
 
     def test_create_beneficiary_missing_details(self, test_db, test_user_data):
         """Test that creating beneficiary requires at least UPI or account"""
         user_id = test_user_data["user_id"]
 
         # Should either raise or return None
-        benef = create_beneficiary(
+        create_beneficiary(
             db=test_db,
             user_id=user_id,
             name="Invalid Beneficiary",
@@ -213,7 +213,7 @@ class TestBeneficiaryLimits:
 
         # Should fail if name is None or empty
         try:
-            benef = create_beneficiary(
+            create_beneficiary(
                 db=test_db,
                 user_id=user_id,
                 name="",

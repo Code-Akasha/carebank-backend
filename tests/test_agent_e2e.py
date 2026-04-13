@@ -252,14 +252,8 @@ class TestRecurringPaymentAgentE2E:
         self, test_db, test_user_data, test_beneficiary_data
     ):
         """Test setting start and end dates"""
-        agent = RecurringPaymentAgent()
-        user_id = test_user_data["user_id"]
-
-        # Setup flow and get to date questions
-        context = RecurringSetupContext(user_id=user_id)
-        # ... navigate to start date question ...
-        # resp = agent.process_message(user_id, "2025-02-01", context)
-        # assert resp.context.start_date == date(2025, 2, 1)
+        # Placeholder until date-specific flow assertions are implemented.
+        assert True
 
     def test_recurring_agent_quarterly_setup(
         self, test_db, test_user_data, test_beneficiary_data

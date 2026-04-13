@@ -6,7 +6,6 @@ from fastapi import HTTPException
 from app.core.security import hash_password, verify_password
 
 from app.models.payment_settings import PaymentSettings
-from app.models.user import User
 from app.schemas.payments import PaymentSettingsUpdate, SetMPINRequest
 
 
@@ -95,7 +94,6 @@ def check_daily_limit(
     Returns: (is_within_limit, error_message)
     """
     from app.models.payment_history import PaymentHistory
-    from datetime import date
 
     settings = get_or_create_payment_settings(db, user_id)
 

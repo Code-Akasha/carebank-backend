@@ -10,7 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
 )
-from datetime import datetime, date, timezone
+from datetime import datetime, timezone
 
 from app.core.database import Base
 

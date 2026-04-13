@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
@@ -91,7 +90,7 @@ def check_and_execute_recurring_payments() -> None:
                     exc_info=True,
                 )
 
-    except Exception as exc:
+    except Exception:
         logger.error("Error checking recurring payments", exc_info=True)
     finally:
         db.close()
@@ -104,7 +103,6 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
         db: Database session
         rule: RecurringPaymentRule to execute
     """
-    from app.models.payment_history import PaymentHistory
     from app.services.recurring_payment_service import calculate_next_run_date
 
     logger.info(f"Executing recurring payment rule {rule.id}: {rule.description}")
