@@ -12,7 +12,9 @@ from app.schemas.payments import PaymentSettingsUpdate, SetMPINRequest
 
 def get_or_create_payment_settings(db: Session, user_id: str) -> PaymentSettings:
     """Get existing payment settings or create default ones."""
-    settings = db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+    settings = (
+        db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+    )
 
     if not settings:
         settings = PaymentSettings(
@@ -73,7 +75,9 @@ def set_mpin(db: Session, user_id: str, body: SetMPINRequest) -> None:
 
 def verify_mpin(db: Session, user_id: str, mpin: str) -> bool:
     """Verify user's MPIN."""
-    settings = db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+    settings = (
+        db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+    )
 
     if not settings or not settings.mpin_hash:
         raise HTTPException(status_code=400, detail="MPIN not configured")
@@ -96,7 +100,9 @@ def check_daily_limit(
     settings = get_or_create_payment_settings(db, user_id)
 
     # Get total paid today
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     today_end = datetime.now(timezone.utc)
 
     total_today = (
@@ -129,7 +135,11 @@ def reset_daily_limit_if_needed(db: Session, user_id: str) -> None:
         settings.daily_limit_used = 0.0
         db.commit()
     else:
-        last_date = settings.daily_limit_used_date.date() if isinstance(settings.daily_limit_used_date, datetime) else settings.daily_limit_used_date
+        last_date = (
+            settings.daily_limit_used_date.date()
+            if isinstance(settings.daily_limit_used_date, datetime)
+            else settings.daily_limit_used_date
+        )
         today = date.today()
 
         if last_date < today:

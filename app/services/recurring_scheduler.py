@@ -71,10 +71,14 @@ def check_and_execute_recurring_payments() -> None:
         now = datetime.now(timezone.utc).date()
 
         # Find all active rules that are due for execution
-        due_rules = db.query(RecurringPaymentRule).filter(
-            RecurringPaymentRule.status == "active",
-            RecurringPaymentRule.next_run_date <= now,
-        ).all()
+        due_rules = (
+            db.query(RecurringPaymentRule)
+            .filter(
+                RecurringPaymentRule.status == "active",
+                RecurringPaymentRule.next_run_date <= now,
+            )
+            .all()
+        )
 
         logger.info(f"Found {len(due_rules)} recurring payments due for execution")
 
@@ -132,7 +136,9 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
         )
 
         # Execute payment
-        result = execute_generic_payment(db, rule.user_id, payload, recurring_rule_id=str(rule.id))
+        result = execute_generic_payment(
+            db, rule.user_id, payload, recurring_rule_id=str(rule.id)
+        )
 
         # Update recurring rule execution stats
         rule.total_executions += 1
@@ -190,13 +196,19 @@ def _execute_rule_by_id(rule_id: str) -> None:
     """Helper function to execute a recurring rule by ID."""
     db = SessionLocal()
     try:
-        rule = db.query(RecurringPaymentRule).filter(RecurringPaymentRule.id == rule_id).first()
+        rule = (
+            db.query(RecurringPaymentRule)
+            .filter(RecurringPaymentRule.id == rule_id)
+            .first()
+        )
         if rule:
             execute_recurring_payment(db, rule)
         else:
             logger.warning(f"Recurring payment rule {rule_id} not found")
     except Exception as exc:
-        logger.error(f"Failed to execute recurring rule {rule_id}: {exc}", exc_info=True)
+        logger.error(
+            f"Failed to execute recurring rule {rule_id}: {exc}", exc_info=True
+        )
     finally:
         db.close()
 
@@ -218,11 +230,17 @@ def resume_recurring_execution(rule_id: str) -> None:
     """Resume a paused recurring payment."""
     db = SessionLocal()
     try:
-        rule = db.query(RecurringPaymentRule).filter(RecurringPaymentRule.id == rule_id).first()
+        rule = (
+            db.query(RecurringPaymentRule)
+            .filter(RecurringPaymentRule.id == rule_id)
+            .first()
+        )
         if rule and rule.status == "paused":
             # Schedule will pick it up on next check
             logger.info(f"Recurring payment {rule_id} marked for resume")
         else:
-            logger.warning(f"Cannot resume recurring rule {rule_id}: not paused or not found")
+            logger.warning(
+                f"Cannot resume recurring rule {rule_id}: not paused or not found"
+            )
     finally:
         db.close()

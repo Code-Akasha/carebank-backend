@@ -22,12 +22,18 @@ class PaymentHistory(Base):
     payment_method = Column(String, nullable=False)  # "upi", "account_transfer"
 
     # Recurring Link
-    recurring_rule_id = Column(Integer, ForeignKey("recurring_payment_rules.id"), nullable=True)
+    recurring_rule_id = Column(
+        Integer, ForeignKey("recurring_payment_rules.id"), nullable=True
+    )
 
     # Execution Details
-    status = Column(String, nullable=False, index=True)  # "pending", "success", "failed"
+    status = Column(
+        String, nullable=False, index=True
+    )  # "pending", "success", "failed"
     execution_date = Column(DateTime, nullable=False, index=True)
-    mockbank_transaction_id = Column(String, nullable=True)  # Transaction ID from MockBank
+    mockbank_transaction_id = Column(
+        String, nullable=True
+    )  # Transaction ID from MockBank
 
     # Error Tracking
     error_reason = Column(String, nullable=True)  # Failure reason if status="failed"

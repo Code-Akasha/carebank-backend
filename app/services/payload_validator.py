@@ -17,12 +17,12 @@ class PayloadValidationError(ValueError):
     def __init__(self, action_type: str, errors: list[str]):
         self.action_type = action_type
         self.errors = errors
-        super().__init__(f"Payload validation failed for {action_type}: {'; '.join(errors)}")
+        super().__init__(
+            f"Payload validation failed for {action_type}: {'; '.join(errors)}"
+        )
 
 
-def validate_action_payload(
-    action_type: str, payload: dict
-) -> tuple[bool, list[str]]:
+def validate_action_payload(action_type: str, payload: dict) -> tuple[bool, list[str]]:
     """
     Validate action payload against tool schema and policy constraints.
 

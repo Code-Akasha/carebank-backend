@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    
+
     # Start recurring payment scheduler
     # NOTE: Disabled to avoid potential event loop issues
     # try:
@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     #     logger.info("Recurring payment scheduler started")
     # except Exception as exc:
     #     logger.warning("Failed to start recurring scheduler (non-fatal): %s", exc)
-    
+
     # Auto-seed demo users if DB is empty (safe to run every startup)
     # NOTE: Disabled to avoid event loop issues during startup
     # try:
@@ -67,9 +67,9 @@ async def lifespan(app: FastAPI):
     #         logger.info("Empty DB detected — running demo user seed in background")
     # except Exception as exc:
     #     logger.warning("Auto-seed check failed (non-fatal): %s", exc)
-    
+
     yield
-    
+
     # Stop scheduler on shutdown
     # NOTE: Disabled since scheduler startup was also disabled
     # try:

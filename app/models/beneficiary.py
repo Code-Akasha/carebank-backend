@@ -15,14 +15,24 @@ class Beneficiary(Base):
     user_id = Column(String, ForeignKey("users.user_id"), index=True, nullable=False)
 
     # Beneficiary Identification
-    nickname = Column(String, nullable=True)  # User-friendly name (e.g., "Mom", "Yoga fees")
-    identifier_type = Column(String, nullable=False)  # "phone", "upi_id", "account_number"
-    identifier_value = Column(String, nullable=False)  # "+919876543210", "user@upi", "1234567890"
+    nickname = Column(
+        String, nullable=True
+    )  # User-friendly name (e.g., "Mom", "Yoga fees")
+    identifier_type = Column(
+        String, nullable=False
+    )  # "phone", "upi_id", "account_number"
+    identifier_value = Column(
+        String, nullable=False
+    )  # "+919876543210", "user@upi", "1234567890"
 
     # Verification Status
-    is_verified = Column(Boolean, default=False)  # Has been verified by OTP/micro-deposit
+    is_verified = Column(
+        Boolean, default=False
+    )  # Has been verified by OTP/micro-deposit
     is_trusted = Column(Boolean, default=False)  # User marked as trusted (auto-execute)
-    verification_method = Column(String, nullable=True)  # "otp", "micro_deposit", "payment"
+    verification_method = Column(
+        String, nullable=True
+    )  # "otp", "micro_deposit", "payment"
     verified_at = Column(DateTime, nullable=True)
 
     # Metadata

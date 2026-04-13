@@ -95,10 +95,12 @@ def sample_transactions():
 
 # ── Payment System Fixtures ──────────────────────────────────────────
 
+
 @pytest.fixture
 def test_db(client):
     """Get database session from app"""
     from app.core.database import SessionLocal
+
     db = SessionLocal()
     yield db
     db.close()
@@ -111,7 +113,7 @@ def test_user_data(test_db):
     from app.models.user import User
     from app.models.payment_settings import PaymentSettings
     from datetime import datetime
-    
+
     # Generate unique email to avoid UNIQUE constraint violations
     unique_id = str(uuid.uuid4())[:8]
     user = User(
@@ -127,7 +129,7 @@ def test_user_data(test_db):
     )
     test_db.add(user)
     test_db.commit()
-    
+
     # Create payment settings
     settings = PaymentSettings(
         user_id=user.user_id,
@@ -141,7 +143,7 @@ def test_user_data(test_db):
     )
     test_db.add(settings)
     test_db.commit()
-    
+
     return {"user_id": user.user_id, "user": user, "settings": settings}
 
 
@@ -152,7 +154,7 @@ def test_user_2(test_db):
     from app.models.user import User
     from app.models.payment_settings import PaymentSettings
     from datetime import datetime
-    
+
     # Generate unique email to avoid UNIQUE constraint violations
     unique_id = str(uuid.uuid4())[:8]
     user = User(
@@ -168,7 +170,7 @@ def test_user_2(test_db):
     )
     test_db.add(user)
     test_db.commit()
-    
+
     # Create payment settings
     settings = PaymentSettings(
         user_id=user.user_id,
@@ -182,7 +184,7 @@ def test_user_2(test_db):
     )
     test_db.add(settings)
     test_db.commit()
-    
+
     return user
 
 
@@ -191,7 +193,7 @@ def test_beneficiary_data(test_db, test_user_data):
     """Create test beneficiaries"""
     from app.models.beneficiary import Beneficiary
     from datetime import datetime
-    
+
     benef1 = Beneficiary(
         user_id=test_user_data["user_id"],
         nickname="Mom",
@@ -204,7 +206,7 @@ def test_beneficiary_data(test_db, test_user_data):
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
-    
+
     benef2 = Beneficiary(
         user_id=test_user_data["user_id"],
         nickname="Dad",
@@ -216,10 +218,10 @@ def test_beneficiary_data(test_db, test_user_data):
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
-    
+
     test_db.add_all([benef1, benef2])
     test_db.commit()
-    
+
     return {"benef1": benef1, "benef2": benef2}
 
 
@@ -234,7 +236,7 @@ def test_recurring_rule_data(test_db, test_user_data, test_beneficiary_data):
     """Create a test recurring payment rule"""
     from app.models.recurring_payment_rule import RecurringPaymentRule
     from datetime import datetime, date
-    
+
     rule = RecurringPaymentRule(
         user_id=test_user_data["user_id"],
         beneficiary_id=test_beneficiary_data["benef1"].id,
@@ -251,10 +253,10 @@ def test_recurring_rule_data(test_db, test_user_data, test_beneficiary_data):
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
-    
+
     test_db.add(rule)
     test_db.commit()
-    
+
     return rule
 
 

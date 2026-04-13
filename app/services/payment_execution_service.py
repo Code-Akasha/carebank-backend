@@ -27,7 +27,9 @@ PAYMENT_LIMITS = {
 }
 
 
-def validate_payment_method_available(db: Session, user_id: str, payment_method: str) -> tuple[bool, str | None]:
+def validate_payment_method_available(
+    db: Session, user_id: str, payment_method: str
+) -> tuple[bool, str | None]:
     """Check if payment method is available for user.
 
     Returns: (is_available, error_message)
@@ -38,11 +40,17 @@ def validate_payment_method_available(db: Session, user_id: str, payment_method:
 
     if payment_method == "upi":
         if not user.phone_number:
-            return False, "UPI payment requires phone number. Please add phone number in onboarding settings."
+            return (
+                False,
+                "UPI payment requires phone number. Please add phone number in onboarding settings.",
+            )
         return True, None
     elif payment_method == "account_transfer":
         if not user.account_number or not user.account_ifsc:
-            return False, "Account transfer requires account number and IFSC. Please add account details in onboarding settings."
+            return (
+                False,
+                "Account transfer requires account number and IFSC. Please add account details in onboarding settings.",
+            )
         return True, None
     else:
         return False, f"Unsupported payment method: {payment_method}"
@@ -53,7 +61,11 @@ def get_per_transaction_limit(payment_method: str, is_verified: bool) -> float:
     if payment_method == "upi":
         return PAYMENT_LIMITS["upi_verified" if is_verified else "upi_unverified"]
     elif payment_method == "account_transfer":
-        return PAYMENT_LIMITS["account_transfer_verified" if is_verified else "account_transfer_unverified"]
+        return PAYMENT_LIMITS[
+            "account_transfer_verified"
+            if is_verified
+            else "account_transfer_unverified"
+        ]
     else:
         raise ValueError(f"Unknown payment method: {payment_method}")
 
@@ -70,10 +82,14 @@ def validate_payment_amount(
     Returns: (is_valid, error_message)
     """
     # Get beneficiary to check verification status
-    beneficiary = db.query(Beneficiary).filter(
-        Beneficiary.id == beneficiary_id,
-        Beneficiary.user_id == user_id,
-    ).first()
+    beneficiary = (
+        db.query(Beneficiary)
+        .filter(
+            Beneficiary.id == beneficiary_id,
+            Beneficiary.user_id == user_id,
+        )
+        .first()
+    )
 
     if not beneficiary:
         return False, "Beneficiary not found"
@@ -81,7 +97,10 @@ def validate_payment_amount(
     # Check per-transaction limit
     limit = get_per_transaction_limit(payment_method, beneficiary.is_verified)
     if payment_amount > limit:
-        return False, f"Amount exceeds {payment_method} limit of ₹{limit} ({get_limit_name(beneficiary.is_verified)})"
+        return (
+            False,
+            f"Amount exceeds {payment_method} limit of ₹{limit} ({get_limit_name(beneficiary.is_verified)})",
+        )
 
     # Check daily limit
     is_within_daily, daily_error = check_daily_limit(db, user_id, payment_amount)
@@ -140,15 +159,21 @@ def execute_generic_payment(
         raise HTTPException(status_code=404, detail="User not found")
 
     # Step 1: Validate payment method available
-    is_available, method_error = validate_payment_method_available(db, user_id, payload.payment_method)
+    is_available, method_error = validate_payment_method_available(
+        db, user_id, payload.payment_method
+    )
     if not is_available:
         raise HTTPException(status_code=400, detail=method_error)
 
     # Step 2: Get beneficiary and validate amount
-    beneficiary = db.query(Beneficiary).filter(
-        Beneficiary.id == payload.beneficiary_id,
-        Beneficiary.user_id == user_id,
-    ).first()
+    beneficiary = (
+        db.query(Beneficiary)
+        .filter(
+            Beneficiary.id == payload.beneficiary_id,
+            Beneficiary.user_id == user_id,
+        )
+        .first()
+    )
 
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
@@ -171,14 +196,19 @@ def execute_generic_payment(
     # Step 4: Verify MPIN if required
     if requires_mpin:
         if not payload.mpin:
-            raise HTTPException(status_code=400, detail="MPIN required for this payment")
+            raise HTTPException(
+                status_code=400, detail="MPIN required for this payment"
+            )
 
         try:
             if not verify_mpin(db, user_id, payload.mpin):
                 raise HTTPException(status_code=401, detail="MPIN incorrect")
         except HTTPException as e:
             if "not configured" in str(e.detail):
-                raise HTTPException(status_code=400, detail="Payment requires MPIN but MPIN not configured. Please set MPIN in settings.")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Payment requires MPIN but MPIN not configured. Please set MPIN in settings.",
+                )
             raise
 
     # Step 5: Call MockBank to execute transaction

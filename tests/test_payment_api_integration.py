@@ -1,6 +1,7 @@
 """
 Integration tests for payment API endpoints
 """
+
 import pytest
 import json
 from fastapi.testclient import TestClient
@@ -14,13 +15,13 @@ class TestBeneficiaryAPI:
         """Test POST /api/beneficiaries"""
         # Note: Requires authentication token in real scenarios
         # This is a mock of what the endpoint should do
-        
+
         payload = {
             "name": "Test Beneficiary",
             "phone": "9876543210",
             "upi": "test@bank",
         }
-        
+
         # Would need to include auth token header
         # response = client.post("/api/beneficiaries", json=payload, headers=auth_headers)
         # assert response.status_code == 201
@@ -38,19 +39,25 @@ class TestBeneficiaryAPI:
         # assert response.status_code == 200
         pass
 
-    def test_update_beneficiary_endpoint(self, client: TestClient, test_beneficiary_data):
+    def test_update_beneficiary_endpoint(
+        self, client: TestClient, test_beneficiary_data
+    ):
         """Test PUT /api/beneficiaries/{id}"""
         # response = client.put(f"/api/beneficiaries/{benef_id}", json=update_data, headers=auth_headers)
         # assert response.status_code == 200
         pass
 
-    def test_delete_beneficiary_endpoint(self, client: TestClient, test_beneficiary_data):
+    def test_delete_beneficiary_endpoint(
+        self, client: TestClient, test_beneficiary_data
+    ):
         """Test DELETE /api/beneficiaries/{id}"""
         # response = client.delete(f"/api/beneficiaries/{benef_id}", headers=auth_headers)
         # assert response.status_code == 204
         pass
 
-    def test_verify_beneficiary_endpoint(self, client: TestClient, test_beneficiary_data):
+    def test_verify_beneficiary_endpoint(
+        self, client: TestClient, test_beneficiary_data
+    ):
         """Test POST /api/beneficiaries/{id}/verify"""
         # response = client.post(f"/api/beneficiaries/{benef_id}/verify", json={"method": "otp"}, headers=auth_headers)
         # assert response.status_code == 200
@@ -61,7 +68,9 @@ class TestBeneficiaryAPI:
 class TestPaymentSettingsAPI:
     """Tests for payment settings endpoints"""
 
-    def test_get_payment_settings_endpoint(self, client: TestClient, test_payment_settings):
+    def test_get_payment_settings_endpoint(
+        self, client: TestClient, test_payment_settings
+    ):
         """Test GET /api/payment-settings"""
         # response = client.get("/api/payment-settings", headers=auth_headers)
         # assert response.status_code == 200
@@ -115,7 +124,9 @@ class TestPaymentExecutionAPI:
 class TestRecurringPaymentAPI:
     """Tests for recurring payment endpoints"""
 
-    def test_create_recurring_payment_endpoint(self, client: TestClient, test_beneficiary_data):
+    def test_create_recurring_payment_endpoint(
+        self, client: TestClient, test_beneficiary_data
+    ):
         """Test POST /api/recurring-payments"""
         # payload = {
         #     "beneficiary_id": benef_id,
@@ -133,31 +144,41 @@ class TestRecurringPaymentAPI:
         # assert response.status_code == 200
         pass
 
-    def test_get_recurring_payment_endpoint(self, client: TestClient, test_recurring_rule_data):
+    def test_get_recurring_payment_endpoint(
+        self, client: TestClient, test_recurring_rule_data
+    ):
         """Test GET /api/recurring-payments/{id}"""
         # response = client.get(f"/api/recurring-payments/{rule_id}", headers=auth_headers)
         # assert response.status_code == 200
         pass
 
-    def test_update_recurring_payment_endpoint(self, client: TestClient, test_recurring_rule_data):
+    def test_update_recurring_payment_endpoint(
+        self, client: TestClient, test_recurring_rule_data
+    ):
         """Test PUT /api/recurring-payments/{id}"""
         # response = client.put(f"/api/recurring-payments/{rule_id}", json={"amount": 20000}, headers=auth_headers)
         # assert response.status_code == 200
         pass
 
-    def test_pause_recurring_payment_endpoint(self, client: TestClient, test_recurring_rule_data):
+    def test_pause_recurring_payment_endpoint(
+        self, client: TestClient, test_recurring_rule_data
+    ):
         """Test POST /api/recurring-payments/{id}/pause"""
         # response = client.post(f"/api/recurring-payments/{rule_id}/pause", headers=auth_headers)
         # assert response.status_code == 200
         pass
 
-    def test_resume_recurring_payment_endpoint(self, client: TestClient, test_recurring_rule_data):
+    def test_resume_recurring_payment_endpoint(
+        self, client: TestClient, test_recurring_rule_data
+    ):
         """Test POST /api/recurring-payments/{id}/resume"""
         # response = client.post(f"/api/recurring-payments/{rule_id}/resume", headers=auth_headers)
         # assert response.status_code == 200
         pass
 
-    def test_delete_recurring_payment_endpoint(self, client: TestClient, test_recurring_rule_data):
+    def test_delete_recurring_payment_endpoint(
+        self, client: TestClient, test_recurring_rule_data
+    ):
         """Test DELETE /api/recurring-payments/{id}"""
         # response = client.delete(f"/api/recurring-payments/{rule_id}", headers=auth_headers)
         # assert response.status_code == 204

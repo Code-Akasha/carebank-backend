@@ -1,6 +1,15 @@
 """Recurring payment rules configured by users."""
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+)
 from datetime import datetime, date, timezone
 
 from app.core.database import Base
@@ -20,7 +29,9 @@ class RecurringPaymentRule(Base):
     description = Column(String, nullable=False)  # "Yoga fees", "Dish TV bill", etc.
 
     # Frequency Configuration
-    frequency = Column(String, nullable=False)  # "daily", "weekly", "monthly", "quarterly"
+    frequency = Column(
+        String, nullable=False
+    )  # "daily", "weekly", "monthly", "quarterly"
     day_of_month = Column(Integer, nullable=True)  # 1-31 for monthly frequency
     day_of_week = Column(String, nullable=True)  # "monday", "tuesday", etc. for weekly
 
@@ -30,7 +41,9 @@ class RecurringPaymentRule(Base):
     next_run_date = Column(Date, nullable=False, index=True)  # Next scheduled execution
 
     # Execution Control
-    status = Column(String, default="active", index=True)  # "active", "paused", "expired"
+    status = Column(
+        String, default="active", index=True
+    )  # "active", "paused", "expired"
     requires_approval = Column(Boolean, default=True)  # User must approve each payment
 
     # Execution History

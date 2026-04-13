@@ -15,7 +15,7 @@ class ToolNotFoundError(KeyError):
 
 class ActionTool(Protocol):
     """Protocol for action tools.
-    
+
     Tools are responsible for executing specific action types.
     All tools must implement:
     - can_handle(action_type) → bool
@@ -258,9 +258,11 @@ class ActionToolRegistry:
                 return tool
         return None
 
-    def validate_payload(self, action_type: str, payload: dict) -> tuple[bool, str | None]:
+    def validate_payload(
+        self, action_type: str, payload: dict
+    ) -> tuple[bool, str | None]:
         """Validate payload against tool schema.
-        
+
         Returns: (is_valid, error_message)
         - is_valid: True if payload matches schema
         - error_message: Validation error if invalid, None if valid

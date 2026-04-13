@@ -14,14 +14,23 @@ from pydantic import BaseModel, Field
 class BeneficiaryCreate(BaseModel):
     """Create a new beneficiary."""
 
-    nickname: str = Field(...,  min_length=1, max_length=50, description="User-friendly name")
+    nickname: str = Field(
+        ..., min_length=1, max_length=50, description="User-friendly name"
+    )
     identifier_type: str = Field(
         ...,
         pattern="^(phone|upi_id|account_number)$",
         description="Type of identifier",
     )
-    identifier_value: str = Field(..., min_length=5, max_length=100, description="Phone, UPI ID, or account number")
-    category: Optional[str] = Field(None, max_length=50, description="Category (family, bills, services)")
+    identifier_value: str = Field(
+        ...,
+        min_length=5,
+        max_length=100,
+        description="Phone, UPI ID, or account number",
+    )
+    category: Optional[str] = Field(
+        None, max_length=50, description="Category (family, bills, services)"
+    )
 
 
 class BeneficiaryUpdate(BaseModel):
@@ -29,7 +38,9 @@ class BeneficiaryUpdate(BaseModel):
 
     nickname: Optional[str] = Field(None, min_length=1, max_length=50)
     category: Optional[str] = Field(None, max_length=50)
-    is_trusted: Optional[bool] = Field(None, description="Mark as trusted for auto-execute")
+    is_trusted: Optional[bool] = Field(
+        None, description="Mark as trusted for auto-execute"
+    )
 
 
 class BeneficiaryResponse(BaseModel):
@@ -60,7 +71,9 @@ class ExecutePaymentPayload(BaseModel):
 
     beneficiary_id: int = Field(..., description="Beneficiary ID")
     amount: float = Field(..., gt=0, le=500000, description="Payment amount in rupees")
-    description: Optional[str] = Field(None, max_length=200, description="Payment description")
+    description: Optional[str] = Field(
+        None, max_length=200, description="Payment description"
+    )
     payment_method: str = Field(
         default="upi",
         pattern="^(upi|account_transfer)$",
@@ -97,8 +110,12 @@ class RecurringPaymentCreate(BaseModel):
     """Create a new recurring payment rule."""
 
     beneficiary_id: int = Field(..., description="Beneficiary ID")
-    amount: float = Field(..., gt=0, le=100000, description="Amount per cycle (max ₹100k)")
-    description: str = Field(..., min_length=1, max_length=100, description="Bill/service name")
+    amount: float = Field(
+        ..., gt=0, le=100000, description="Amount per cycle (max ₹100k)"
+    )
+    description: str = Field(
+        ..., min_length=1, max_length=100, description="Bill/service name"
+    )
     frequency: str = Field(
         ...,
         pattern="^(daily|weekly|monthly|quarterly)$",
@@ -108,9 +125,15 @@ class RecurringPaymentCreate(BaseModel):
         None,
         description='{"day_of_week": "monday"} for weekly or {"day_of_month": 5} for monthly',
     )
-    start_date: Optional[date] = Field(None, description="Start date (defaults to today)")
-    end_date: Optional[date] = Field(None, description="End date (optional; None = indefinite)")
-    requires_approval: bool = Field(default=True, description="Require approval for each payment")
+    start_date: Optional[date] = Field(
+        None, description="Start date (defaults to today)"
+    )
+    end_date: Optional[date] = Field(
+        None, description="End date (optional; None = indefinite)"
+    )
+    requires_approval: bool = Field(
+        default=True, description="Require approval for each payment"
+    )
 
 
 class RecurringPaymentUpdate(BaseModel):

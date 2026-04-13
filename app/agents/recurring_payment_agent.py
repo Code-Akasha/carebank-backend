@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class RecurringSetupState(str, Enum):
     """States in recurring payment setup conversation."""
-    
+
     START = "start"
     SELECTING_BENEFICIARY = "selecting_beneficiary"
     ENTERING_AMOUNT = "entering_amount"
@@ -34,7 +34,7 @@ class RecurringSetupState(str, Enum):
 
 class RecurringSetupContext(BaseModel):
     """Conversation context for recurring payment setup."""
-    
+
     user_id: str
     state: RecurringSetupState = RecurringSetupState.START
     beneficiary_id: Optional[int] = None
@@ -48,14 +48,14 @@ class RecurringSetupContext(BaseModel):
     requires_approval: bool = True
     rule_id: Optional[int] = None
     error_message: Optional[str] = None
-    
+
     class Config:
         use_enum_values = False
 
 
 class RecurringSetupResponse(BaseModel):
     """Response from recurring setup agent."""
-    
+
     message: str
     context: RecurringSetupContext
     options: Optional[list[dict]] = None
@@ -65,7 +65,7 @@ class RecurringSetupResponse(BaseModel):
 class RecurringPaymentAgent:
     """
     Conversational agent for setting up recurring payments.
-    
+
     Flow:
     1. Ask which beneficiary (show saved contacts)
     2. Ask amount
@@ -75,7 +75,7 @@ class RecurringPaymentAgent:
     6. Ask end date (optional)
     7. Ask if approval needed
     8. Confirm and create
-    
+
     Example:
         User: "Setup recurring yoga"
         Agent: "Which beneficiary?"
@@ -94,50 +94,54 @@ class RecurringPaymentAgent:
         User: "no"
         Agent: "✅ Recurring set up: ₹2000 weekly on Monday to Yoga Planet"
     """
-    
+
     def __init__(self, db: Optional[SessionLocal] = None):
         """Initialize agent with optional DB session."""
         self.db = db or SessionLocal()
-    
-    def process_message(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def process_message(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Process user message and return agent response."""
-        
+
         try:
             # State machine routing
             if context.state == RecurringSetupState.START:
                 return self._handle_start(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.SELECTING_BENEFICIARY:
                 return self._handle_beneficiary_selection(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.ENTERING_AMOUNT:
                 return self._handle_amount_entry(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.SELECTING_FREQUENCY:
                 return self._handle_frequency_selection(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.ENTERING_FREQUENCY_CONFIG:
                 return self._handle_frequency_config(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.ENTERING_START_DATE:
                 return self._handle_start_date(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.ENTERING_END_DATE:
                 return self._handle_end_date(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.ASKING_APPROVAL:
                 return self._handle_approval(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.CONFIRMING:
                 return self._handle_confirmation(user_id, message, context)
-            
+
             elif context.state == RecurringSetupState.COMPLETE:
                 return RecurringSetupResponse(
                     message="✅ Recurring payment set up successfully! Setup another one?",
-                    context=RecurringSetupContext(user_id=user_id, state=RecurringSetupState.START),
+                    context=RecurringSetupContext(
+                        user_id=user_id, state=RecurringSetupState.START
+                    ),
                     options=[{"label": "Yes, setup another", "value": "yes"}],
                 )
-            
+
             else:
                 context.error_message = "Unknown state"
                 context.state = RecurringSetupState.FAILED
@@ -146,7 +150,7 @@ class RecurringPaymentAgent:
                     context=context,
                     error="Unknown state",
                 )
-        
+
         except Exception as exc:
             logger.error(f"Recurring agent error: {exc}", exc_info=True)
             context.error_message = str(exc)
@@ -156,15 +160,17 @@ class RecurringPaymentAgent:
                 context=context,
                 error=str(exc),
             )
-    
-    def _handle_start(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_start(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle initial state - ask which beneficiary."""
-        
+
         # Get saved beneficiaries
-        beneficiaries = self.db.query(Beneficiary).filter(
-            Beneficiary.user_id == user_id
-        ).all()
-        
+        beneficiaries = (
+            self.db.query(Beneficiary).filter(Beneficiary.user_id == user_id).all()
+        )
+
         if not beneficiaries:
             context.state = RecurringSetupState.FAILED
             return RecurringSetupResponse(
@@ -172,7 +178,7 @@ class RecurringPaymentAgent:
                 context=context,
                 error="No beneficiaries",
             )
-        
+
         # Build options for saved beneficiaries
         options = [
             {
@@ -182,31 +188,37 @@ class RecurringPaymentAgent:
             }
             for b in beneficiaries
         ]
-        
+
         context.state = RecurringSetupState.SELECTING_BENEFICIARY
         return RecurringSetupResponse(
             message="Which beneficiary?",
             context=context,
             options=options,
         )
-    
-    def _handle_beneficiary_selection(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_beneficiary_selection(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle beneficiary selection."""
-        
+
         try:
             beneficiary_id = int(message)
-            beneficiary = self.db.query(Beneficiary).filter(
-                Beneficiary.id == beneficiary_id,
-                Beneficiary.user_id == user_id,
-            ).first()
-            
+            beneficiary = (
+                self.db.query(Beneficiary)
+                .filter(
+                    Beneficiary.id == beneficiary_id,
+                    Beneficiary.user_id == user_id,
+                )
+                .first()
+            )
+
             if not beneficiary:
                 return RecurringSetupResponse(
                     message="❌ Beneficiary not found. Please select again.",
                     context=context,
                     error="Beneficiary not found",
                 )
-            
+
             context.beneficiary_id = beneficiary_id
             context.description = beneficiary.nickname or beneficiary.identifier_value
             context.state = RecurringSetupState.ENTERING_AMOUNT
@@ -214,42 +226,46 @@ class RecurringPaymentAgent:
                 message=f"Recurring payment to {context.description}.\n\nHow much each time?",
                 context=context,
             )
-        
+
         except (ValueError, TypeError):
             return RecurringSetupResponse(
                 message="❌ Invalid selection. Please enter the number.",
                 context=context,
                 error="Invalid input",
             )
-    
-    def _handle_amount_entry(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_amount_entry(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle amount input."""
-        
+
         try:
             amount = float(message)
-            
+
             if amount <= 0:
                 return RecurringSetupResponse(
                     message="❌ Amount must be positive. Please enter again:",
                     context=context,
                     error="Invalid amount",
                 )
-            
+
             # Check recurring limit
-            settings = self.db.query(PaymentSettings).filter(
-                PaymentSettings.user_id == user_id
-            ).first()
-            
+            settings = (
+                self.db.query(PaymentSettings)
+                .filter(PaymentSettings.user_id == user_id)
+                .first()
+            )
+
             if settings and amount > settings.recurring_payment_max:
                 return RecurringSetupResponse(
                     message=f"❌ Amount exceeds recurring limit (₹{settings.recurring_payment_max}). Please enter less.",
                     context=context,
                     error="Amount exceeds limit",
                 )
-            
+
             context.amount = amount
             context.state = RecurringSetupState.SELECTING_FREQUENCY
-            
+
             return RecurringSetupResponse(
                 message="How often should this payment repeat?",
                 context=context,
@@ -260,26 +276,28 @@ class RecurringPaymentAgent:
                     {"label": "Quarterly (every 3 months)", "value": "quarterly"},
                 ],
             )
-        
+
         except (ValueError, TypeError):
             return RecurringSetupResponse(
                 message="❌ Invalid amount. Please enter a number.",
                 context=context,
                 error="Invalid input",
             )
-    
-    def _handle_frequency_selection(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_frequency_selection(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle frequency selection."""
-        
+
         if message.lower() not in ["daily", "weekly", "monthly", "quarterly"]:
             return RecurringSetupResponse(
                 message="❌ Invalid frequency. Please select one.",
                 context=context,
                 error="Invalid input",
             )
-        
+
         context.frequency = message.lower()
-        
+
         if context.frequency == "daily":
             # No config needed for daily
             context.state = RecurringSetupState.ENTERING_START_DATE
@@ -287,10 +305,10 @@ class RecurringPaymentAgent:
                 message="Great! Daily recurring payments.\n\nStart date? (YYYY-MM-DD or press enter for today)",
                 context=context,
             )
-        
+
         # Need frequency config
         context.state = RecurringSetupState.ENTERING_FREQUENCY_CONFIG
-        
+
         if context.frequency == "weekly":
             return RecurringSetupResponse(
                 message="Which day of week?",
@@ -305,25 +323,35 @@ class RecurringPaymentAgent:
                     {"label": "Sunday", "value": "sunday"},
                 ],
             )
-        
+
         elif context.frequency == "monthly" or context.frequency == "quarterly":
             return RecurringSetupResponse(
                 message=f"Which date of the month? (1-31)",
                 context=context,
             )
-    
-    def _handle_frequency_config(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_frequency_config(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle frequency configuration (day of week/month)."""
-        
+
         if context.frequency == "weekly":
-            if message.lower() not in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]:
+            if message.lower() not in [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday",
+            ]:
                 return RecurringSetupResponse(
                     message="❌ Invalid day. Please select one.",
                     context=context,
                     error="Invalid input",
                 )
             context.day_of_week = message.lower()
-        
+
         elif context.frequency in ["monthly", "quarterly"]:
             try:
                 day = int(message)
@@ -340,16 +368,18 @@ class RecurringPaymentAgent:
                     context=context,
                     error="Invalid input",
                 )
-        
+
         context.state = RecurringSetupState.ENTERING_START_DATE
         return RecurringSetupResponse(
             message="Start date? (YYYY-MM-DD or press enter for today)",
             context=context,
         )
-    
-    def _handle_start_date(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_start_date(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle start date input."""
-        
+
         if message.strip() == "":
             context.start_date = None  # Will default to today
         else:
@@ -361,16 +391,18 @@ class RecurringPaymentAgent:
                     context=context,
                     error="Invalid input",
                 )
-        
+
         context.state = RecurringSetupState.ENTERING_END_DATE
         return RecurringSetupResponse(
             message="End date? (YYYY-MM-DD or leave blank for never-ending)",
             context=context,
         )
-    
-    def _handle_end_date(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_end_date(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle end date input."""
-        
+
         if message.strip() == "":
             context.end_date = None  # Never-ending
         else:
@@ -382,7 +414,7 @@ class RecurringPaymentAgent:
                     context=context,
                     error="Invalid input",
                 )
-        
+
         context.state = RecurringSetupState.ASKING_APPROVAL
         return RecurringSetupResponse(
             message="Require approval/confirmation for each payment? (yes/no)",
@@ -392,10 +424,12 @@ class RecurringPaymentAgent:
                 {"label": "No, auto-execute", "value": "no"},
             ],
         )
-    
-    def _handle_approval(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_approval(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle approval requirement."""
-        
+
         if message.lower() in ["yes", "y"]:
             context.requires_approval = True
         elif message.lower() in ["no", "n"]:
@@ -406,13 +440,15 @@ class RecurringPaymentAgent:
                 context=context,
                 error="Invalid input",
             )
-        
+
         context.state = RecurringSetupState.CONFIRMING
         return self._generate_confirmation(context)
-    
-    def _generate_confirmation(self, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _generate_confirmation(
+        self, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Generate confirmation message."""
-        
+
         # Format frequency display
         if context.frequency == "daily":
             freq_str = "Daily"
@@ -424,14 +460,14 @@ class RecurringPaymentAgent:
             freq_str = f"Quarterly on the {context.day_of_month}th"
         else:
             freq_str = context.frequency
-        
+
         # Format dates
         start_str = str(context.start_date) if context.start_date else "Today"
         end_str = str(context.end_date) if context.end_date else "Never-ending"
-        
+
         # Format approval
         approval_str = "Required" if context.requires_approval else "Auto-execute"
-        
+
         confirmation = (
             f"Please confirm:\n"
             f"Beneficiary: {context.description}\n"
@@ -441,7 +477,7 @@ class RecurringPaymentAgent:
             f"Ends: {end_str}\n"
             f"Approval: {approval_str}"
         )
-        
+
         return RecurringSetupResponse(
             message=confirmation,
             context=context,
@@ -450,23 +486,25 @@ class RecurringPaymentAgent:
                 {"label": "❌ Cancel", "value": "no"},
             ],
         )
-    
-    def _handle_confirmation(self, user_id: str, message: str, context: RecurringSetupContext) -> RecurringSetupResponse:
+
+    def _handle_confirmation(
+        self, user_id: str, message: str, context: RecurringSetupContext
+    ) -> RecurringSetupResponse:
         """Handle final confirmation."""
-        
+
         if message.lower() == "no":
             context.state = RecurringSetupState.FAILED
             return RecurringSetupResponse(
                 message="❌ Setup cancelled. Start over?",
                 context=context,
             )
-        
+
         if message.lower() != "yes":
             return RecurringSetupResponse(
                 message="Please confirm (yes/no).",
                 context=context,
             )
-        
+
         # Create recurring payment rule
         try:
             payload = RecurringPaymentCreate(
@@ -482,20 +520,20 @@ class RecurringPaymentAgent:
                 end_date=context.end_date,
                 requires_approval=context.requires_approval,
             )
-            
+
             rule = create_recurring_payment_rule(self.db, user_id, payload)
-            
+
             context.rule_id = rule.id
             context.state = RecurringSetupState.COMPLETE
-            
+
             return RecurringSetupResponse(
                 message=f"✅ Recurring payment set up successfully!\n\n"
-                        f"Rule ID: {rule.id}\n"
-                        f"First payment: {rule.next_run_date}\n"
-                        f"Frequency: {context.frequency}",
+                f"Rule ID: {rule.id}\n"
+                f"First payment: {rule.next_run_date}\n"
+                f"Frequency: {context.frequency}",
                 context=context,
             )
-        
+
         except Exception as exc:
             logger.error(f"Failed to create recurring rule: {exc}", exc_info=True)
             context.error_message = str(exc)
@@ -505,7 +543,7 @@ class RecurringPaymentAgent:
                 context=context,
                 error=str(exc),
             )
-    
+
     def close(self) -> None:
         """Close DB session."""
         if self.db:

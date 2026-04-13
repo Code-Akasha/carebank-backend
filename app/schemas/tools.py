@@ -112,7 +112,9 @@ class ToolMetadata(BaseModel):
 
     name: str = Field(description="Human-readable tool name")
     description: str = Field(description="What the tool does")
-    action_types: list[str] = Field(description="List of action types this tool handles")
+    action_types: list[str] = Field(
+        description="List of action types this tool handles"
+    )
     timeout_seconds: int = Field(
         default=15,
         ge=5,
@@ -145,7 +147,9 @@ class ActionTypeSchema(BaseModel):
     payload_schema: dict[str, Any] = Field(
         description="JSON Schema for payload validation"
     )
-    requires_approval: bool = Field(description="Whether approval needed before execution")
+    requires_approval: bool = Field(
+        description="Whether approval needed before execution"
+    )
     max_amount: float | None = Field(
         default=None,
         description="Max transaction amount (if applicable)",
@@ -164,7 +168,9 @@ class ToolDiscoveryResponse(BaseModel):
     """Complete tool discovery response."""
 
     tools: list[ToolMetadata] = Field(description="List of available tools")
-    action_types: list[ActionTypeSchema] = Field(description="Detailed schema for each action type")
+    action_types: list[ActionTypeSchema] = Field(
+        description="Detailed schema for each action type"
+    )
     timestamp: str = Field(description="ISO 8601 timestamp of discovery response")
 
 
@@ -185,4 +191,6 @@ class ToolExecutionResult(BaseModel):
         default_factory=dict,
         description="Tool-specific metadata",
     )
-    error: str | None = Field(default=None, description="Error message if execution failed")
+    error: str | None = Field(
+        default=None, description="Error message if execution failed"
+    )

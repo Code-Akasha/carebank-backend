@@ -24,16 +24,22 @@ def create_recurring_payment_rule(
     - User hasn't exceeded max active rules (10)
     """
     # Validate beneficiary
-    beneficiary = db.query(Beneficiary).filter(
-        Beneficiary.id == payload.beneficiary_id,
-        Beneficiary.user_id == user_id,
-    ).first()
+    beneficiary = (
+        db.query(Beneficiary)
+        .filter(
+            Beneficiary.id == payload.beneficiary_id,
+            Beneficiary.user_id == user_id,
+        )
+        .first()
+    )
 
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
     # Validate amount
-    settings = db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+    settings = (
+        db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+    )
     if not settings:
         raise HTTPException(status_code=400, detail="Payment settings not configured")
 
@@ -44,10 +50,14 @@ def create_recurring_payment_rule(
         )
 
     # Check max active rules
-    active_rules_count = db.query(RecurringPaymentRule).filter(
-        RecurringPaymentRule.user_id == user_id,
-        RecurringPaymentRule.status.in_(["active", "paused"]),
-    ).count()
+    active_rules_count = (
+        db.query(RecurringPaymentRule)
+        .filter(
+            RecurringPaymentRule.user_id == user_id,
+            RecurringPaymentRule.status.in_(["active", "paused"]),
+        )
+        .count()
+    )
 
     if active_rules_count >= settings.max_active_recurring_rules:
         raise HTTPException(
@@ -56,12 +66,20 @@ def create_recurring_payment_rule(
         )
 
     # Extract day_config
-    day_of_month = payload.day_config.get("day_of_month") if payload.day_config else None
+    day_of_month = (
+        payload.day_config.get("day_of_month") if payload.day_config else None
+    )
     day_of_week = payload.day_config.get("day_of_week") if payload.day_config else None
 
     # Calculate next run date
-    start_date_dt = datetime.combine(payload.start_date, datetime.min.time()).replace(tzinfo=timezone.utc) if payload.start_date else datetime.now(timezone.utc)
-    
+    start_date_dt = (
+        datetime.combine(payload.start_date, datetime.min.time()).replace(
+            tzinfo=timezone.utc
+        )
+        if payload.start_date
+        else datetime.now(timezone.utc)
+    )
+
     next_run_date = calculate_next_run_date(
         payload.frequency,
         day_of_month,
@@ -99,10 +117,14 @@ def get_recurring_payment_rule(
     rule_id: int,
 ) -> RecurringPaymentRule:
     """Get recurring payment rule by ID."""
-    rule = db.query(RecurringPaymentRule).filter(
-        RecurringPaymentRule.id == rule_id,
-        RecurringPaymentRule.user_id == user_id,
-    ).first()
+    rule = (
+        db.query(RecurringPaymentRule)
+        .filter(
+            RecurringPaymentRule.id == rule_id,
+            RecurringPaymentRule.user_id == user_id,
+        )
+        .first()
+    )
 
     if not rule:
         raise HTTPException(status_code=404, detail="Recurring payment rule not found")
@@ -119,7 +141,9 @@ def list_recurring_payment_rules(
 
     Optional filter by status: active, paused, expired.
     """
-    query = db.query(RecurringPaymentRule).filter(RecurringPaymentRule.user_id == user_id)
+    query = db.query(RecurringPaymentRule).filter(
+        RecurringPaymentRule.user_id == user_id
+    )
 
     if status:
         if status not in ["active", "paused", "expired"]:
@@ -127,7 +151,9 @@ def list_recurring_payment_rules(
         query = query.filter(RecurringPaymentRule.status == status)
 
     # Order by next_run_date, then by creation date
-    query = query.order_by(RecurringPaymentRule.next_run_date, RecurringPaymentRule.created_at)
+    query = query.order_by(
+        RecurringPaymentRule.next_run_date, RecurringPaymentRule.created_at
+    )
 
     return query.all()
 
@@ -150,7 +176,9 @@ def update_recurring_payment_rule(
 
     # Validate new amount if provided
     if payload.amount is not None:
-        settings = db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+        settings = (
+            db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+        )
         if payload.amount > settings.recurring_payment_max:
             raise HTTPException(
                 status_code=400,
@@ -262,12 +290,17 @@ def get_upcoming_payments(
     now_date = datetime.now(timezone.utc).date()
     future_date = now_date + timedelta(days=days_ahead)
 
-    rules = db.query(RecurringPaymentRule).filter(
-        RecurringPaymentRule.user_id == user_id,
-        RecurringPaymentRule.status == "active",
-        RecurringPaymentRule.next_run_date >= now_date,
-        RecurringPaymentRule.next_run_date <= future_date,
-    ).order_by(RecurringPaymentRule.next_run_date).all()
+    rules = (
+        db.query(RecurringPaymentRule)
+        .filter(
+            RecurringPaymentRule.user_id == user_id,
+            RecurringPaymentRule.status == "active",
+            RecurringPaymentRule.next_run_date >= now_date,
+            RecurringPaymentRule.next_run_date <= future_date,
+        )
+        .order_by(RecurringPaymentRule.next_run_date)
+        .all()
+    )
 
     result = []
     for rule in rules:
@@ -279,22 +312,24 @@ def get_upcoming_payments(
             )
             .first()
         )
-        result.append({
-            "id": rule.id,
-            "beneficiary": {
-                "id": rule.beneficiary_id,
-                "display_name": (
-                    beneficiary.nickname if beneficiary else "Unknown Beneficiary"
-                ),
-                "identifier_value": (
-                    beneficiary.identifier_value if beneficiary else None
-                ),
-            },
-            "amount": rule.amount,
-            "frequency": rule.frequency,
-            "next_run_date": rule.next_run_date.isoformat(),
-            "description": rule.description,
-        })
+        result.append(
+            {
+                "id": rule.id,
+                "beneficiary": {
+                    "id": rule.beneficiary_id,
+                    "display_name": (
+                        beneficiary.nickname if beneficiary else "Unknown Beneficiary"
+                    ),
+                    "identifier_value": (
+                        beneficiary.identifier_value if beneficiary else None
+                    ),
+                },
+                "amount": rule.amount,
+                "frequency": rule.frequency,
+                "next_run_date": rule.next_run_date.isoformat(),
+                "description": rule.description,
+            }
+        )
 
     return result
 
@@ -374,8 +409,13 @@ def calculate_next_run_date(
                 next_date = datetime(year, month, day_of_month, tzinfo=timezone.utc)
         except ValueError:
             # Day doesn't exist in month (e.g., Feb 31), use last day of month
-            last_day_next_month = (datetime(year, month + 1 if month < 12 else 1, 1, tzinfo=timezone.utc) - timedelta(days=1)).day
-            next_date = datetime(year, month, min(day_of_month, last_day_next_month), tzinfo=timezone.utc)
+            last_day_next_month = (
+                datetime(year, month + 1 if month < 12 else 1, 1, tzinfo=timezone.utc)
+                - timedelta(days=1)
+            ).day
+            next_date = datetime(
+                year, month, min(day_of_month, last_day_next_month), tzinfo=timezone.utc
+            )
 
         return next_date
 
@@ -394,8 +434,13 @@ def calculate_next_run_date(
             next_date = datetime(year, month, day_of_month, tzinfo=timezone.utc)
         except ValueError:
             # Day doesn't exist, use last day of month
-            last_day = (datetime(year, month + 1 if month < 12 else 1, 1, tzinfo=timezone.utc) - timedelta(days=1)).day
-            next_date = datetime(year, month, min(day_of_month, last_day), tzinfo=timezone.utc)
+            last_day = (
+                datetime(year, month + 1 if month < 12 else 1, 1, tzinfo=timezone.utc)
+                - timedelta(days=1)
+            ).day
+            next_date = datetime(
+                year, month, min(day_of_month, last_day), tzinfo=timezone.utc
+            )
 
         return next_date
 

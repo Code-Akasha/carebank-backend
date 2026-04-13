@@ -16,7 +16,7 @@ class ExecutionErrorMessage:
         self,
         message: str,
         error_type: str,
-        suggestion: str | None =None,
+        suggestion: str | None = None,
         is_retryable: bool = False,
     ):
         self.message = message
@@ -35,7 +35,9 @@ class ExecutionErrorMessage:
         return result
 
 
-def format_execution_error(exc: Exception, action_type: str | None = None) -> ExecutionErrorMessage:
+def format_execution_error(
+    exc: Exception, action_type: str | None = None
+) -> ExecutionErrorMessage:
     """
     Convert an exception into a user-friendly error message.
 

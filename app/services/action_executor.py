@@ -13,7 +13,10 @@ from app.services.idempotency import (
     mark_completed,
     reserve_or_replay,
 )
-from app.services.payload_validator import PayloadValidationError, validate_action_payload
+from app.services.payload_validator import (
+    PayloadValidationError,
+    validate_action_payload,
+)
 from app.tools.registry import ToolNotFoundError, get_tool_registry
 
 
@@ -145,7 +148,12 @@ def execute_action(
                     },
                 )
             return execution
-        except (ToolNotFoundError, ValueError, IdempotencyConflictError, PayloadValidationError) as exc:
+        except (
+            ToolNotFoundError,
+            ValueError,
+            IdempotencyConflictError,
+            PayloadValidationError,
+        ) as exc:
             # Non-retryable errors — fail immediately with user-friendly message
             friendly_error = format_execution_error(exc, action_type)
             last_error = friendly_error.message

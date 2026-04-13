@@ -47,7 +47,7 @@ def init_db() -> None:
     import app.models.action_request  # noqa: F401
     import app.models.action_execution  # noqa: F401
     import app.models.idempotency_record  # noqa: F401
-    
+
     # Payment system models (generic payments + recurring bills)
     import app.models.payment_settings  # noqa: F401
     import app.models.beneficiary  # noqa: F401
