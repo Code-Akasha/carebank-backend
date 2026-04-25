@@ -49,42 +49,31 @@ if not exist "%FRONTEND_DIR%\package.json" (
 )
 
 REM --- Install python-dotenv in mockbank venv if missing ---
-if "%RUN_MOCKBANK%"=="1" if exist "%MOCKBANK_DIR%\.venv\Scripts\pip.exe" (
-    "%MOCKBANK_DIR%\.venv\Scripts\pip.exe" install -q python-dotenv
+if "%RUN_MOCKBANK%"=="1" if exist "%MOCKBANK_DIR%\.venv" (
+    cmd /c "cd /d %MOCKBANK_DIR% && uv pip install -q python-dotenv"
 )
 
 REM --- Initialise PostgreSQL tables ---
 echo Initialising database tables...
 cd /d "%BACKEND_DIR%"
-if exist ".venv\Scripts\activate" (
-    call .venv\Scripts\activate
-    set DB_HOST=%DB_HOST%
-    set DB_PORT=%DB_PORT%
-    set DB_USER=%DB_USER%
-    set DB_PASSWORD=%DB_PASSWORD%
-    set DB_NAME=%DB_NAME%
-    python scripts\setup_postgres.py
-)
+set DB_HOST=%DB_HOST%
+set DB_PORT=%DB_PORT%
+set DB_USER=%DB_USER%
+set DB_PASSWORD=%DB_PASSWORD%
+set DB_NAME=%DB_NAME%
+uv run scripts\setup_postgres.py
 
 REM --- Start MockBank ---
 if "%RUN_MOCKBANK%"=="1" (
     echo Starting MockBank API on port 8001...
-    if exist "%MOCKBANK_DIR%\.venv\Scripts\activate" (
-        start "MockBank API" cmd /k "cd /d %MOCKBANK_DIR% && call .venv\Scripts\activate && uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
-    ) else (
-        start "MockBank API" cmd /k "cd /d %MOCKBANK_DIR% && uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
-    )
+    start "MockBank API" cmd /k "cd /d %MOCKBANK_DIR% && uv run uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
 ) else (
     echo [WARN] Skipping MockBank startup.
 )
 
 REM --- Start Backend ---
 echo Starting CareBank Backend on port 8000...
-if exist "%BACKEND_DIR%\.venv\Scripts\activate" (
-    start "CareBank Backend" cmd /k "cd /d %BACKEND_DIR% && call .venv\Scripts\activate && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
-) else (
-    start "CareBank Backend" cmd /k "cd /d %BACKEND_DIR% && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
-)
+start "CareBank Backend" cmd /k "cd /d %BACKEND_DIR% && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 REM --- Wait for Backend before starting Frontend ---
 echo Waiting for backend to become ready...
@@ -98,10 +87,7 @@ if errorlevel 1 (
 REM --- Seed demo users before frontend starts ---
 echo Seeding demo users ^(skips existing^)...
 cd /d "%BACKEND_DIR%"
-if exist ".venv\Scripts\activate" (
-    call .venv\Scripts\activate
-)
-python scripts\register_demo_users.py
+uv run scripts\register_demo_users.py
 
 REM --- Start Frontend (after backend is confirmed ready) ---
 if "%RUN_FRONTEND%"=="1" (

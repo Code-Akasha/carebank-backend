@@ -1,0 +1,7077 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CareBank Backend",
+    "description": "Personalized Banking & Financial Wellness API",
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register",
+        "operationId": "register_api_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Get Me",
+        "operationId": "get_me_api_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/mpin/set": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Set User Mpin",
+        "operationId": "set_user_mpin_api_auth_mpin_set_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__routes__auth__SetMPINRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetMPINResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin List Users",
+        "operationId": "admin_list_users_api_admin_users_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Per Page"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{user_id}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Get User",
+        "operationId": "admin_get_user_api_admin_users__user_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/agent-logs": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Agent Logs",
+        "operationId": "admin_agent_logs_api_admin_agent_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Per Page"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "agent_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Agent Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/agent-logs/{user_id}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Agent Logs For User",
+        "operationId": "admin_agent_logs_for_user_api_admin_agent_logs__user_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/simulation/toggle": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Simulation Toggle",
+        "operationId": "admin_simulation_toggle_api_admin_simulation_toggle_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationToggleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/simulation/status": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Simulation Status",
+        "operationId": "admin_simulation_status_api_admin_simulation_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/scenario": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Trigger Scenario",
+        "operationId": "admin_trigger_scenario_api_admin_scenario_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioTriggerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Get Profile",
+        "operationId": "get_profile_api_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Upsert Profile",
+        "operationId": "upsert_profile_api_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfileUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/planning/plans": {
+      "get": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "List Plans",
+        "operationId": "list_plans_api_planning_plans_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FinancialPlanResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Plans Api Planning Plans Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Create Plan",
+        "operationId": "create_plan_api_planning_plans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinancialPlanCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinancialPlanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/planning/recurring-rules": {
+      "post": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Create Recurring Rule",
+        "operationId": "create_recurring_rule_api_planning_recurring_rules_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecurringRuleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringRuleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "List Recurring Rules",
+        "operationId": "list_recurring_rules_api_planning_recurring_rules_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Inactive"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecurringRuleResponse"
+                  },
+                  "title": "Response List Recurring Rules Api Planning Recurring Rules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/planning/schedule-from-text": {
+      "post": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Create Schedule From Text",
+        "operationId": "create_schedule_from_text_api_planning_schedule_from_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleFromTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleFromTextResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/planning/recurring-rules/{rule_id}": {
+      "patch": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Update Recurring Rule",
+        "operationId": "update_recurring_rule_api_planning_recurring_rules__rule_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecurringRuleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringRuleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/planning/recurring-rules/{rule_id}/materialize": {
+      "post": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Materialize Rule Once",
+        "operationId": "materialize_rule_once_api_planning_recurring_rules__rule_id__materialize_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecklistItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/planning/scheduler/materialize-due": {
+      "post": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Materialize Due Checklists",
+        "operationId": "materialize_due_checklists_api_planning_scheduler_materialize_due_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerMaterializeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/planning/checklist": {
+      "get": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "List Checklist",
+        "operationId": "list_checklist_api_planning_checklist_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Filter"
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChecklistItemResponse"
+                  },
+                  "title": "Response List Checklist Api Planning Checklist Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/planning/checklist/{item_id}": {
+      "patch": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Update Checklist Status",
+        "operationId": "update_checklist_status_api_planning_checklist__item_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecklistItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/actions/requests": {
+      "post": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "Create Action Request",
+        "operationId": "create_action_request_api_actions_requests_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionRequestCreateResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "List Action Requests",
+        "operationId": "list_action_requests_api_actions_requests_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActionRequestResponse"
+                  },
+                  "title": "Response List Action Requests Api Actions Requests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/actions/requests/{request_id}/approve": {
+      "post": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "Approve Action Request",
+        "operationId": "approve_action_request_api_actions_requests__request_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionDecisionResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/actions/requests/{request_id}/reject": {
+      "post": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "Reject Action Request",
+        "operationId": "reject_action_request_api_actions_requests__request_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionDecisionResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/actions/executions": {
+      "get": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "List Action Executions",
+        "operationId": "list_action_executions_api_actions_executions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActionExecutionResponse"
+                  },
+                  "title": "Response List Action Executions Api Actions Executions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/actions/executions/{execution_id}": {
+      "get": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "Get Action Execution",
+        "operationId": "get_action_execution_api_actions_executions__execution_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Execution Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionExecutionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/actions/executions/reconcile": {
+      "post": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "Reconcile Action Executions",
+        "operationId": "reconcile_action_executions_api_actions_executions_reconcile_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutionReconcileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/actions/webhooks/mockbank": {
+      "post": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "Mockbank Lifecycle Webhook",
+        "operationId": "mockbank_lifecycle_webhook_api_actions_webhooks_mockbank_post",
+        "parameters": [
+          {
+            "name": "X-CareBank-Signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Carebank-Signature"
+            }
+          },
+          {
+            "name": "X-CareBank-Timestamp",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Carebank-Timestamp"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "List Notifications",
+        "operationId": "list_notifications_api_notifications_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "unread_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Unread Only"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationResponse"
+                  },
+                  "title": "Response List Notifications Api Notifications Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{notification_id}": {
+      "patch": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark Notification Read",
+        "operationId": "mark_notification_read_api_notifications__notification_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationMarkReadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/transactions/": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "List Transactions",
+        "operationId": "list_transactions_api_transactions__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/transactions/{transaction_id}": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "Get Transaction",
+        "operationId": "get_transaction_api_transactions__transaction_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Transaction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/transactions/trigger": {
+      "post": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "Trigger Transaction Proxy",
+        "operationId": "trigger_transaction_proxy_api_transactions_trigger_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionTriggerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Trigger Transaction Proxy Api Transactions Trigger Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/balances/": {
+      "get": {
+        "tags": [
+          "balances"
+        ],
+        "summary": "Get Balance",
+        "operationId": "get_balance_api_balances__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/products/bank-policies": {
+      "get": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Get Bank Policies",
+        "description": "Return MockBank regulatory policy catalog (India-first rails + action caps).",
+        "operationId": "get_bank_policies_api_products_bank_policies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Bank Policies Api Products Bank Policies Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/bank-plans": {
+      "get": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Get Bank Plans",
+        "description": "Return MockBank account plan catalog as the source of truth.",
+        "operationId": "get_bank_plans_api_products_bank_plans_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Bank Plans Api Products Bank Plans Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/": {
+      "get": {
+        "tags": [
+          "products"
+        ],
+        "summary": "List Products",
+        "description": "Return products from the mock bank, persisting locally for caching.",
+        "operationId": "list_products_api_products__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {},
+                  "type": "array",
+                  "title": "Response List Products Api Products  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/": {
+      "get": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "List Accounts",
+        "operationId": "list_accounts_api_accounts__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Accounts Api Accounts  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Create Account",
+        "operationId": "create_account_api_accounts__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/beneficiaries/": {
+      "get": {
+        "tags": [
+          "beneficiaries"
+        ],
+        "summary": "List Beneficiaries Endpoint",
+        "description": "List all beneficiaries for current user.",
+        "operationId": "list_beneficiaries_endpoint_api_beneficiaries__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "beneficiaries"
+        ],
+        "summary": "Create Beneficiary Endpoint",
+        "description": "Create a new beneficiary (saved contact) in the connected banking provider.",
+        "operationId": "create_beneficiary_endpoint_api_beneficiaries__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BeneficiaryCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/beneficiaries/{beneficiary_id}": {
+      "get": {
+        "tags": [
+          "beneficiaries"
+        ],
+        "summary": "Get Beneficiary Endpoint",
+        "description": "Get specific beneficiary details.",
+        "operationId": "get_beneficiary_endpoint_api_beneficiaries__beneficiary_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "beneficiary_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Beneficiary Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "beneficiaries"
+        ],
+        "summary": "Update Beneficiary Endpoint",
+        "description": "Update beneficiary.\n\nMockBank currently does not expose a dedicated update endpoint.",
+        "operationId": "update_beneficiary_endpoint_api_beneficiaries__beneficiary_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "beneficiary_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Beneficiary Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BeneficiaryCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "beneficiaries"
+        ],
+        "summary": "Delete Beneficiary Endpoint",
+        "description": "Delete a beneficiary.\n\nMockBank currently does not expose a dedicated delete endpoint.",
+        "operationId": "delete_beneficiary_endpoint_api_beneficiaries__beneficiary_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "beneficiary_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Beneficiary Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/beneficiaries/{beneficiary_id}/verify": {
+      "put": {
+        "tags": [
+          "beneficiaries"
+        ],
+        "summary": "Verify Beneficiary Endpoint",
+        "description": "Mark beneficiary as verified.",
+        "operationId": "verify_beneficiary_endpoint_api_beneficiaries__beneficiary_id__verify_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "beneficiary_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Beneficiary Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "beneficiaries"
+        ],
+        "summary": "Verify Beneficiary Endpoint",
+        "description": "Mark beneficiary as verified.",
+        "operationId": "verify_beneficiary_endpoint_api_beneficiaries__beneficiary_id__verify_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "beneficiary_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Beneficiary Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bank-schedules/settlement-windows": {
+      "get": {
+        "tags": [
+          "bank-schedules"
+        ],
+        "summary": "Get Settlement Windows",
+        "operationId": "get_settlement_windows_api_bank_schedules_settlement_windows_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "for_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "For Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Settlement Windows Api Bank Schedules Settlement Windows Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bank-schedules/": {
+      "get": {
+        "tags": [
+          "bank-schedules"
+        ],
+        "summary": "List Bank Schedules",
+        "operationId": "list_bank_schedules_api_bank_schedules__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Inactive"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Bank Schedules Api Bank Schedules  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "bank-schedules"
+        ],
+        "summary": "Create Bank Schedule",
+        "operationId": "create_bank_schedule_api_bank_schedules__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BankScheduleCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Bank Schedule Api Bank Schedules  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bank-schedules/{schedule_id}/run": {
+      "post": {
+        "tags": [
+          "bank-schedules"
+        ],
+        "summary": "Run Bank Schedule",
+        "operationId": "run_bank_schedule_api_bank_schedules__schedule_id__run_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Schedule Id"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Force"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Run Bank Schedule Api Bank Schedules  Schedule Id  Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bank-schedules/{schedule_id}": {
+      "delete": {
+        "tags": [
+          "bank-schedules"
+        ],
+        "summary": "Cancel Bank Schedule",
+        "operationId": "cancel_bank_schedule_api_bank_schedules__schedule_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Cancel Bank Schedule Api Bank Schedules  Schedule Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/providers/": {
+      "get": {
+        "tags": [
+          "providers"
+        ],
+        "summary": "List Providers",
+        "operationId": "list_providers_api_providers__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Providers Api Providers  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health-score/": {
+      "get": {
+        "tags": [
+          "health-score"
+        ],
+        "summary": "Get My Health Score",
+        "operationId": "get_my_health_score_api_health_score__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthScoreResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/health-score/{user_id}": {
+      "get": {
+        "tags": [
+          "health-score"
+        ],
+        "summary": "Get Health Score",
+        "description": "Legacy endpoint for admin use \u2014 now restricted to admins.",
+        "operationId": "get_health_score_api_health_score__user_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthScoreResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Chat",
+        "operationId": "chat_api_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/simulate": {
+      "post": {
+        "tags": [
+          "simulate"
+        ],
+        "summary": "Simulate",
+        "operationId": "simulate_api_simulate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/events/stream": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Stream Events",
+        "description": "SSE endpoint for real-time events (transactions, notifications, agent updates).",
+        "operationId": "stream_events_api_events_stream_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/bot/telegram/webhook": {
+      "post": {
+        "tags": [
+          "bot"
+        ],
+        "summary": "Telegram Webhook",
+        "description": "Receive a Telegram update and queue it for processing.",
+        "operationId": "telegram_webhook_bot_telegram_webhook_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Telegram Webhook Bot Telegram Webhook Post"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "bot"
+        ],
+        "summary": "Delete Webhook",
+        "description": "Unregister the Telegram webhook.",
+        "operationId": "delete_webhook_bot_telegram_webhook_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Delete Webhook Bot Telegram Webhook Delete"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/bot/telegram/set-webhook": {
+      "post": {
+        "tags": [
+          "bot"
+        ],
+        "summary": "Set Webhook",
+        "description": "Register this server's webhook URL with Telegram.",
+        "operationId": "set_webhook_bot_telegram_set_webhook_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Set Webhook Bot Telegram Set Webhook Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/bot/telegram/link": {
+      "post": {
+        "tags": [
+          "bot"
+        ],
+        "summary": "Link Telegram Id",
+        "operationId": "link_telegram_id_bot_telegram_link_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramLinkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "bot"
+        ],
+        "summary": "Unlink Telegram Id",
+        "operationId": "unlink_telegram_id_bot_telegram_link_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramUnlinkResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/bot/telegram/pair/approve": {
+      "post": {
+        "tags": [
+          "bot"
+        ],
+        "summary": "Approve Telegram Pairing",
+        "operationId": "approve_telegram_pairing_bot_telegram_pair_approve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramPairApproveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramPairApproveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/bot/telegram/alerts/spending": {
+      "post": {
+        "tags": [
+          "bot"
+        ],
+        "summary": "Trigger Spending Alert",
+        "operationId": "trigger_spending_alert_bot_telegram_alerts_spending_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramSpendingAlertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramSpendingAlertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/tools/available": {
+      "get": {
+        "tags": [
+          "tools"
+        ],
+        "summary": "Get Available Tools",
+        "description": "Discover all available tools and their supported action types.\n\nReturns schema information for each action type to enable frontend\nvalidation and dynamic UI rendering.\n\n**Response includes:**\n- List of available tools with metadata\n- Detailed schema for each action type (including validation rules)\n- Policy information (approval requirements, amount limits)",
+        "operationId": "get_available_tools_api_tools_available_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolDiscoveryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tools/{action_type}/schema": {
+      "get": {
+        "tags": [
+          "tools"
+        ],
+        "summary": "Get Action Schema",
+        "description": "Get the detailed schema for a specific action type.\n\n**Parameters:**\n- action_type: The action identifier (e.g., 'pay_rent', 'transfer_savings')\n\n**Returns:**\n- JSON Schema for the action's payload\n- Validation rules and constraints\n- Example payload",
+        "operationId": "get_action_schema_api_tools__action_type__schema_get",
+        "parameters": [
+          {
+            "name": "action_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Action Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tools/{action_type}/validate": {
+      "post": {
+        "tags": [
+          "tools"
+        ],
+        "summary": "Validate Action Payload",
+        "description": "Dry-run validation of an action payload without executing it.\n\nUseful for frontend to validate user input before submitting approval request.\n\n**Parameters:**\n- action_type: The action identifier\n- payload: JSON payload to validate\n\n**Returns:**\n- is_valid: bool\n- errors: List of validation errors (if invalid)\n- warnings: List of policy warnings (e.g., amount near limit)",
+        "operationId": "validate_action_payload_api_tools__action_type__validate_post",
+        "parameters": [
+          {
+            "name": "action_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Action Type"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tools/action-types/list": {
+      "get": {
+        "tags": [
+          "tools"
+        ],
+        "summary": "List Action Types",
+        "description": "Get a simple list of all supported action types.\n\nUseful for frontend navigation/menu rendering.\n\n**Returns:**\n- action_types: List of action type identifiers\n- count: Total number of supported actions",
+        "operationId": "list_action_types_api_tools_action_types_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payment-settings/": {
+      "get": {
+        "tags": [
+          "payment-settings"
+        ],
+        "summary": "Get Settings",
+        "description": "Get current user's payment settings.",
+        "operationId": "get_settings_api_payment_settings__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSettingsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "payment-settings"
+        ],
+        "summary": "Update Settings",
+        "description": "Update payment settings (thresholds, limits, auto-approval).",
+        "operationId": "update_settings_api_payment_settings__put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSettingsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/payment-settings/mpin": {
+      "post": {
+        "tags": [
+          "payment-settings"
+        ],
+        "summary": "Configure Mpin",
+        "description": "Set or update MPIN for payment confirmation.\n\nMPIN must be 4-6 digits.",
+        "operationId": "configure_mpin_api_payment_settings_mpin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__schemas__payments__SetMPINRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/payments/execute": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Execute Payment",
+        "description": "Execute a one-time payment to a beneficiary.\n\nFlow:\n1. Validate payment method available (phone for UPI, account for transfer)\n2. Validate amount against per-transaction and daily limits\n3. Check if MPIN is required (first payment or amount > threshold)\n4. Verify MPIN if required\n5. Execute payment via MockBank\n6. Return result with transaction ID\n\nRequired fields:\n- beneficiary_id: ID of saved beneficiary\n- amount: Payment amount in rupees\n- payment_method: \"upi\" or \"account_transfer\"\n- description: (Optional) Payment description/reason\n\nConditional fields:\n- mpin: Required if payment requires MPIN (first payment or amount > threshold)",
+        "operationId": "execute_payment_api_payments_execute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutePaymentPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentExecutionResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/recurring-payments/": {
+      "post": {
+        "tags": [
+          "recurring-payments"
+        ],
+        "summary": "Create Recurring Payment",
+        "description": "Create a new recurring payment rule.\n\nValidates:\n- Beneficiary exists and belongs to user\n- Amount is within recurring limit (\u20b9100k per cycle)\n- User hasn't exceeded max active rules (10)\n- Frequency and day config are valid\n\nReturns:\n- Full recurring payment rule with calculated next_run_date",
+        "operationId": "create_recurring_payment_api_recurring_payments__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecurringPaymentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "recurring-payments"
+        ],
+        "summary": "List Recurring Payments",
+        "description": "List all recurring payment rules for current user.\n\nOptional filter by status: 'active', 'paused', 'expired'.\nReturns rules ordered by next run date.",
+        "operationId": "list_recurring_payments_api_recurring_payments__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecurringPaymentResponse"
+                  },
+                  "title": "Response List Recurring Payments Api Recurring Payments  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recurring-payments/upcoming": {
+      "get": {
+        "tags": [
+          "recurring-payments"
+        ],
+        "summary": "Get Upcoming",
+        "description": "Get upcoming recurring payments for next N days.\n\nReturns list of payments scheduled for the next period,\nsorted by execution date.",
+        "operationId": "get_upcoming_api_recurring_payments_upcoming_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days_ahead",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 30,
+              "title": "Days Ahead"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Get Upcoming Api Recurring Payments Upcoming Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recurring-payments/{rule_id}": {
+      "get": {
+        "tags": [
+          "recurring-payments"
+        ],
+        "summary": "Get Recurring Payment",
+        "description": "Get specific recurring payment rule details.",
+        "operationId": "get_recurring_payment_api_recurring_payments__rule_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "recurring-payments"
+        ],
+        "summary": "Update Recurring Payment",
+        "description": "Update recurring payment rule.\n\nCan update:\n- amount: Payment per cycle (max \u20b9100k)\n- frequency: \"daily\", \"weekly\", \"monthly\", \"quarterly\"\n- day_of_month: 1-31 for monthly/quarterly\n- day_of_week: \"monday\"-\"sunday\" for weekly\n- end_date: When to stop recurring\n- requires_approval: Whether to require MPIN for each execution",
+        "operationId": "update_recurring_payment_api_recurring_payments__rule_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecurringPaymentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "recurring-payments"
+        ],
+        "summary": "Delete Recurring Payment",
+        "description": "Delete (cancel) a recurring payment rule.\n\nNote: Soft deleted via status=\"expired\". Historical payment records remain.",
+        "operationId": "delete_recurring_payment_api_recurring_payments__rule_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recurring-payments/{rule_id}/pause": {
+      "post": {
+        "tags": [
+          "recurring-payments"
+        ],
+        "summary": "Pause Recurring Payment",
+        "description": "Pause a recurring payment rule.\n\nPaused rules can be resumed later. The rule won't execute until resumed.\nUseful for temporary suspension without permanent deletion.",
+        "operationId": "pause_recurring_payment_api_recurring_payments__rule_id__pause_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recurring-payments/{rule_id}/resume": {
+      "post": {
+        "tags": [
+          "recurring-payments"
+        ],
+        "summary": "Resume Recurring Payment",
+        "description": "Resume a paused recurring payment rule.\n\nRecalculates next_run_date from current date.",
+        "operationId": "resume_recurring_payment_api_recurring_payments__rule_id__resume_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auto-savings/recommend": {
+      "get": {
+        "tags": [
+          "auto-savings"
+        ],
+        "summary": "Get Recommendation",
+        "description": "Get auto-savings recommendation based on current financial forecast.",
+        "operationId": "get_recommendation_api_auto_savings_recommend_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavingsRecommendation"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/auto-savings/approve": {
+      "post": {
+        "tags": [
+          "auto-savings"
+        ],
+        "summary": "Approve Savings",
+        "description": "Approve and execute a micro-savings transfer.",
+        "operationId": "approve_savings_api_auto_savings_approve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApproveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountCreateRequest": {
+        "properties": {
+          "account_type": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 3,
+            "title": "Account Type",
+            "default": "savings"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name",
+            "default": "New Account"
+          },
+          "provider_id": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Provider Id",
+            "default": "carebank_retail"
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Currency",
+            "default": "INR"
+          },
+          "initial_deposit": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Initial Deposit",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "AccountCreateRequest"
+      },
+      "AccountResponse": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "title": "Account Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "account_type": {
+            "type": "string",
+            "title": "Account Type"
+          },
+          "mask": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mask"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "institution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution"
+          },
+          "current_balance": {
+            "type": "number",
+            "title": "Current Balance"
+          },
+          "available_balance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Balance"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "last_statement_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Statement Date"
+          },
+          "metadata_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata Json"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "user_id",
+          "provider_id",
+          "name",
+          "account_type",
+          "current_balance"
+        ],
+        "title": "AccountResponse"
+      },
+      "ActionDecisionRequest": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "title": "ActionDecisionRequest"
+      },
+      "ActionDecisionResult": {
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/ActionRequestResponse"
+          },
+          "execution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActionExecutionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "request"
+        ],
+        "title": "ActionDecisionResult"
+      },
+      "ActionExecutionResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "approval_request_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Request Id"
+          },
+          "action_type": {
+            "type": "string",
+            "title": "Action Type"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "success",
+              "failure",
+              "rollback"
+            ],
+            "title": "Status"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "request_payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Request Payload"
+          },
+          "result_payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Payload"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count"
+          },
+          "max_retries": {
+            "type": "integer",
+            "title": "Max Retries"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "approval_request_id",
+          "action_type",
+          "status",
+          "idempotency_key",
+          "request_payload",
+          "result_payload",
+          "attempt_count",
+          "max_retries",
+          "last_error",
+          "started_at",
+          "finished_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ActionExecutionResponse"
+      },
+      "ActionRequestCreate": {
+        "properties": {
+          "action_type": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 3,
+            "title": "Action Type"
+          },
+          "action_payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Action Payload"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "expires_in_hours": {
+            "type": "integer",
+            "maximum": 168.0,
+            "minimum": 1.0,
+            "title": "Expires In Hours",
+            "default": 24
+          }
+        },
+        "type": "object",
+        "required": [
+          "action_type"
+        ],
+        "title": "ActionRequestCreate"
+      },
+      "ActionRequestCreateResult": {
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/ActionRequestResponse"
+          },
+          "execution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActionExecutionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "request"
+        ],
+        "title": "ActionRequestCreateResult"
+      },
+      "ActionRequestResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "action_type": {
+            "type": "string",
+            "title": "Action Type"
+          },
+          "action_payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Action Payload"
+          },
+          "policy_snapshot": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Snapshot"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "expired"
+            ],
+            "title": "Status"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "linked_execution_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Execution Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "replayed": {
+            "type": "boolean",
+            "title": "Replayed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "action_type",
+          "action_payload",
+          "policy_snapshot",
+          "status",
+          "idempotency_key",
+          "expires_at",
+          "decided_at",
+          "decision_reason",
+          "linked_execution_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ActionRequestResponse"
+      },
+      "ActionTypeSchema": {
+        "properties": {
+          "action_type": {
+            "type": "string",
+            "title": "Action Type",
+            "description": "Action type identifier"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What this action does"
+          },
+          "payload_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload Schema",
+            "description": "JSON Schema for payload validation"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval",
+            "description": "Whether approval needed before execution"
+          },
+          "max_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Amount",
+            "description": "Max transaction amount (if applicable)"
+          },
+          "default_merchant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Merchant",
+            "description": "Default merchant/recipient for action"
+          },
+          "default_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Category",
+            "description": "Default transaction category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action_type",
+          "description",
+          "payload_schema",
+          "requires_approval"
+        ],
+        "title": "ActionTypeSchema",
+        "description": "Schema definition for a single action type."
+      },
+      "ApproveRequest": {
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Amount to transfer to savings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "ApproveRequest"
+      },
+      "ApproveResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "ApproveResponse"
+      },
+      "BalanceResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "current_balance": {
+            "type": "number",
+            "title": "Current Balance"
+          },
+          "available_balance": {
+            "type": "number",
+            "title": "Available Balance"
+          },
+          "last_updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "current_balance",
+          "available_balance",
+          "last_updated"
+        ],
+        "title": "BalanceResponse"
+      },
+      "BankScheduleCreateRequest": {
+        "properties": {
+          "action_type": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 3,
+            "title": "Action Type",
+            "default": "pay_bill"
+          },
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount"
+          },
+          "merchant": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Merchant",
+            "default": "Scheduled Payment"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 2,
+            "title": "Category",
+            "default": "utilities"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "payment_rail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Rail"
+          },
+          "beneficiary_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beneficiary Id"
+          },
+          "beneficiary_verified": {
+            "type": "boolean",
+            "title": "Beneficiary Verified",
+            "default": true
+          },
+          "frequency": {
+            "type": "string",
+            "title": "Frequency",
+            "default": "monthly"
+          },
+          "day_of_month": {
+            "type": "integer",
+            "maximum": 31.0,
+            "minimum": 1.0,
+            "title": "Day Of Month",
+            "default": 1
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "BankScheduleCreateRequest"
+      },
+      "BeneficiaryCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "payment_rail": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 3,
+            "title": "Payment Rail",
+            "default": "UPI"
+          },
+          "account_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Number"
+          },
+          "ifsc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ifsc"
+          },
+          "upi_handle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upi Handle"
+          },
+          "nickname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "BeneficiaryCreateRequest"
+      },
+      "ChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest"
+      },
+      "ChatResponse": {
+        "properties": {
+          "response": {
+            "type": "string",
+            "title": "Response"
+          },
+          "intent": {
+            "type": "string",
+            "title": "Intent"
+          },
+          "agent_used": {
+            "type": "string",
+            "title": "Agent Used"
+          },
+          "ui_actions": {
+            "items": {
+              "$ref": "#/components/schemas/ChatUIAction"
+            },
+            "type": "array",
+            "title": "Ui Actions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "response",
+          "intent",
+          "agent_used"
+        ],
+        "title": "ChatResponse"
+      },
+      "ChatUIAction": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "message"
+        ],
+        "title": "ChatUIAction"
+      },
+      "ChecklistItemResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "recurring_rule_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurring Rule Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "skipped",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "recurring_rule_id",
+          "title",
+          "due_date",
+          "amount",
+          "status",
+          "notes",
+          "completed_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ChecklistItemResponse"
+      },
+      "ChecklistStatusUpdateRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "skipped",
+              "failed"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ChecklistStatusUpdateRequest"
+      },
+      "ExecutePaymentPayload": {
+        "properties": {
+          "beneficiary_id": {
+            "type": "integer",
+            "title": "Beneficiary Id",
+            "description": "Beneficiary ID"
+          },
+          "amount": {
+            "type": "number",
+            "maximum": 500000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Payment amount in rupees"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Payment description"
+          },
+          "payment_method": {
+            "type": "string",
+            "pattern": "^(upi|account_transfer)$",
+            "title": "Payment Method",
+            "description": "Payment method",
+            "default": "upi"
+          },
+          "mpin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mpin",
+            "description": "User MPIN for verification"
+          }
+        },
+        "type": "object",
+        "required": [
+          "beneficiary_id",
+          "amount"
+        ],
+        "title": "ExecutePaymentPayload",
+        "description": "Payload for executing a one-time payment."
+      },
+      "ExecutionReconcileRequest": {
+        "properties": {
+          "execution_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Id"
+          },
+          "lookback_hours": {
+            "type": "integer",
+            "maximum": 720.0,
+            "minimum": 1.0,
+            "title": "Lookback Hours",
+            "default": 72
+          },
+          "max_items": {
+            "type": "integer",
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Max Items",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "title": "ExecutionReconcileRequest"
+      },
+      "FinancialPlanCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "goal_type": {
+            "type": "string",
+            "enum": [
+              "save",
+              "invest",
+              "debt",
+              "expense_control",
+              "custom"
+            ],
+            "title": "Goal Type",
+            "default": "custom"
+          },
+          "target_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Amount"
+          },
+          "monthly_budget": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Budget"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "FinancialPlanCreate"
+      },
+      "FinancialPlanResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "goal_type": {
+            "type": "string",
+            "enum": [
+              "save",
+              "invest",
+              "debt",
+              "expense_control",
+              "custom"
+            ],
+            "title": "Goal Type"
+          },
+          "target_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Amount"
+          },
+          "monthly_budget": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Budget"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "title",
+          "goal_type",
+          "target_amount",
+          "monthly_budget",
+          "status",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "FinancialPlanResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthScoreResponse": {
+        "properties": {
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "factors": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Factors"
+          },
+          "persona": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona"
+          },
+          "forecast": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast"
+          },
+          "stats": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "message",
+          "factors"
+        ],
+        "title": "HealthScoreResponse"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "NotificationMarkReadRequest": {
+        "properties": {
+          "read": {
+            "type": "boolean",
+            "title": "Read",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "NotificationMarkReadRequest"
+      },
+      "NotificationResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "kind",
+          "title",
+          "body"
+        ],
+        "title": "NotificationResponse"
+      },
+      "PaymentExecutionResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "execution_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Id"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id"
+          },
+          "error_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "PaymentExecutionResult",
+        "description": "Result of payment execution."
+      },
+      "PaymentSettingsResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "mpin_threshold": {
+            "type": "number",
+            "title": "Mpin Threshold"
+          },
+          "auto_approve_trusted": {
+            "type": "boolean",
+            "title": "Auto Approve Trusted"
+          },
+          "daily_limit": {
+            "type": "number",
+            "title": "Daily Limit"
+          },
+          "daily_limit_used": {
+            "type": "number",
+            "title": "Daily Limit Used"
+          },
+          "recurring_payment_max": {
+            "type": "number",
+            "title": "Recurring Payment Max"
+          },
+          "max_active_recurring_rules": {
+            "type": "integer",
+            "title": "Max Active Recurring Rules"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "mpin_threshold",
+          "auto_approve_trusted",
+          "daily_limit",
+          "daily_limit_used",
+          "recurring_payment_max",
+          "max_active_recurring_rules",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PaymentSettingsResponse",
+        "description": "User's payment settings."
+      },
+      "PaymentSettingsUpdate": {
+        "properties": {
+          "mpin_threshold": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mpin Threshold"
+          },
+          "auto_approve_trusted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Approve Trusted"
+          },
+          "daily_limit": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Limit"
+          },
+          "recurring_payment_max": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurring Payment Max"
+          }
+        },
+        "type": "object",
+        "title": "PaymentSettingsUpdate",
+        "description": "Update payment settings."
+      },
+      "PersistentExpenseItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Amount"
+          },
+          "day_of_month": {
+            "type": "integer",
+            "maximum": 31.0,
+            "minimum": 1.0,
+            "title": "Day Of Month"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Category",
+            "default": "other"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "amount",
+          "day_of_month"
+        ],
+        "title": "PersistentExpenseItem"
+      },
+      "ProviderResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "channels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channels"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "support_contact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Contact"
+          },
+          "metadata_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata Json"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ProviderResponse"
+      },
+      "RecurringPaymentCreate": {
+        "properties": {
+          "beneficiary_id": {
+            "type": "integer",
+            "title": "Beneficiary Id",
+            "description": "Beneficiary ID"
+          },
+          "amount": {
+            "type": "number",
+            "maximum": 100000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Amount per cycle (max \u20b9100k)"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Description",
+            "description": "Bill/service name"
+          },
+          "frequency": {
+            "type": "string",
+            "pattern": "^(daily|weekly|monthly|quarterly)$",
+            "title": "Frequency",
+            "description": "Frequency"
+          },
+          "day_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Config",
+            "description": "{\"day_of_week\": \"monday\"} for weekly or {\"day_of_month\": 5} for monthly"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Start date (defaults to today)"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date (optional; None = indefinite)"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval",
+            "description": "Require approval for each payment",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "beneficiary_id",
+          "amount",
+          "description",
+          "frequency"
+        ],
+        "title": "RecurringPaymentCreate",
+        "description": "Create a new recurring payment rule."
+      },
+      "RecurringPaymentResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "beneficiary_id": {
+            "type": "integer",
+            "title": "Beneficiary Id"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "frequency": {
+            "type": "string",
+            "title": "Frequency"
+          },
+          "day_of_month": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Of Month"
+          },
+          "day_of_week": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Of Week"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "next_run_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Run Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval"
+          },
+          "total_executions": {
+            "type": "integer",
+            "title": "Total Executions"
+          },
+          "last_executed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Executed At"
+          },
+          "last_execution_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Execution Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "beneficiary_id",
+          "amount",
+          "description",
+          "frequency",
+          "day_of_month",
+          "day_of_week",
+          "start_date",
+          "end_date",
+          "next_run_date",
+          "status",
+          "requires_approval",
+          "total_executions",
+          "last_executed_at",
+          "last_execution_status",
+          "created_at"
+        ],
+        "title": "RecurringPaymentResponse",
+        "description": "Recurring payment rule response."
+      },
+      "RecurringPaymentUpdate": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(daily|weekly|monthly|quarterly)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          },
+          "day_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Config"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "requires_approval": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requires Approval"
+          }
+        },
+        "type": "object",
+        "title": "RecurringPaymentUpdate",
+        "description": "Update an existing recurring payment rule."
+      },
+      "RecurringRuleCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "rent",
+              "bill",
+              "gas",
+              "saving",
+              "investment",
+              "custom"
+            ],
+            "title": "Category",
+            "default": "custom"
+          },
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount"
+          },
+          "day_of_month": {
+            "type": "integer",
+            "maximum": 31.0,
+            "minimum": 1.0,
+            "title": "Day Of Month"
+          },
+          "plan_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Id"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "autopay_enabled": {
+            "type": "boolean",
+            "title": "Autopay Enabled",
+            "default": false
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval",
+            "default": true
+          },
+          "reminder_days_before": {
+            "type": "integer",
+            "maximum": 14.0,
+            "minimum": 0.0,
+            "title": "Reminder Days Before",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "amount",
+          "day_of_month"
+        ],
+        "title": "RecurringRuleCreate"
+      },
+      "RecurringRuleResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "plan_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "rent",
+              "bill",
+              "gas",
+              "saving",
+              "investment",
+              "custom"
+            ],
+            "title": "Category"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "day_of_month": {
+            "type": "integer",
+            "title": "Day Of Month"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "next_run_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Run Date"
+          },
+          "autopay_enabled": {
+            "type": "boolean",
+            "title": "Autopay Enabled"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval"
+          },
+          "trusted_recurring": {
+            "type": "boolean",
+            "title": "Trusted Recurring"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "reminder_days_before": {
+            "type": "integer",
+            "title": "Reminder Days Before"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "plan_id",
+          "title",
+          "category",
+          "amount",
+          "day_of_month",
+          "start_date",
+          "next_run_date",
+          "autopay_enabled",
+          "requires_approval",
+          "trusted_recurring",
+          "is_active",
+          "reminder_days_before",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RecurringRuleResponse"
+      },
+      "RecurringRuleUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "rent",
+                  "bill",
+                  "gas",
+                  "saving",
+                  "investment",
+                  "custom"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "day_of_month": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 31.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Of Month"
+          },
+          "autopay_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autopay Enabled"
+          },
+          "requires_approval": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requires Approval"
+          },
+          "trusted_recurring": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trusted Recurring"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "reminder_days_before": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 14.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Days Before"
+          }
+        },
+        "type": "object",
+        "title": "RecurringRuleUpdate"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "full_name"
+        ],
+        "title": "RegisterRequest"
+      },
+      "SavingsRecommendation": {
+        "properties": {
+          "suggested_amount": {
+            "type": "integer",
+            "title": "Suggested Amount",
+            "default": 0
+          },
+          "goal_progress": {
+            "type": "number",
+            "title": "Goal Progress",
+            "default": 0.0
+          },
+          "safety_threshold": {
+            "type": "number",
+            "title": "Safety Threshold",
+            "default": 0.0
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "SavingsRecommendation"
+      },
+      "ScenarioTriggerRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "scenario_type": {
+            "type": "string",
+            "title": "Scenario Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "scenario_type"
+        ],
+        "title": "ScenarioTriggerRequest"
+      },
+      "ScheduleFromTextRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 5,
+            "title": "Text"
+          },
+          "plan_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Id"
+          },
+          "default_amount": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Default Amount",
+            "default": 0.0
+          },
+          "autopay_enabled": {
+            "type": "boolean",
+            "title": "Autopay Enabled",
+            "default": false
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ScheduleFromTextRequest"
+      },
+      "ScheduleFromTextResponse": {
+        "properties": {
+          "rule": {
+            "$ref": "#/components/schemas/RecurringRuleResponse"
+          },
+          "extracted": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Extracted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule",
+          "extracted"
+        ],
+        "title": "ScheduleFromTextResponse"
+      },
+      "SchedulerMaterializeRequest": {
+        "properties": {
+          "until_days": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Until Days",
+            "default": 14
+          }
+        },
+        "type": "object",
+        "title": "SchedulerMaterializeRequest"
+      },
+      "SetMPINResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "mpin_set": {
+            "type": "boolean",
+            "title": "Mpin Set",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "SetMPINResponse"
+      },
+      "SimulateRequest": {
+        "properties": {
+          "expense_amount": {
+            "type": "number",
+            "title": "Expense Amount"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "default": "general"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "expense_amount"
+        ],
+        "title": "SimulateRequest"
+      },
+      "SimulateResponse": {
+        "properties": {
+          "current_forecast": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Current Forecast"
+          },
+          "simulated_forecast": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Simulated Forecast"
+          },
+          "impact": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Impact"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "suggestions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Suggestions",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_forecast",
+          "simulated_forecast",
+          "impact",
+          "explanation"
+        ],
+        "title": "SimulateResponse"
+      },
+      "SimulationToggleRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "SimulationToggleRequest"
+      },
+      "TelegramLinkRequest": {
+        "properties": {
+          "telegram_user_id": {
+            "type": "string",
+            "title": "Telegram User Id",
+            "description": "Telegram user id in format tg_<numeric_id>"
+          }
+        },
+        "type": "object",
+        "required": [
+          "telegram_user_id"
+        ],
+        "title": "TelegramLinkRequest"
+      },
+      "TelegramLinkResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "telegram_user_id": {
+            "type": "string",
+            "title": "Telegram User Id"
+          },
+          "linked": {
+            "type": "boolean",
+            "title": "Linked",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "telegram_user_id"
+        ],
+        "title": "TelegramLinkResponse"
+      },
+      "TelegramPairApproveRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 4,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "TelegramPairApproveRequest"
+      },
+      "TelegramPairApproveResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "telegram_user_id": {
+            "type": "string",
+            "title": "Telegram User Id"
+          },
+          "paired": {
+            "type": "boolean",
+            "title": "Paired",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "telegram_user_id"
+        ],
+        "title": "TelegramPairApproveResponse"
+      },
+      "TelegramSpendingAlertRequest": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount"
+          },
+          "threshold": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Threshold"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "threshold"
+        ],
+        "title": "TelegramSpendingAlertRequest"
+      },
+      "TelegramSpendingAlertResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "telegram_user_id": {
+            "type": "string",
+            "title": "Telegram User Id"
+          },
+          "alert_sent": {
+            "type": "boolean",
+            "title": "Alert Sent"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "telegram_user_id",
+          "alert_sent",
+          "reason"
+        ],
+        "title": "TelegramSpendingAlertResponse"
+      },
+      "TelegramUnlinkResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "unlinked": {
+            "type": "boolean",
+            "title": "Unlinked",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "TelegramUnlinkResponse"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "user_id",
+          "role",
+          "full_name"
+        ],
+        "title": "TokenResponse"
+      },
+      "ToolDiscoveryResponse": {
+        "properties": {
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolMetadata"
+            },
+            "type": "array",
+            "title": "Tools",
+            "description": "List of available tools"
+          },
+          "action_types": {
+            "items": {
+              "$ref": "#/components/schemas/ActionTypeSchema"
+            },
+            "type": "array",
+            "title": "Action Types",
+            "description": "Detailed schema for each action type"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "ISO 8601 timestamp of discovery response"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tools",
+          "action_types",
+          "timestamp"
+        ],
+        "title": "ToolDiscoveryResponse",
+        "description": "Complete tool discovery response."
+      },
+      "ToolMetadata": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Human-readable tool name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What the tool does"
+          },
+          "action_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Action Types",
+            "description": "List of action types this tool handles"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 5.0,
+            "title": "Timeout Seconds",
+            "description": "Max execution time per attempt",
+            "default": 15
+          },
+          "max_retries": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Max Retries",
+            "description": "Max retry attempts on failure",
+            "default": 2
+          },
+          "is_deterministic": {
+            "type": "boolean",
+            "title": "Is Deterministic",
+            "description": "Whether tool output is deterministic (no LLM)",
+            "default": true
+          },
+          "requires_approval": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Requires Approval",
+            "description": "Per-action-type approval requirements"
+          },
+          "max_amount_per_action": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Max Amount Per Action",
+            "description": "Per-action-type amount caps (None = no limit)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "action_types"
+        ],
+        "title": "ToolMetadata",
+        "description": "Metadata for a single tool."
+      },
+      "TransactionResponse": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "merchant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "id",
+          "user_id",
+          "date"
+        ],
+        "title": "TransactionResponse"
+      },
+      "TransactionTriggerCreate": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "merchant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "TransactionTriggerCreate"
+      },
+      "UserProfileResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "monthly_salary": {
+            "type": "number",
+            "title": "Monthly Salary"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "min_safe_balance": {
+            "type": "number",
+            "title": "Min Safe Balance"
+          },
+          "savings_goal_pct": {
+            "type": "number",
+            "title": "Savings Goal Pct"
+          },
+          "risk_tolerance": {
+            "type": "string",
+            "title": "Risk Tolerance"
+          },
+          "persistent_expenses": {
+            "items": {
+              "$ref": "#/components/schemas/PersistentExpenseItem"
+            },
+            "type": "array",
+            "title": "Persistent Expenses"
+          },
+          "total_persistent_expenses": {
+            "type": "number",
+            "title": "Total Persistent Expenses"
+          },
+          "projected_free_cashflow": {
+            "type": "number",
+            "title": "Projected Free Cashflow"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "monthly_salary",
+          "currency",
+          "min_safe_balance",
+          "savings_goal_pct",
+          "risk_tolerance",
+          "persistent_expenses",
+          "total_persistent_expenses",
+          "projected_free_cashflow"
+        ],
+        "title": "UserProfileResponse"
+      },
+      "UserProfileUpsertRequest": {
+        "properties": {
+          "monthly_salary": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Monthly Salary",
+            "default": 0
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 3,
+            "title": "Currency",
+            "default": "INR"
+          },
+          "min_safe_balance": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Min Safe Balance",
+            "default": 5000
+          },
+          "savings_goal_pct": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Savings Goal Pct",
+            "default": 0.2
+          },
+          "risk_tolerance": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 3,
+            "title": "Risk Tolerance",
+            "default": "moderate"
+          },
+          "persistent_expenses": {
+            "items": {
+              "$ref": "#/components/schemas/PersistentExpenseItem"
+            },
+            "type": "array",
+            "title": "Persistent Expenses"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "UserProfileUpsertRequest"
+      },
+      "UserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "full_name",
+          "role",
+          "is_active"
+        ],
+        "title": "UserResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "app__routes__auth__SetMPINRequest": {
+        "properties": {
+          "mpin": {
+            "type": "string",
+            "title": "Mpin"
+          },
+          "confirm_mpin": {
+            "type": "string",
+            "title": "Confirm Mpin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mpin",
+          "confirm_mpin"
+        ],
+        "title": "SetMPINRequest"
+      },
+      "app__schemas__payments__SetMPINRequest": {
+        "properties": {
+          "mpin": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 4,
+            "title": "Mpin",
+            "description": "4-6 digit MPIN"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mpin"
+        ],
+        "title": "SetMPINRequest",
+        "description": "Set or update user MPIN."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

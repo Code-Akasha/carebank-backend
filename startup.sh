@@ -103,10 +103,10 @@ setup_python_env() {
   local dir="$1"
   echo "Setting up Python environment for $dir..."
   if [ ! -d "$dir/.venv" ]; then
-    python3 -m venv "$dir/.venv"
+    (cd "$dir" && uv venv)
   fi
   if [ -f "$dir/requirements.txt" ]; then
-    "$dir/.venv/bin/pip" install -q -r "$dir/requirements.txt"
+    (cd "$dir" && uv pip install -q -r requirements.txt)
   fi
 }
 
@@ -116,34 +116,24 @@ if [ "$RUN_MOCKBANK" = "1" ]; then
   setup_python_env "$MOCKBANK_DIR"
 fi
 
-if [ "$RUN_MOCKBANK" = "1" ] && [ -x "$MOCKBANK_DIR/.venv/bin/pip" ]; then
-  "$MOCKBANK_DIR/.venv/bin/pip" install -q python-dotenv
+if [ "$RUN_MOCKBANK" = "1" ] && [ -d "$MOCKBANK_DIR/.venv" ]; then
+  (cd "$MOCKBANK_DIR" && uv pip install -q python-dotenv)
 fi
 
 echo "Initialising database tables..."
 cd "$BACKEND_DIR"
 export DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME
-./.venv/bin/python scripts/setup_postgres.py
+uv run scripts/setup_postgres.py
 
 if [ "$RUN_MOCKBANK" = "1" ]; then
   echo "Starting MockBank API on port 8001..."
-  if [ -f "$MOCKBANK_DIR/.venv/bin/activate" ]; then
-    # shellcheck disable=SC1091
-    (cd "$MOCKBANK_DIR" && source .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8001 --reload) &
-  else
-    (cd "$MOCKBANK_DIR" && uvicorn main:app --host 0.0.0.0 --port 8001 --reload) &
-  fi
+  (cd "$MOCKBANK_DIR" && uv run uvicorn main:app --host 0.0.0.0 --port 8001 --reload) &
 else
   echo "[WARN] Skipping MockBank startup."
 fi
 
 echo "Starting CareBank Backend on port 8000..."
-if [ -f "$BACKEND_DIR/.venv/bin/activate" ]; then
-  # shellcheck disable=SC1091
-  (cd "$BACKEND_DIR" && source .venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload) &
-else
-  (cd "$BACKEND_DIR" && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload) &
-fi
+(cd "$BACKEND_DIR" && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload) &
 
 wait_for_backend() {
   local wait_url="http://localhost:8000/docs"
@@ -170,7 +160,7 @@ fi
 
 echo "Seeding demo users (skips existing)..."
 cd "$BACKEND_DIR"
-./.venv/bin/python scripts/register_demo_users.py
+uv run scripts/register_demo_users.py
 
 if [ "$RUN_FRONTEND" = "1" ]; then
   echo "Starting CareBank Frontend on port 5173..."

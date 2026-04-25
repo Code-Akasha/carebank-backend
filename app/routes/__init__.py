@@ -13,6 +13,7 @@ __all__ = [
     "profile_router",
     "planning_router",
     "actions_router",
+    "auto_savings_router",
 ]
 
 
@@ -30,6 +31,7 @@ def __getattr__(name: str):
         "profile_router": ("app.routes.profile", "router"),
         "planning_router": ("app.routes.planning", "router"),
         "actions_router": ("app.routes.actions", "router"),
+        "auto_savings_router": ("app.routes.auto_savings", "router"),
     }
     target = router_modules.get(name)
     if target is None:

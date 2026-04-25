@@ -61,6 +61,21 @@ def list_plans(
     )
 
 
+@router.get("/forecast")
+def get_financial_forecast(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Session = Depends(get_db),
+):
+    # Mocking AI forecast for the user
+    return {
+        "predicted_balance_30d": 45000,
+        "predicted_balance_90d": 52000,
+        "safe_to_save": 3500,
+        "status": "healthy",
+        "confidence": 0.88
+    }
+
+
 @router.post(
     "/recurring-rules",
     response_model=RecurringRuleResponse,

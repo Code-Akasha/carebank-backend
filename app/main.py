@@ -25,6 +25,7 @@ from app.routes.tools import router as tools_router
 from app.routes.payment_settings import router as payment_settings_router
 from app.routes.payments import router as payments_router
 from app.routes.recurring_payments import router as recurring_payments_router
+from app.routes.auto_savings import router as auto_savings_router
 from app.core.database import init_db
 from app.core.config import get_settings
 
@@ -35,49 +36,24 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     init_db()
 
-    # Start recurring payment scheduler
-    # NOTE: Disabled to avoid potential event loop issues
-    # try:
-    #     from app.services.recurring_scheduler import start_scheduler
-    #     start_scheduler()
-    #     logger.info("Recurring payment scheduler started")
-    # except Exception as exc:
-    #     logger.warning("Failed to start recurring scheduler (non-fatal): %s", exc)
-
-    # Auto-seed demo users if DB is empty (safe to run every startup)
-    # NOTE: Disabled to avoid event loop issues during startup
-    # try:
-    #     from app.core.database import SessionLocal
-    #     from app.models.user import User
-    #     db = SessionLocal()
-    #     user_count = db.query(User).count()
-    #     db.close()
-    #     if user_count == 0:
-    #         import subprocess
-    #         import sys
-    #         import os
-    #         script = os.path.join(
-    #             os.path.dirname(__file__), "..", "scripts", "register_demo_users.py"
-    #         )
-    #         subprocess.Popen(
-    #             [sys.executable, script],
-    #             stdout=subprocess.DEVNULL,
-    #             stderr=subprocess.DEVNULL,
-    #         )
-    #         logger.info("Empty DB detected — running demo user seed in background")
-    # except Exception as exc:
-    #     logger.warning("Auto-seed check failed (non-fatal): %s", exc)
+    # Start recurring payment scheduler (BackgroundScheduler is thread-based,
+    # no conflict with FastAPI's asyncio event loop)
+    try:
+        from app.services.recurring_scheduler import start_scheduler
+        start_scheduler()
+        logger.info("Recurring payment scheduler started")
+    except Exception as exc:
+        logger.warning("Failed to start recurring scheduler (non-fatal): %s", exc)
 
     yield
 
     # Stop scheduler on shutdown
-    # NOTE: Disabled since scheduler startup was also disabled
-    # try:
-    #     from app.services.recurring_scheduler import stop_scheduler
-    #     stop_scheduler()
-    #     logger.info("Recurring payment scheduler stopped")
-    # except Exception as exc:
-    #     logger.warning("Failed to stop scheduler (non-fatal): %s", exc)
+    try:
+        from app.services.recurring_scheduler import stop_scheduler
+        stop_scheduler()
+        logger.info("Recurring payment scheduler stopped")
+    except Exception as exc:
+        logger.warning("Failed to stop scheduler (non-fatal): %s", exc)
 
 
 app = FastAPI(
@@ -119,6 +95,7 @@ app.include_router(tools_router)
 app.include_router(payment_settings_router)
 app.include_router(payments_router)
 app.include_router(recurring_payments_router)
+app.include_router(auto_savings_router)
 
 
 @app.get("/")

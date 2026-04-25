@@ -102,7 +102,15 @@ else:  # LangGraph introspects type hints at runtime
 # ---------------------------------------------------------------------------
 # Conversation memory (abstracted via ConversationStore protocol)
 # ---------------------------------------------------------------------------
-_conversation_store = InMemoryConversationStore(max_history=10)
+try:
+    from app.services.redis_conversation_store import RedisConversationStore
+    _conversation_store = RedisConversationStore(max_history=10)
+    # Verify connection
+    _conversation_store.get("__health_check__")
+    logger.info("Using Redis-backed conversation store")
+except Exception:
+    _conversation_store = InMemoryConversationStore(max_history=10)
+    logger.warning("Redis unavailable, falling back to in-memory conversation store")
 
 
 def get_conversation_history(user_id: str) -> list[dict]:

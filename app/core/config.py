@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     # Schema management
     # - create_all: dev/test convenience
     # - alembic: run Alembic migrations on startup (prod)
-    db_schema_mode: str = "create_all"
+    db_schema_mode: str = "alembic"
 
     # Financial thresholds (configurable, previously hardcoded)
     whatif_low_threshold: float = 70.0

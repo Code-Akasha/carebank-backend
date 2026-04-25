@@ -1,3 +1,4 @@
+import time
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,6 +18,26 @@ from app.models.audit_log import AuditLog
 from app.models.user import User
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
+
+# ---------------------------------------------------------------------------
+# Rate limiter: 10 requests per 60 seconds per user (token bucket)
+# ---------------------------------------------------------------------------
+_RATE_LIMIT = 10
+_RATE_WINDOW = 60.0
+_user_request_log: dict[str, list[float]] = {}
+
+
+def _check_rate_limit(user_id: str) -> None:
+    now = time.monotonic()
+    timestamps = _user_request_log.get(user_id, [])
+    timestamps = [t for t in timestamps if now - t < _RATE_WINDOW]
+    if len(timestamps) >= _RATE_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded. Max {_RATE_LIMIT} messages per minute.",
+        )
+    timestamps.append(now)
+    _user_request_log[user_id] = timestamps
 
 
 class ChatRequest(BaseModel):
@@ -46,6 +67,8 @@ def chat(
         raise HTTPException(status_code=403, detail="Cannot chat as another user")
 
     user_id = current_user.user_id
+    _check_rate_limit(user_id)
+
     history = get_conversation_history(user_id)
     conversation_state = get_conversation_state(user_id)
 
