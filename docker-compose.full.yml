@@ -1,0 +1,106 @@
+# ============================================================================
+# CareBank Full Stack - Development Docker Compose
+# ============================================================================
+# Usage: docker-compose -f docker-compose.full.yml up
+# ============================================================================
+
+services:
+  # ── Infrastructure ────────────────────────────────────────────────
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    environment:
+      POSTGRES_USER: carebank
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carebank_dev_pwd}
+      POSTGRES_DB: carebank_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carebank -d carebank_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MockBank API ──────────────────────────────────────────────────
+  mockbank:
+    build:
+      context: ../carebank-mockbank
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - BANKING_API_SECRET=${BANKING_API_SECRET:-supersecret123}
+      - MOCKBANK_JWT_SECRET=${BANKING_API_SECRET:-supersecret123}
+    ports:
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Backend API ───────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=carebank
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-carebank_dev_pwd}
+      - DB_NAME=carebank_db
+      - REDIS_URL=redis://redis:6379
+      - BANKING_API_URL=http://mockbank:8001
+      - BANKING_API_SECRET=${BANKING_API_SECRET:-supersecret123}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:8b}
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mockbank:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── Frontend (Optional) ───────────────────────────────────────────
+  # To run the frontend via docker, uncomment the below service.
+  # However, for development, running `npm run dev` directly in the 
+  # frontend directory is usually faster and recommended.
+  # frontend:
+  #   image: node:20-alpine
+  #   working_dir: /app
+  #   volumes:
+  #     - ../carebank-frontend:/app
+  #   ports:
+  #     - "5173:5173"
+  #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+  #   depends_on:
+  #     - backend
+
+# ============================================================================
+# 🔗 Endpoints Summary:
+# - Backend API:         http://localhost:8000
+# - Backend Swagger UI:  http://localhost:8000/docs
+# - MockBank API:        http://localhost:8001
+# - MockBank Swagger UI: http://localhost:8001/docs
+# - Frontend:            http://localhost:5173 (if run)
+# ============================================================================
+
+volumes:
+  pgdata:
