@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 __all__ = [
+    "bills_router",
     "transactions_router",
     "balances_router",
     "products_router",
@@ -19,6 +20,7 @@ __all__ = [
 
 def __getattr__(name: str):
     router_modules = {
+        "bills_router": ("app.routes.bills", "router"),
         "transactions_router": ("app.routes.transactions", "router"),
         "balances_router": ("app.routes.balances", "router"),
         "products_router": ("app.routes.products", "router"),
