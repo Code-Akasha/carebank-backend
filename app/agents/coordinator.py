@@ -557,6 +557,34 @@ def _detect_tool_action_request(message: str) -> dict | None:
     if not lower:
         return None
 
+    request_ref = re.search(
+        r"\b(?:action\s+request|request|action|approval)\s*#?\s*(\d+)\b",
+        lower,
+    )
+    execution_ref = re.search(r"\bexecution\s*#?\s*(\d+)\b", lower)
+    if request_ref or execution_ref:
+        if re.search(r"\b(approve|confirm|proceed|yes|go ahead)\b", lower):
+            if request_ref:
+                return {
+                    "action_command": "approve_action_request",
+                    "request_id": int(request_ref.group(1)),
+                }
+        if re.search(r"\b(reject|cancel|deny|no|stop)\b", lower):
+            if request_ref:
+                return {
+                    "action_command": "reject_action_request",
+                    "request_id": int(request_ref.group(1)),
+                }
+        if re.search(r"\b(status|check|show|what(?:'s| is))\b", lower):
+            payload: dict[str, int | str] = {
+                "action_command": "get_action_status",
+            }
+            if request_ref:
+                payload["request_id"] = int(request_ref.group(1))
+            if execution_ref:
+                payload["execution_id"] = int(execution_ref.group(1))
+            return payload
+
     # Avoid hijacking advisory questions.
     if any(
         token in lower for token in ("can i ", "should i ", "could i ", "how do i ")

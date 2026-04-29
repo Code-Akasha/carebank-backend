@@ -306,6 +306,70 @@ class TestToolActionRouting:
         result = classify_intent(state)
         assert result["intent"] != "actions"
 
+    def test_explicit_approval_routes_to_actions(self, monkeypatch):
+        import app.agents.coordinator as coordinator_module
+
+        monkeypatch.setattr(
+            coordinator_module,
+            "_detect_action_request",
+            lambda _message, _history: None,
+        )
+        monkeypatch.setattr(
+            coordinator_module,
+            "_classify_intent_with_llm",
+            lambda _message, _history: ClassificationResult(
+                intent="general",
+                confidence=0.9,
+                parameters={},
+            ),
+        )
+
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "approve request 42",
+            "audit_log": [],
+            "conversation_history": [],
+            "conversation_state": {},
+        }
+
+        result = classify_intent(state)
+        assert result["intent"] == "actions"
+        params = result["classification_parameters"]
+        assert params["action_command"] == "approve_action_request"
+        assert params["request_id"] == 42
+
+    def test_action_status_routes_to_actions(self, monkeypatch):
+        import app.agents.coordinator as coordinator_module
+
+        monkeypatch.setattr(
+            coordinator_module,
+            "_detect_action_request",
+            lambda _message, _history: None,
+        )
+        monkeypatch.setattr(
+            coordinator_module,
+            "_classify_intent_with_llm",
+            lambda _message, _history: ClassificationResult(
+                intent="general",
+                confidence=0.9,
+                parameters={},
+            ),
+        )
+
+        state: CoordinatorState = {
+            "user_id": "u1",
+            "message": "status of action 42",
+            "audit_log": [],
+            "conversation_history": [],
+            "conversation_state": {},
+        }
+
+        result = classify_intent(state)
+        assert result["intent"] == "actions"
+        params = result["classification_parameters"]
+        assert params["action_command"] == "get_action_status"
+        assert params["request_id"] == 42
+
 
 class TestPendingActionsResumeGuard:
     def test_pending_actions_resume_on_yes(self):

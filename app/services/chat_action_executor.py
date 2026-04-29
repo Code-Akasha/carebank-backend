@@ -6,6 +6,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session as DBSession
 
+from app.models.action_execution import ActionExecution
+from app.models.action_request import ActionRequest
 from app.models.bill_snooze import BillSnooze
 from app.models.user import User
 from app.services.action_request_service import (
@@ -306,6 +308,110 @@ def apply_planned_chat_action(
                     "day_of_month": day_of_month,
                     "amount": amount,
                     "category": category,
+                },
+            },
+        )
+
+    if action_type == "get_action_status":
+        request_id = _coerce_positive_int(action.get("request_id"))
+        execution_id = _coerce_positive_int(action.get("execution_id"))
+
+        request: ActionRequest | None = None
+        execution: ActionExecution | None = None
+
+        if request_id is not None:
+            request = (
+                db.query(ActionRequest)
+                .filter(
+                    ActionRequest.id == request_id,
+                    ActionRequest.user_id == current_user.user_id,
+                )
+                .first()
+            )
+            if request and request.linked_execution_id:
+                execution = (
+                    db.query(ActionExecution)
+                    .filter(
+                        ActionExecution.id == request.linked_execution_id,
+                        ActionExecution.user_id == current_user.user_id,
+                    )
+                    .first()
+                )
+
+        if execution_id is not None:
+            execution = (
+                db.query(ActionExecution)
+                .filter(
+                    ActionExecution.id == execution_id,
+                    ActionExecution.user_id == current_user.user_id,
+                )
+                .first()
+            )
+            if execution and request is None and execution.approval_request_id:
+                request = (
+                    db.query(ActionRequest)
+                    .filter(
+                        ActionRequest.id == execution.approval_request_id,
+                        ActionRequest.user_id == current_user.user_id,
+                    )
+                    .first()
+                )
+
+        if request is None and execution is None:
+            return (
+                "I couldn't find that action for your account.",
+                {
+                    **metadata,
+                    "clear_pending": True,
+                    "action_result": {
+                        "type": "get_action_status",
+                        "found": False,
+                    },
+                },
+            )
+
+        label_map = {
+            "pay_rent": "pay rent",
+            "pay_bill": "pay a bill",
+            "pay_gas": "pay the gas bill",
+            "pay_utility": "pay the utility bill",
+            "transfer_savings": "transfer to savings",
+            "record_note": "record a note",
+        }
+
+        if request is not None:
+            action_label = label_map.get(request.action_type) or request.action_type
+            payload = request.action_payload_json or {}
+            amount_str = _format_currency(payload.get("amount"))
+            amount_clause = f" for {amount_str}" if amount_str else ""
+            response = (
+                f"Action request ID {request.id} to {action_label}{amount_clause} "
+                f"is {request.status}."
+            )
+        else:
+            action_label = label_map.get(execution.action_type) or execution.action_type
+            response = (
+                f"Execution ID {execution.id} for {action_label} is "
+                f"{execution.status}."
+            )
+
+        if execution is not None:
+            response += f" Execution ID {execution.id} is {execution.status}."
+            if execution.last_error:
+                response += f" Last error: {execution.last_error}."
+
+        return (
+            response,
+            {
+                **metadata,
+                "clear_pending": True,
+                "action_result": {
+                    "type": "get_action_status",
+                    "found": True,
+                    "request_id": request.id if request else None,
+                    "request_status": request.status if request else None,
+                    "execution_id": execution.id if execution else None,
+                    "execution_status": execution.status if execution else None,
                 },
             },
         )
@@ -670,3 +776,21 @@ def apply_planned_chat_action(
         )
 
     return agent_response, metadata
+
+
+def _format_currency(value: Any) -> str:
+    try:
+        amount_value = float(value)
+    except (TypeError, ValueError):
+        return ""
+    return f"INR {amount_value:,.2f}"
+
+
+def _coerce_positive_int(value: Any) -> int | None:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    if parsed <= 0:
+        return None
+    return parsed

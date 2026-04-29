@@ -198,3 +198,80 @@ def test_chat_later_snoozes_and_suppresses_bill_suggestion(client):
     suppressed_payload = suppressed.json()
     assert "how much" in suppressed_payload["response"].lower()
     assert suppressed_payload.get("ui_actions") == []
+
+
+def test_chat_pay_bill_explicit_approve_status_and_idempotency(client, monkeypatch):
+    token, _ = _register_and_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    action_policy._policy_cache.clear()
+
+    def fake_get_action_policy_sync(action_type, user_id=None):
+        return {
+            "country": "IN",
+            "policy_version": "test",
+            "action_type": action_type,
+            "requires_approval": True,
+            "max_amount": 25000.0,
+            "allow_trusted_recurring_bypass": True,
+            "default_payment_rail": "UPI",
+            "regulatory_context": ["test"],
+        }
+
+    monkeypatch.setattr(
+        action_policy, "get_action_policy_sync", fake_get_action_policy_sync
+    )
+
+    captured_payloads = []
+
+    def fake_execute(self, user_id, action_type, payload):
+        captured_payloads.append(payload)
+        assert payload.get("_execution_idempotency_key", "").startswith(
+            "chat:pay_bill:"
+        )
+        return {
+            "status": "ok",
+            "action_type": action_type,
+            "user_id": user_id,
+            "payload": payload,
+            "mocked": True,
+        }
+
+    monkeypatch.setattr(BankTransactionTool, "execute", fake_execute)
+
+    created = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": "pay internet bill 2000"},
+    )
+    assert created.status_code == 200
+    created_payload = created.json()
+    assert created_payload["intent"] == "actions"
+    assert "action request" in created_payload["response"].lower()
+
+    requests = client.get("/api/actions/requests", headers=headers)
+    assert requests.status_code == 200
+    request_payload = requests.json()[0]
+    request_id = request_payload["id"]
+    assert request_payload["action_type"] == "pay_bill"
+    assert request_payload["idempotency_key"].startswith("chat:pay_bill:")
+
+    approved = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": f"approve request {request_id}"},
+    )
+    assert approved.status_code == 200
+    approved_payload = approved.json()
+    assert "approved action request" in approved_payload["response"].lower()
+    assert captured_payloads
+
+    status = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": f"status of request {request_id}"},
+    )
+    assert status.status_code == 200
+    status_payload = status.json()
+    assert "approved" in status_payload["response"].lower()
+    assert "execution id" in status_payload["response"].lower()

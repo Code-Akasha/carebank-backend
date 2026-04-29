@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import hashlib
 import re
 from typing import Any
 
@@ -500,6 +501,12 @@ class CommunicationAgent(BaseAgent):
                 params["action_type"] = extras.get("action_type")
             if "action_payload" in extras:
                 params["action_payload"] = extras.get("action_payload")
+            if "action_command" in extras:
+                params["action_command"] = extras.get("action_command")
+            if "request_id" in extras:
+                params["request_id"] = extras.get("request_id")
+            if "execution_id" in extras:
+                params["execution_id"] = extras.get("execution_id")
         return params
 
     def _plan_action_engine_action(
@@ -532,6 +539,62 @@ class CommunicationAgent(BaseAgent):
             pending = {}
 
         flow = str(pending.get("flow") or "").strip().lower()
+        direct_command = str(parsed_parameters.get("action_command") or "").strip()
+        if direct_command:
+            request_id = self._coerce_int(parsed_parameters.get("request_id"))
+            execution_id = self._coerce_int(parsed_parameters.get("execution_id"))
+
+            if direct_command == "approve_action_request" and request_id is not None:
+                return {
+                    "response": f"Understood. Approving action request ID {request_id} now.",
+                    "confidence": 0.95,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": {
+                        "type": "approve_action_request",
+                        "request_id": request_id,
+                    },
+                    "ui_actions": [],
+                }
+
+            if direct_command == "reject_action_request" and request_id is not None:
+                return {
+                    "response": f"Okay. Cancelling action request ID {request_id}.",
+                    "confidence": 0.95,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": {
+                        "type": "reject_action_request",
+                        "request_id": request_id,
+                    },
+                    "ui_actions": [],
+                }
+
+            if direct_command == "get_action_status" and (
+                request_id is not None or execution_id is not None
+            ):
+                action: dict[str, Any] = {"type": "get_action_status"}
+                if request_id is not None:
+                    action["request_id"] = request_id
+                if execution_id is not None:
+                    action["execution_id"] = execution_id
+                return {
+                    "response": "Checking that action status now.",
+                    "confidence": 0.94,
+                    "pending_state": None,
+                    "clear_pending": True,
+                    "action": action,
+                    "ui_actions": [],
+                }
+
+            return {
+                "response": "Please include the action request or execution ID.",
+                "confidence": 0.9,
+                "pending_state": None,
+                "clear_pending": False,
+                "action": None,
+                "ui_actions": [],
+            }
 
         if not flow and bill_listing_query:
             return {
@@ -954,6 +1017,11 @@ class CommunicationAgent(BaseAgent):
                 "action_type": normalized_type,
                 "action_payload": action_payload,
                 "expires_in_hours": 24,
+                "idempotency_key": self._build_chat_idempotency_key(
+                    normalized_type,
+                    action_payload,
+                    user_message,
+                ),
             },
         }
 
@@ -1192,6 +1260,40 @@ class CommunicationAgent(BaseAgent):
         if 1 <= day <= 31:
             return day
         return None
+
+    @staticmethod
+    def _coerce_int(value: Any) -> int | None:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return None
+        if parsed <= 0:
+            return None
+        return parsed
+
+    @staticmethod
+    def _build_chat_idempotency_key(
+        action_type: str,
+        action_payload: dict[str, Any],
+        user_message: str,
+    ) -> str:
+        amount = action_payload.get("amount")
+        description = str(action_payload.get("description") or "").strip().lower()
+        source_type = str(action_payload.get("source_type") or "").strip().lower()
+        source_id = str(action_payload.get("source_id") or "").strip().lower()
+        raw = "|".join(
+            [
+                "chat",
+                action_type,
+                str(amount),
+                description,
+                source_type,
+                source_id,
+                re.sub(r"\s+", " ", user_message.lower()).strip(),
+            ]
+        )
+        digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+        return f"chat:{action_type}:{digest}"
 
     @staticmethod
     def _coerce_amount(value: Any) -> float | None:

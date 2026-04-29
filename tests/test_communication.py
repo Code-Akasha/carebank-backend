@@ -515,6 +515,25 @@ class TestCommunicationAgent:
         assert action.get("type") == "approve_action_request"
         assert action.get("request_id") == 123
 
+    def test_direct_action_status_command_emits_status_action(self):
+        agent = CommunicationAgent()
+        output = agent.invoke(
+            AgentInput(
+                user_id="user_action_status",
+                message="status of request 123",
+                intent="actions",
+                context={
+                    "action_command": "get_action_status",
+                    "request_id": 123,
+                },
+            )
+        )
+
+        assert output.metadata.get("provider") == "action_engine_planner"
+        action = output.metadata.get("action") or {}
+        assert action.get("type") == "get_action_status"
+        assert action.get("request_id") == 123
+
     def test_action_rejection_followup_emits_reject(self):
         agent = CommunicationAgent()
         output = agent.invoke(
