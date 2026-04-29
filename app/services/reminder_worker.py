@@ -6,6 +6,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.database import SessionLocal
+from app.models.bill_snooze import BillSnooze
 from app.models.checklist_item import ChecklistItem
 from app.models.notification import Notification
 from app.models.recurring_rule import RecurringRule
@@ -62,6 +64,19 @@ def _create_notification_if_missing(
     return True
 
 
+def _load_snoozes(db: Session, *, now: datetime) -> set[tuple[str, str, int]]:
+    snoozes = (
+        db.query(BillSnooze)
+        .filter(BillSnooze.snoozed_until > now)
+        .all()
+    )
+    return {
+        (s.user_id, s.source_type, int(s.source_id))
+        for s in snoozes
+        if s.user_id
+    }
+
+
 def _rule_to_action_type(rule: RecurringRule) -> str | None:
     category = (rule.category or "").strip().lower()
     if category in _ACTION_TYPE_BY_CATEGORY:
@@ -94,6 +109,7 @@ def run_reminder_worker(
     """
 
     today = as_of or date.today()
+    now = datetime.now(timezone.utc)
     horizon = today + timedelta(days=max(0, int(horizon_days)))
 
     materialized = 0
@@ -162,8 +178,13 @@ def run_reminder_worker(
         for user in db.query(User).filter(User.user_id.in_(sorted(user_ids))).all()
     }
 
+    snoozed = _load_snoozes(db, now=now)
+
     for item in items:
         delta_days = (item.due_date - today).days
+
+        if (item.user_id, "checklist_item", int(item.id)) in snoozed:
+            continue
 
         if delta_days in _REMINDER_OFFSETS:
             if delta_days == 0:
@@ -211,6 +232,8 @@ def run_reminder_worker(
                 notifications_created += 1
 
         rule = rule_map.get(item.recurring_rule_id) if item.recurring_rule_id else None
+        if rule and (item.user_id, "recurring_rule", int(rule.id)) in snoozed:
+            continue
         if not rule or not rule.autopay_enabled:
             continue
 
@@ -312,3 +335,14 @@ def mark_notification_read(db: Session, *, notification_id: int, user_id: str) -
     item.read_at = datetime.now(timezone.utc)
     db.commit()
     return True
+
+
+def check_and_send_due_reminders() -> None:
+    db = SessionLocal()
+    try:
+        result = run_reminder_worker(db)
+        logger.info("Reminder worker completed: %s", result)
+    except Exception:
+        logger.exception("Reminder worker failed")
+    finally:
+        db.close()

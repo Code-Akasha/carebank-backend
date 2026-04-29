@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.models.notification import Notification
 
@@ -21,19 +23,36 @@ def create_notification(
     title: str,
     body: str,
     payload: dict[str, Any] | None = None,
+    dedupe_key: str | None = None,
 ) -> Notification:
     """Create a notification and push it to SSE stream."""
+    dedupe = dedupe_key or f"note:{uuid.uuid4().hex}"
     notification = Notification(
         user_id=user_id,
+        dedupe_key=dedupe,
         kind=kind,
         title=title,
         body=body,
         payload_json=payload or {},
         created_at=datetime.now(timezone.utc),
     )
-    db.add(notification)
-    db.commit()
-    db.refresh(notification)
+    try:
+        db.add(notification)
+        db.commit()
+        db.refresh(notification)
+    except IntegrityError:
+        db.rollback()
+        existing = (
+            db.query(Notification)
+            .filter(
+                Notification.user_id == user_id,
+                Notification.dedupe_key == dedupe,
+            )
+            .first()
+        )
+        if existing:
+            return existing
+        raise
 
     # Push to SSE stream (best-effort, non-blocking)
     try:

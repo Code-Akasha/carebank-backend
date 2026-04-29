@@ -32,6 +32,10 @@ class ScenarioTriggerRequest(BaseModel):
     scenario_type: str
 
 
+class WebhookReplayRequest(BaseModel):
+    webhook_url: str | None = None
+
+
 @router.get("/users")
 async def admin_list_users(
     page: int = 1,
@@ -248,6 +252,70 @@ async def admin_trigger_scenario(
     try:
         result = await client.trigger_scenario(body.user_id, body.scenario_type)
         return result
+    except BankingClientError as exc:
+        raise HTTPException(
+            status_code=exc.status_code or 503,
+            detail=f"Banking API unavailable: {exc}",
+        ) from exc
+
+
+@router.get("/webhooks/dead-letter")
+async def admin_webhook_dead_letters(
+    status_filter: str | None = None,
+    _admin: User = Depends(require_admin),
+):
+    client = get_banking_client()
+    try:
+        response = await client.get_webhook_dead_letters(
+            status_filter=status_filter
+        )
+    except BankingClientError as exc:
+        raise HTTPException(
+            status_code=exc.status_code or 503,
+            detail=f"Banking API unavailable: {exc}",
+        ) from exc
+
+    records = response.get("records", []) if isinstance(response, dict) else []
+    normalized = []
+    for record in records:
+        payload = record.get("payload") or {}
+        attempts = record.get("attempts") or []
+        last_error = record.get("last_error")
+        if not last_error and attempts:
+            last_attempt = attempts[-1]
+            if isinstance(last_attempt, dict):
+                last_error = last_attempt.get("error")
+        normalized.append(
+            {
+                "id": record.get("id"),
+                "event_type": payload.get("event_type") or record.get("event_type"),
+                "payload": payload,
+                "failed_at": record.get("created_at"),
+                "attempts": record.get("attempt_count")
+                or len(attempts),
+                "last_error": last_error,
+                "status": record.get("status"),
+            }
+        )
+
+    return {
+        "count": len(normalized),
+        "records": normalized,
+    }
+
+
+@router.post("/webhooks/dead-letter/{dead_letter_id}/replay")
+async def admin_webhook_replay_dead_letter(
+    dead_letter_id: str,
+    body: WebhookReplayRequest | None = None,
+    _admin: User = Depends(require_admin),
+):
+    client = get_banking_client()
+    try:
+        return await client.replay_webhook_dead_letter(
+            dead_letter_id,
+            webhook_url=(body.webhook_url if body else None),
+        )
     except BankingClientError as exc:
         raise HTTPException(
             status_code=exc.status_code or 503,

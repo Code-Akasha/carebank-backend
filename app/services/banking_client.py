@@ -363,6 +363,34 @@ class BankingClient:
             return data.get("users", []) or []
         return []
 
+    async def get_webhook_dead_letters(
+        self, *, status_filter: str | None = None
+    ) -> dict[str, Any]:
+        params: dict[str, Any] | None = None
+        if status_filter:
+            params = {"status_filter": status_filter}
+        return await self._request(
+            "GET",
+            "/admin/webhooks/dead-letter",
+            user_id="admin",
+            role="admin",
+            params=params,
+        )
+
+    async def replay_webhook_dead_letter(
+        self, dead_letter_id: str, *, webhook_url: str | None = None
+    ) -> dict[str, Any]:
+        body: dict[str, Any] | None = None
+        if webhook_url:
+            body = {"webhook_url": webhook_url}
+        return await self._request(
+            "POST",
+            f"/admin/webhooks/dead-letter/{dead_letter_id}/replay",
+            user_id="admin",
+            role="admin",
+            json_body=body,
+        )
+
     @staticmethod
     def _normalize_transaction(data: dict[str, Any]) -> dict[str, Any]:
         normalized = {
