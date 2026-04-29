@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.routes.transactions import router as transactions_router
+from app.routes.bills import router as bills_router
 from app.routes.balances import router as balances_router
 from app.routes.products import router as products_router
 from app.routes.accounts import router as accounts_router
@@ -74,6 +75,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(bills_router)
 app.include_router(admin_router)
 app.include_router(profile_router)
 app.include_router(planning_router)

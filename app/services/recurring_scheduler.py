@@ -36,17 +36,29 @@ def start_scheduler() -> None:
         scheduler.start()
         logger.info("Recurring payment scheduler started")
 
-        # Schedule daily check for recurring payments
-        scheduler.add_job(
-            check_and_execute_recurring_payments,
-            trigger="cron",
-            hour=0,
-            minute=0,
-            id="recurring_payment_check",
-            name="Check and execute recurring payments",
-            replace_existing=True,
-        )
-        logger.info("Recurring payment jobs scheduled")
+    scheduler.add_job(
+        check_and_execute_recurring_payments,
+        trigger="cron",
+        hour=0,
+        minute=0,
+        id="recurring_payment_check",
+        name="Check and execute recurring payments",
+        replace_existing=True,
+    )
+
+    from app.services.reminder_worker import check_and_send_due_reminders
+
+    scheduler.add_job(
+        check_and_send_due_reminders,
+        trigger="cron",
+        hour=8,
+        minute=0,
+        id="checklist_reminder_check",
+        name="Check and send checklist reminders",
+        replace_existing=True,
+    )
+
+    logger.info("Recurring payment and reminder jobs scheduled")
 
 
 def stop_scheduler() -> None:
