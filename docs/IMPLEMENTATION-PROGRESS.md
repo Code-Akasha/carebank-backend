@@ -13,18 +13,18 @@ Build a policy-governed action platform with hybrid autonomy (first approval, th
 
 | # | Gap | Impact | Repos |
 |---|-----|--------|-------|
-| G1 | **MockBank routes not wired**: Only `accounts.py` scaffold exists in `app/routes/`; all endpoints live in monolithic `main.py` (~2500 lines). No route modularization. | Maintenance nightmare, no separation of concerns | MockBank |
+| G1 | ✅ **RESOLVED in Phase 8**: MockBank routes are now wired through `app/routes/`, with `main.py` reduced to a thin FastAPI registrar. | Maintainable route separation restored | MockBank |
 | G2 | **MockBank admin endpoints not exposed**: Backend `admin.py` has webhook replay proxy but no scenario trigger/ simulation toggle/ dead-letter list proxies wired to MockBank `/admin/*` endpoints. | Admin can't manage simulation or dead letters | Backend+MockBank |
-| G3 | **MockBank `/admin/*` endpoints missing entirely**: No admin endpoints for scenario triggering, simulation toggle, dead-letter listing exist in MockBank `main.py`. | Can't trigger scenarios or manage simulation from admin UI | MockBank |
-| G4 | **Coordinator graph not using tool actions**: Planner/executor integration into coordinator graph is NOT done. `chat_action_executor.py` exists but `coordinator.py` doesn't route action intents through it. | Chat can't trigger bill pay, rent pay, etc. | Backend |
+| G3 | ✅ **RESOLVED in Phase 8**: MockBank `/admin/*` endpoints now cover scenario trigger/list, simulation status/toggle/config, webhook dead-letter list/replay, delivery log, receiver events, and settlement reconciliation. | MockBank admin surface is available for backend/frontend wiring | MockBank |
+| G4 | ✅ **RESOLVED in Phase 9**: Coordinator graph routes action intents through `chat_action_executor.py` and executes planned actions end-to-end. | Chat can trigger bill pay, rent pay, approvals, and status checks | Backend |
 | G5 | **Action webhook endpoint wiring**: Backend has `/api/actions/webhooks/mockbank` but MockBank `_dispatch_signed_webhook` calls it — need to verify signature validation end-to-end. | Webhook delivery may silently fail | Backend+MockBank |
-| G6 | **Frontend bill-pay flow incomplete**: `Bills.tsx` shows discovery results but has no "Pay Now" button wired to action engine. `Planning.tsx` shows plans but no "Execute" action. | Users can't act on discovered bills or plans | Frontend+Backend |
+| G6 | ✅ **RESOLVED in Phase 10**: Bills now create action requests, and Planning includes approvals + execution status tracking. | Users can act on discovered bills and plans | Frontend+Backend |
 | G7 | **Frontend no beneficiary management UI**: Backend & MockBank have full beneficiary CRUD + verify. Frontend has zero beneficiary pages/components. | Users can't manage beneficiaries | Frontend |
 | G8 | **Frontend no schedule management UI**: Backend & MockBank have schedule CRUD. Frontend has zero schedule pages. | Users can't manage bank schedules | Frontend |
 | G9 | **Overdue escalation not implemented**: Reminder worker covers D-3/D-1/due-day but has no escalation path after missed due date. | Missed payments go silent | Backend |
 | G10 | **No Alembic migrations for new tables**: Models exist in SQLAlchemy but no Alembic migration files generated. `db_schema_mode` defaults to `alembic` but migrations are empty. | Production deploys will fail | Backend |
 | G11 | **MockBank in-memory state for transactions/balances**: Despite Postgres persistence for beneficiaries/schedules/dead-letters, transactions and balances are still in-memory dicts. | Data lost on restart | MockBank |
-| G12 | **Frontend admin simulation page incomplete**: `AdminSimulation.tsx` exists but MockBank has no `/admin/simulation` endpoint to toggle. | Admin can't control simulation | Frontend+MockBank |
+| G12 | **Frontend admin simulation page incomplete**: `AdminSimulation.tsx` exists and MockBank now has `/admin/simulation/*`; backend proxy/frontend wiring still needs completion. | Admin can't control simulation end-to-end yet | Frontend+Backend |
 | G13 | **Telegram outbound reminders incomplete**: Phase 6 checklist shows outbound reminders/approvals not done. | No push notifications via Telegram | Backend |
 | G14 | **No E2E tests across repos**: Tests exist per-repo but no cross-repo integration/E2E tests. | Regressions across repo boundaries | All 3 |
 
@@ -39,12 +39,12 @@ Build a policy-governed action platform with hybrid autonomy (first approval, th
 | Transaction History | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Account Management | ✅ | ✅ | ✅ (scaffold) | ✅ | ⚠️ Partial |
 | Profile/Settings | ✅ | ✅ | N/A | ❌ | ❌ |
-| Planning (Plans/Goals) | ✅ | ✅ | N/A | ⚠️ Read-only | ❌ |
-| Bills Discovery | ✅ | ✅ | N/A | ⚠️ Read-only | ❌ |
-| Recurring Rules | ✅ | ✅ | N/A | ❌ | ❌ |
-| Action Requests (CRUD) | ✅ | ✅ | N/A | ❌ | ❌ |
-| Action Approval/Reject | ✅ | ✅ | N/A | ❌ | ❌ |
-| Action Execution | ✅ | ✅ | ✅ (trigger) | ❌ | ❌ |
+| Planning (Plans/Goals) | ✅ | ✅ | N/A | ✅ | ❌ |
+| Bills Discovery | ✅ | ✅ | N/A | ✅ | ❌ |
+| Recurring Rules | ✅ | ✅ | N/A | ✅ | ❌ |
+| Action Requests (CRUD) | ✅ | ✅ | N/A | ✅ | ❌ |
+| Action Approval/Reject | ✅ | ✅ | N/A | ✅ | ❌ |
+| Action Execution | ✅ | ✅ | ✅ (trigger) | ✅ | ❌ |
 | Payment Execution (one-time) | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Recurring Payments | ✅ | ✅ | N/A | ❌ | ❌ |
 | Auto-Savings | ✅ | ✅ | ✅ | ❌ | ❌ |
@@ -52,11 +52,11 @@ Build a policy-governed action platform with hybrid autonomy (first approval, th
 | Beneficiary Verify | ✅ (proxy) | ✅ | ✅ | ❌ | ❌ |
 | Bank Schedules CRUD | ✅ (proxy) | ✅ | ✅ | ❌ | ❌ |
 | Settlement Windows | ✅ (proxy) | ✅ | ✅ | ❌ | ❌ |
-| Reminders/Notifications | ✅ | ✅ | N/A | ❌ | ❌ |
+| Reminders/Notifications | ✅ | ✅ | N/A | ✅ | ❌ |
 | Admin Dashboard | ✅ | ✅ | ❌ | ✅ | ⚠️ Partial |
 | Admin Agent Logs | ✅ | ✅ | N/A | ✅ | ✅ |
 | Admin Users List | ✅ | ✅ | N/A | ✅ | ✅ |
-| Admin Simulation | ❌ | ❌ | ❌ | ⚠️ Shell | ❌ |
+| Admin Simulation | ❌ | ❌ | ✅ | ⚠️ Shell | ❌ |
 | Admin Webhooks DLQ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Telegram Bot | ✅ | ✅ | N/A | N/A | ⚠️ Partial |
 | MPIN Verification | ✅ | ✅ | N/A | ⚠️ Component | ❌ |
@@ -65,10 +65,10 @@ Build a policy-governed action platform with hybrid autonomy (first approval, th
 
 ## REVISED PHASE PLAN — End-to-End Completion
 
-### Phase 8 — MockBank Modularization + Admin Endpoints (Week 1-2) 🔴 P0
+### Phase 8 — MockBank Modularization + Admin Endpoints (Week 1-2) ✅ COMPLETE
 **Goal**: Make MockBank maintainable and expose admin controls.
 
-- [ ] **M8.1** Extract MockBank routes from `main.py` into `app/routes/`:
+- [x] **M8.1** Extract MockBank routes from `main.py` into `app/routes/`:
   - `transactions.py` — GET /transactions, POST /trigger, GET /lifecycle, POST /reverse
   - `balances.py` — GET /balances
   - `beneficiaries.py` — GET/POST /beneficiaries, PUT /verify
@@ -79,42 +79,48 @@ Build a policy-governed action platform with hybrid autonomy (first approval, th
   - `accounts.py` — GET/POST/DELETE /accounts (replace scaffold)
   - `admin.py` — POST /admin/scenario, POST /admin/simulation/toggle, GET /admin/simulation/status, GET /admin/webhooks/dead-letter, POST /admin/webhooks/dead-letter/{id}/replay, GET /admin/webhooks/delivery-log
   - `profiles.py` — POST /profiles/upsert
-- [ ] **M8.2** Move helper functions to `app/services/`:
+- [x] **M8.2** Move helper functions to `app/services/`:
   - `transaction_service.py` — _append_transaction, _process_transaction_event, _validate_transaction_policy
   - `settlement_service.py` — _compute_settlement_fields, _finalize_settlement_after_delay
   - `webhook_service.py` — _build_signed_webhook, _dispatch_signed_webhook, dead-letter management
   - `beneficiary_service.py` — beneficiary CRUD, cooldown, verify
   - `schedule_service.py` — schedule CRUD, run, advance
   - `simulation_service.py` — auto-simulation loop, scenario builders
-- [ ] **M8.3** Move Pydantic models to `app/models.py` (already exists, populate it)
-- [ ] **M8.4** Ensure `app/state.py` is the single source of truth for runtime state
-- [ ] **M8.5** Add proper `auth.py` dependency injection on ALL routes (currently some skip auth)
-- [ ] **M8.6** Add admin endpoints: scenario trigger, simulation toggle, dead-letter list/replay
-- [ ] **M8.7** Add tests for all new route modules
+- [x] **M8.3** Move Pydantic models to `app/models.py` (already exists, populate it)
+- [x] **M8.4** Ensure `app/state.py` is the single source of truth for runtime state
+- [x] **M8.5** Add proper `auth.py` dependency injection on ALL routes (currently some skip auth)
+- [x] **M8.6** Add admin endpoints: scenario trigger, simulation toggle, dead-letter list/replay
+- [x] **M8.7** Add tests for all new route modules
 
-### Phase 9 — Coordinator + Action Engine Integration (Week 2-3) 🔴 P0
+**Completion note (2026-04-29)**: MockBank `main.py` is now a thin FastAPI app/route registrar. Route modules live under `carebank-mockbank/app/routes/`, shared runtime state remains in `app/state.py`, Pydantic contracts live in `app/models.py`, and service helpers/facades live under `app/services/`. Admin scenario, simulation status/toggle/config, webhook dead-letter list/replay, delivery log, receiver events, and settlement reconciliation are exposed through `app/routes/admin.py`.
+
+**Verification**:
+- `RUFF_CACHE_DIR=/tmp/carebank-mockbank-ruff .venv/bin/ruff check app tests` ✅
+- `PYTHONDONTWRITEBYTECODE=1 /home/jefino9488/PycharmProjects/carebank-backend/.venv/bin/python -m pytest -q tests` ✅ (`5 passed`; run outside sandbox because FastAPI `TestClient` hangs inside the restricted sandbox)
+
+### Phase 9 — Coordinator + Action Engine Integration (Week 2-3) ✅ COMPLETE
 **Goal**: Chat can actually execute payments/bills/rent through the action engine.
 
-- [ ] **M9.1** Wire coordinator graph to route "pay_*", "transfer_*" intents through `chat_action_executor.py`
-- [ ] **M9.2** Add intent detection in coordinator for action requests (approve/reject/status)
-- [ ] **M9.3** Implement `_plan_action_engine_action` in CommunicationAgent to emit proper `response_metadata.action`
-- [ ] **M9.4** Add conversation state machine in chat for multi-step flows:
+- [x] **M9.1** Wire coordinator graph to route "pay_*", "transfer_*" intents through `chat_action_executor.py`
+- [x] **M9.2** Add intent detection in coordinator for action requests (approve/reject/status)
+- [x] **M9.3** Implement `_plan_action_engine_action` in CommunicationAgent to emit proper `response_metadata.action`
+- [x] **M9.4** Add conversation state machine in chat for multi-step flows:
   - "I want to pay rent" → discover bills → show candidates → "pay this one" → create action request → "approve" → execute
-- [ ] **M9.5** Wire action execution webhook handling end-to-end (MockBank → Backend webhook → execution ledger update)
-- [ ] **M9.6** Add idempotency key propagation through full chain (chat → action request → execution → MockBank trigger)
-- [ ] **M9.7** Tests: chat-to-execution E2E for pay_bill, pay_rent, transfer_savings
+- [x] **M9.5** Wire action execution webhook handling end-to-end (MockBank → Backend webhook → execution ledger update)
+- [x] **M9.6** Add idempotency key propagation through full chain (chat → action request → execution → MockBank trigger)
+- [x] **M9.7** Tests: chat-to-execution E2E for pay_bill, pay_rent, transfer_savings
 
-### Phase 10 — Frontend Wiring: Bills, Planning, Actions (Week 3-4) 🔴 P0
+### Phase 10 — Frontend Wiring: Bills, Planning, Actions (Week 3-4) ✅ COMPLETE
 **Goal**: Users can act on discovered bills and plans from the UI.
 
-- [ ] **M10.1** Add "Pay Now" button to Bills.tsx that creates action request
-- [ ] **M10.2** Add action approval/rejection UI (modal or inline)
-- [ ] **M10.3** Add action execution status tracking UI (queued → running → success/failure)
-- [ ] **M10.4** Add "New Goal" form to Planning.tsx wired to POST /api/planning/plans
-- [ ] **M10.5** Add recurring rule creation UI in Planning page
-- [ ] **M10.6** Add checklist item status toggle in Planning (mark done/pending)
-- [ ] **M10.7** Add notification bell/badge in UserLayout header wired to GET /api/notifications
-- [ ] **M10.8** Add notification mark-read on click
+- [x] **M10.1** Add "Pay Now" button to Bills.tsx that creates action request
+- [x] **M10.2** Add action approval/rejection UI (modal or inline)
+- [x] **M10.3** Add action execution status tracking UI (queued → running → success/failure)
+- [x] **M10.4** Add "New Goal" form to Planning.tsx wired to POST /api/planning/plans
+- [x] **M10.5** Add recurring rule creation UI in Planning page
+- [x] **M10.6** Add checklist item status toggle in Planning (mark done/pending)
+- [x] **M10.7** Add notification bell/badge in UserLayout header wired to GET /api/notifications
+- [x] **M10.8** Add notification mark-read on click
 
 ### Phase 11 — Frontend: Beneficiaries + Schedules (Week 4-5) 🔴 P0
 **Goal**: Users can manage beneficiaries and bank schedules.
@@ -234,11 +240,11 @@ Phase 18 ─→ Phase 19 (Production Hardening)
 
 These are standalone fixes that unblock multiple phases:
 
-1. **Add MockBank admin endpoints** (`/admin/scenario`, `/admin/simulation/*`, `/admin/webhooks/*`) — unblocks Phase 16
+1. ✅ **Add MockBank admin endpoints** (`/admin/scenario`, `/admin/simulation/*`, `/admin/webhooks/*`) — completed in Phase 8; backend/admin UI wiring remains in Phase 16
 2. **Generate Alembic initial migration** — unblocks Phase 13
-3. **Add "Pay Now" to Bills.tsx** — unblocks Phase 10
+3. ✅ **Add "Pay Now" to Bills.tsx** — completed in Phase 10
 4. **Create Beneficiaries page** — unblocks Phase 11
-5. **Wire coordinator to chat_action_executor** — unblocks Phase 9
+5. ✅ **Wire coordinator to chat_action_executor** — completed in Phase 9
 
 ---
 
@@ -257,7 +263,7 @@ These are standalone fixes that unblock multiple phases:
 - [x] Add approval workflow states: pending, approved, rejected, expired.
 - [x] Add execution ledger states: queued, running, success, failure, rollback.
 - [x] Add idempotency handling and replay-safe behavior.
-- [ ] Integrate planner/executor tool path inside coordinator graph. → **Moved to Phase 9**
+- [x] Integrate planner/executor tool path inside coordinator graph. → **Completed in Phase 9**
 - [x] Add rollback state transitions for compensating actions.
 
 ### Phase 2 - Scheduler, Plans, Checklist System ✅
@@ -359,15 +365,13 @@ These are standalone fixes that unblock multiple phases:
 ---
 
 ## Next Up (Priority Order)
-1. **Phase 8**: MockBank route modularization + admin endpoints (unblocks everything)
-2. **Phase 9**: Coordinator + action engine integration in chat
-3. **Phase 10**: Frontend Bills/Planning/Actions wiring
-4. **Phase 11**: Frontend Beneficiaries + Schedules pages
-5. **Phase 12**: Frontend Payments + Auto-Savings pages
-6. **Phase 13**: Alembic migrations
-7. **Phase 14**: MockBank Postgres persistence for transactions
-8. **Phase 15**: Overdue escalation
-9. **Phase 16**: Admin simulation panel
-10. **Phase 17**: Telegram outbound
-11. **Phase 18**: Cross-repo E2E tests
-12. **Phase 19**: Production hardening
+1. **Phase 10**: Frontend Bills/Planning/Actions wiring
+2. **Phase 11**: Frontend Beneficiaries + Schedules pages
+3. **Phase 12**: Frontend Payments + Auto-Savings pages
+4. **Phase 13**: Alembic migrations
+5. **Phase 14**: MockBank Postgres persistence for transactions
+6. **Phase 15**: Overdue escalation
+7. **Phase 16**: Admin simulation panel
+8. **Phase 17**: Telegram outbound
+9. **Phase 18**: Cross-repo E2E tests
+10. **Phase 19**: Production hardening
