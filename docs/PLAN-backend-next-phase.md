@@ -14,7 +14,7 @@ Integrate planner/executor tool actions into the coordinator graph, enabling pol
 - [ ] Add audit logging for tool actions and results
 
 ### 2. Reminder Worker Service
-- [ ] Build reminder cadence workers (D-3, D-1, due-day)
+- [x] Build reminder cadence workers (D-3, D-1, due-day)
 - [ ] Implement overdue escalation workflow for missed actions
 
 ### 3. Alembic Migrations
