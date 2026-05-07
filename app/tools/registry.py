@@ -124,11 +124,11 @@ class BankTransactionTool:
 
         return {
             "name": "Bank Transaction Tool",
-            "description": "Execute bank transactions via MockBank (payments, transfers)",
+            "description": "Execute bank transactions via the banking proxy (payments, transfers)",
             "action_types": list(self._action_types),
             "timeout_seconds": 15,
             "max_retries": 2,
-            "is_deterministic": False,  # May depend on MockBank state
+            "is_deterministic": False,  # May depend on proxy state
             "requires_approval": {
                 action_type: _FALLBACK_POLICY_MATRIX[action_type].requires_approval
                 for action_type in self._action_types

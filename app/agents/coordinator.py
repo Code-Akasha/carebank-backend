@@ -211,6 +211,37 @@ class ActionIntentResult(BaseModel):
     recurring: bool | None = None
 
 
+# Helper function to fetch prompts from database with fallback to hardcoded defaults
+def _get_prompt_from_db(agent_name: str, prompt_key: str, fallback: str) -> str:
+    """
+    Fetch a prompt template from the database for a given agent and key.
+    Falls back to the provided hardcoded default if not configured.
+    """
+    try:
+        from app.core.database import SessionLocal
+        from app.services.agent_prompt_service import AgentPromptService
+        from app.core.config import get_settings
+        
+        settings = get_settings()
+        db = SessionLocal()
+        try:
+            prompt_config = AgentPromptService.get_active_prompt(
+                db, agent_name, settings.environment
+            )
+            if prompt_config:
+                logger.debug(
+                    f"Using DB-configured prompt for {agent_name} in {settings.environment}"
+                )
+                return prompt_config.system_prompt
+        finally:
+            db.close()
+    except Exception as e:
+        logger.debug(f"Failed to fetch prompt from DB for {agent_name}: {e}")
+    
+    # Fall back to hardcoded default
+    return fallback
+
+
 ACTION_INTENT_PROMPT = """You are classifying whether a user message is an actionable instruction.
 
 Classify as is_action_request=true when user asks to DO something (pay, schedule, set up recurring payment, approve/reject an action, create beneficiary, run/cancel schedule).
@@ -234,29 +265,7 @@ Guidelines:
 """
 
 
-# ---------------------------------------------------------------------------
-# Intent-to-agent mapping (deterministic — single source of truth)
-# ---------------------------------------------------------------------------
-
-_INTENT_TO_AGENT: dict[str, str] = {
-    "actions": "CommunicationAgent",
-    "balance": "IntelligenceAgent",
-    "forecast": "IntelligenceAgent",
-    "health_score": "IntelligenceAgent",
-    "what_if": "IntelligenceAgent",
-    "affordability": "IntelligenceAgent",
-    "advice": "IntelligenceAgent",
-    "auto_savings": "AutoSavingsAgent",
-    "opportunity": "OpportunityAgent",
-    "planning": "CommunicationAgent",
-    "general": "CommunicationAgent",
-}
-
-
-# ---------------------------------------------------------------------------
 # Structured Classification Prompt (agent_name REMOVED)
-# ---------------------------------------------------------------------------
-
 INTENT_CLASSIFICATION_PROMPT = """You are an intelligent financial assistant coordinator that routes user queries to the appropriate specialist.
 
 Available capabilities:
@@ -739,7 +748,11 @@ def _classify_action_request_with_llm(
                 [f"{msg['role']}: {msg['content'][:50]}" for msg in recent]
             )
 
-        prompt = PromptTemplate.from_template(ACTION_INTENT_PROMPT)
+        # Fetch prompt from DB with fallback to hardcoded default
+        action_intent_prompt_text = _get_prompt_from_db(
+            "coordinator", "action_intent", ACTION_INTENT_PROMPT
+        )
+        prompt = PromptTemplate.from_template(action_intent_prompt_text)
         chain = prompt | structured_llm
         result: ActionIntentResult = chain.invoke(
             {
@@ -860,7 +873,11 @@ def _classify_intent_with_llm(
                 [f"{msg['role']}: {msg['content'][:50]}" for msg in recent]
             )
 
-        prompt = PromptTemplate.from_template(INTENT_CLASSIFICATION_PROMPT)
+        # Fetch prompt from DB with fallback to hardcoded default
+        intent_classification_prompt_text = _get_prompt_from_db(
+            "coordinator", "intent_classification", INTENT_CLASSIFICATION_PROMPT
+        )
+        prompt = PromptTemplate.from_template(intent_classification_prompt_text)
         chain = prompt | structured_llm
 
         logger.info("🧠 Using structured LLM classification (provider: %s)", provider)
