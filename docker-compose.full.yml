@@ -1,106 +1,143 @@
-# ============================================================================
-# CareBank Full Stack - Development Docker Compose
-# ============================================================================
-# Usage: docker-compose -f docker-compose.full.yml up
-# ============================================================================
-
 services:
-  # ── Infrastructure ────────────────────────────────────────────────
   postgres:
     image: ankane/pgvector:v0.5.1
     environment:
       POSTGRES_USER: carebank
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carebank_dev_pwd}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-carebank_pwd}
       POSTGRES_DB: carebank_db
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - carebank-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U carebank -d carebank_db"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   redis:
     image: redis:7.2-alpine
     ports:
       - "6379:6379"
+    networks:
+      - carebank-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  agentic-proxy:
+    build:
+      context: ../carebank-agentic-bank
+      dockerfile: Dockerfile
+    environment:
+      BANKING_API_SECRET: ${BANKING_API_SECRET:-supersecret123}
+      PROXY_WEBHOOK_SECRET: ${PROXY_WEBHOOK_SECRET:-supersecret123}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      PROXY_DB_PATH: /data/agentic_proxy.db
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8001:8001"
+    volumes:
+      - proxydata:/data
+    networks:
+      - carebank-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8001/').raise_for_status()"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ── MockBank API ──────────────────────────────────────────────────
-  mockbank:
-    build:
-      context: ../carebank-mockbank
-      dockerfile: Dockerfile
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - BANKING_API_SECRET=${BANKING_API_SECRET:-supersecret123}
-      - MOCKBANK_JWT_SECRET=${BANKING_API_SECRET:-supersecret123}
+  ollama:
+    image: ollama/ollama:latest
+    gpus: all
     ports:
-      - "8001:8001"
-    depends_on:
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
+      - "11434:11434"
+    volumes:
+      - ${HOME}/.ollama:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_VULKAN=1
+      - OLLAMA_LLM_LIBRARY=cuda
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    networks:
+      - carebank-network
 
-  # ── Backend API ───────────────────────────────────────────────────
+  ollama-model-ready:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_started
+    networks:
+      - carebank-network
+    volumes:
+      - ${HOME}/.ollama:/root/.ollama
+    entrypoint: ["/bin/sh", "-lc"]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    command: >
+      "for i in $(seq 1 60); do
+         ollama list >/dev/null 2>&1 && break;
+         sleep 2;
+       done;
+       ollama list | grep -q '${OLLAMA_MODEL:-qwen3:8b}' ||
+       ollama pull '${OLLAMA_MODEL:-qwen3:8b}'"
+    restart: "no"
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=carebank
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-carebank_dev_pwd}
-      - DB_NAME=carebank_db
-      - REDIS_URL=redis://redis:6379
-      - BANKING_API_URL=http://mockbank:8001
-      - BANKING_API_SECRET=${BANKING_API_SECRET:-supersecret123}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:8b}
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: carebank
+      DB_PASSWORD: ${DB_PASSWORD:-carebank_pwd}
+      DB_NAME: carebank_db
+      DB_SCHEMA_MODE: create_all
+      REDIS_URL: redis://redis:6379
+      BANKING_API_URL: http://agentic-proxy:8001
+      BANKING_API_SECRET: ${BANKING_API_SECRET:-supersecret123}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
+      OLLAMA_AUTO_PULL: ${OLLAMA_AUTO_PULL:-true}
+      ENVIRONMENT: development
+      PYTHONUNBUFFERED: 1
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000
     ports:
       - "8000:8000"
+    networks:
+      - carebank-network
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      mockbank:
+      agentic-proxy:
         condition: service_started
+      ollama:
+        condition: service_started
+      ollama-model-ready:
+        condition: service_completed_successfully
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/').raise_for_status()"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
-  # ── Frontend (Optional) ───────────────────────────────────────────
-  # To run the frontend via docker, uncomment the below service.
-  # However, for development, running `npm run dev` directly in the 
-  # frontend directory is usually faster and recommended.
-  # frontend:
-  #   image: node:20-alpine
-  #   working_dir: /app
-  #   volumes:
-  #     - ../carebank-frontend:/app
-  #   ports:
-  #     - "5173:5173"
-  #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-  #   depends_on:
-  #     - backend
-
-# ============================================================================
-# 🔗 Endpoints Summary:
-# - Backend API:         http://localhost:8000
-# - Backend Swagger UI:  http://localhost:8000/docs
-# - MockBank API:        http://localhost:8001
-# - MockBank Swagger UI: http://localhost:8001/docs
-# - Frontend:            http://localhost:5173 (if run)
-# ============================================================================
+networks:
+  carebank-network:
+    driver: bridge
 
 volumes:
   pgdata:
+  proxydata:

@@ -3,9 +3,9 @@
 set -e
 
 BACKEND_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MOCKBANK_DIR="$BACKEND_DIR/../carebank-mockbank"
+PROXY_DIR="$BACKEND_DIR/../carebank-agentic-bank"
 FRONTEND_DIR="$(cd "$BACKEND_DIR/../../WebstormProjects/carebank-frontend" 2>/dev/null && pwd || echo "$BACKEND_DIR/../../WebstormProjects/carebank-frontend")"
-RUN_MOCKBANK="${RUN_MOCKBANK:-1}"
+RUN_PROXY="${RUN_PROXY:-1}"
 RUN_FRONTEND="${RUN_FRONTEND:-1}"
 
 # --- Setup .env files if missing ---
@@ -24,11 +24,14 @@ OPENAI_API_KEY=your-api-key-here
 EOT
 fi
 
-if [ ! -f "$MOCKBANK_DIR/.env" ]; then
-  echo "[INFO] Creating default .env for MockBank..."
-  mkdir -p "$MOCKBANK_DIR"
-  cat <<'EOT' > "$MOCKBANK_DIR/.env"
+if [ ! -f "$PROXY_DIR/.env" ]; then
+  echo "[INFO] Creating default .env for Agentic Proxy..."
+  mkdir -p "$PROXY_DIR"
+  cat <<'EOT' > "$PROXY_DIR/.env"
+GEMINI_API_KEY=
 BANKING_API_SECRET=supersecret123
+PROXY_WEBHOOK_SECRET=supersecret123
+PROXY_DB_PATH=./agentic_proxy.db
 EOT
 fi
 
@@ -59,7 +62,7 @@ load_env_file() {
 }
 
 load_env_file "$BACKEND_DIR/.env"
-load_env_file "$MOCKBANK_DIR/.env"
+load_env_file "$PROXY_DIR/.env"
 
 : "${DB_HOST:=localhost}"
 : "${DB_PORT:=5432}"
@@ -76,21 +79,17 @@ if [ -z "${PG_SUPERUSER_PASSWORD:-}" ] && [ -n "${DB_PASSWORD:-}" ]; then
   export PG_SUPERUSER_PASSWORD
 fi
 
-if [ -z "${MOCKBANK_JWT_SECRET:-}" ] && [ -n "${BANKING_API_SECRET:-}" ]; then
-  MOCKBANK_JWT_SECRET="$BANKING_API_SECRET"
-  export MOCKBANK_JWT_SECRET
-fi
 if [ -z "${JWT_SECRET:-}" ] && [ -n "${BANKING_API_SECRET:-}" ]; then
   JWT_SECRET="$BANKING_API_SECRET"
   export JWT_SECRET
 fi
 
-MOCK_BANK_URL="$BANKING_API_URL"
-export MOCK_BANK_URL
+AGENTIC_PROXY_URL="$BANKING_API_URL"
+export AGENTIC_PROXY_URL
 
-if [ ! -f "$MOCKBANK_DIR/main.py" ]; then
-  echo "[WARN] Could not find carebank-mockbank at $MOCKBANK_DIR"
-  RUN_MOCKBANK="0"
+if [ ! -f "$PROXY_DIR/main.py" ]; then
+  echo "[WARN] Could not find carebank-agentic-bank at $PROXY_DIR"
+  RUN_PROXY="0"
 fi
 
 if [ ! -f "$FRONTEND_DIR/package.json" ]; then
@@ -112,12 +111,12 @@ setup_python_env() {
 
 echo "Configuring virtual environments..."
 setup_python_env "$BACKEND_DIR"
-if [ "$RUN_MOCKBANK" = "1" ]; then
-  setup_python_env "$MOCKBANK_DIR"
+if [ "$RUN_PROXY" = "1" ]; then
+  setup_python_env "$PROXY_DIR"
 fi
 
-if [ "$RUN_MOCKBANK" = "1" ] && [ -d "$MOCKBANK_DIR/.venv" ]; then
-  (cd "$MOCKBANK_DIR" && uv pip install -q python-dotenv)
+if [ "$RUN_PROXY" = "1" ] && [ -d "$PROXY_DIR/.venv" ]; then
+  (cd "$PROXY_DIR" && uv pip install -q python-dotenv google-generativeai httpx pyjwt)
 fi
 
 echo "Initialising database tables..."
@@ -125,11 +124,11 @@ cd "$BACKEND_DIR"
 export DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME
 uv run scripts/setup_postgres.py
 
-if [ "$RUN_MOCKBANK" = "1" ]; then
-  echo "Starting MockBank API on port 8001..."
-  (cd "$MOCKBANK_DIR" && uv run uvicorn main:app --host 0.0.0.0 --port 8001 --reload) &
+if [ "$RUN_PROXY" = "1" ]; then
+  echo "Starting Agentic Proxy API on port 8001..."
+  (cd "$PROXY_DIR" && uv run uvicorn main:app --host 0.0.0.0 --port 8001 --reload) &
 else
-  echo "[WARN] Skipping MockBank startup."
+  echo "[WARN] Skipping agentic proxy startup."
 fi
 
 echo "Starting CareBank Backend on port 8000..."

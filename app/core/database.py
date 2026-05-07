@@ -54,6 +54,11 @@ def init_db() -> None:
     import app.models.recurring_payment_rule  # noqa: F401
     import app.models.payment_history  # noqa: F401
 
+    # Admin LLM and tunnel configuration models
+    import app.models.llm_tunnel_config  # noqa: F401
+    import app.models.agent_prompt_config  # noqa: F401
+    import app.models.admin_action_log  # noqa: F401
+
     mode = (settings.db_schema_mode or "create_all").strip().lower()
     if mode in {"create_all", "dev"}:
         Base.metadata.create_all(bind=engine)
@@ -86,6 +91,20 @@ def _apply_dev_schema_backfills() -> None:
     tables = set(inspector.get_table_names())
     if "users" not in tables:
         return
+
+    if "products" in tables:
+        product_columns = {column["name"]: column for column in inspector.get_columns("products")}
+        product_id_column = product_columns.get("id")
+        if product_id_column is not None and str(product_id_column["type"]).lower().startswith("integer"):
+            logger.warning(
+                "DB backfill: converting products.id from integer to varchar for provider compatibility"
+            )
+            with engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE products ALTER COLUMN id TYPE VARCHAR USING id::text"
+                    )
+                )
 
     user_columns = {column["name"] for column in inspector.get_columns("users")}
     if "telegram_user_id" in user_columns:

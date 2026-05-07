@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     ollama_base_url: str | None = "http://localhost:11434"
     ollama_model: str = "qwen3:8b"
+    ollama_auto_pull: bool = True
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
     jwt_secret: str = ""
