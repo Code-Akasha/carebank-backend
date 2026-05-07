@@ -16,8 +16,8 @@ from rich.table import Table
 console = Console()
 
 BACKEND_URL = os.getenv("CAREBANK_BACKEND_URL", "http://localhost:8000")
-MOCKBANK_URL = os.getenv("CAREBANK_MOCKBANK_URL", "http://localhost:8001")
-JWT_SECRET = os.getenv("MOCKBANK_JWT_SECRET", "mockbank-dev-secret")
+PROXY_URL = os.getenv("CAREBANK_PROXY_URL", "http://localhost:8001")
+JWT_SECRET = os.getenv("CAREBANK_PROXY_JWT_SECRET", "mockbank-dev-secret")
 
 MENU_OPTIONS = {
     "1": ("System health check", "show_status"),
@@ -27,7 +27,7 @@ MENU_OPTIONS = {
     "5": ("Simulate expense", "simulate_expense"),
     "6": ("Trigger transaction", "trigger_transaction"),
     "7": ("Trigger admin scenario", "trigger_scenario"),
-    "8": ("Upsert MockBank profile", "upsert_profile"),
+    "8": ("Upsert proxy profile", "upsert_profile"),
     "9": ("Watch live events", "watch_events"),
     "10": ("View accounts", "view_accounts"),
     "11": ("List providers", "list_providers"),
@@ -38,13 +38,13 @@ MENU_OPTIONS = {
 class Dashboard:
     def __init__(self) -> None:
         self.backend_url = BACKEND_URL.rstrip("/")
-        self.mockbank_url = MOCKBANK_URL.rstrip("/")
+        self.proxy_url = PROXY_URL.rstrip("/")
         self.http_timeout = httpx.Timeout(15.0, connect=5.0)
 
     def run(self) -> None:
         console.print("[bold cyan]\nCareBank Ops Dashboard[/bold cyan]")
         console.print("Backend: [yellow]{}[/yellow]".format(self.backend_url))
-        console.print("MockBank: [yellow]{}[/yellow]\n".format(self.mockbank_url))
+        console.print("Proxy: [yellow]{}[/yellow]\n".format(self.proxy_url))
 
         while True:
             for key, (label, _) in MENU_OPTIONS.items():
@@ -62,14 +62,14 @@ class Dashboard:
 
     def show_status(self) -> None:
         backend = self._request_backend("GET", "/")
-        mockbank = self._request_mockbank(
+        proxy = self._request_proxy(
             "GET", "/", token=self._user_token("user_001")
         )
         table = Table(title="Service Health", box=box.SIMPLE)
         table.add_column("Service")
         table.add_column("Status")
         table.add_row("Backend", json.dumps(backend))
-        table.add_row("MockBank", json.dumps(mockbank))
+        table.add_row("Proxy", json.dumps(proxy))
         console.print(table)
 
     def view_balance(self) -> None:
@@ -159,7 +159,7 @@ class Dashboard:
         )
         token = self._admin_token()
         payload = {"user_id": user_id, "scenario_type": scenario}
-        result = self._request_mockbank(
+        result = self._request_proxy(
             "POST", "/admin/scenario", json=payload, token=token
         )
         console.print_json(data=result)
@@ -188,7 +188,7 @@ class Dashboard:
             "transactions": transactions,
         }
         token = self._admin_token()
-        result = self._request_mockbank("POST", "/profiles", json=payload, token=token)
+        result = self._request_proxy("POST", "/profiles", json=payload, token=token)
         console.print_json(data=result)
 
     def view_accounts(self) -> None:
@@ -268,7 +268,7 @@ class Dashboard:
             resp.raise_for_status()
             return resp.json()
 
-    def _request_mockbank(
+    def _request_proxy(
         self,
         method: str,
         path: str,
@@ -278,7 +278,7 @@ class Dashboard:
         token: str,
     ) -> dict:
         headers = {"Authorization": f"Bearer {token}"}
-        url = f"{self.mockbank_url}{path}"
+        url = f"{self.proxy_url}{path}"
         with httpx.Client(timeout=self.http_timeout) as client:
             resp = client.request(
                 method, url, params=params, json=json, headers=headers

@@ -46,7 +46,7 @@ class ProductBase(BaseModel):
 
 
 class ProductResponse(ProductBase):
-    id: int
+    id: str
 
     model_config = {"from_attributes": True}
 

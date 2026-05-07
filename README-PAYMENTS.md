@@ -340,14 +340,14 @@ Agent Flow:
 
 ### Common Issues
 - **No beneficiaries showing**: Verify JWT token, check DB has saved beneficiaries
-- **Payment fails**: Check daily limits, MPIN requirement, MockBank connection
+- **Payment fails**: Check daily limits, MPIN requirement, proxy connection
 - **Agent stuck**: Check state machine, verify context is passed back
 - **Scheduler not running**: Check app logs for "scheduler started"
 
 ### Performance Issues
 - Add caching for beneficiary lists
 - Batch recurring payment execution
-- Use async for MockBank calls
+- Use async for proxy calls
 - Consider Redis for session caching
 
 ---

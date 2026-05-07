@@ -10,12 +10,20 @@ from app.services.banking_client import get_banking_client, BankingClientError
 router = APIRouter(prefix="/api/products", tags=["products"])
 
 
+def _normalize_product(record: dict) -> dict:
+    normalized = dict(record)
+    if "type" not in normalized or not normalized.get("type"):
+        normalized["type"] = normalized.get("category")
+    return normalized
+
+
 def _persist_products(db: Session, products: list[dict]) -> None:
     """Upsert products using raw SQL to avoid ORM schema conflicts."""
     if not products:
         return
     for record in products:
-        eligibility = record.get("eligibility_rules")
+        normalized = _normalize_product(record)
+        eligibility = normalized.get("eligibility_rules")
         eligibility_json = json.dumps(eligibility) if eligibility else None
         db.execute(
             text(
@@ -37,13 +45,13 @@ def _persist_products(db: Session, products: list[dict]) -> None:
                 """
             ),
             {
-                "id": record.get("id"),
-                "name": record.get("name"),
-                "type": record.get("type"),
-                "provider_id": record.get("provider_id"),
-                "description": record.get("description"),
-                "min_balance_required": record.get("min_balance_required"),
-                "interest_rate": record.get("interest_rate"),
+                "id": normalized.get("id"),
+                "name": normalized.get("name"),
+                "type": normalized.get("type"),
+                "provider_id": normalized.get("provider_id"),
+                "description": normalized.get("description"),
+                "min_balance_required": normalized.get("min_balance_required"),
+                "interest_rate": normalized.get("interest_rate"),
                 "eligibility_rules": eligibility_json,
             },
         )
@@ -85,5 +93,6 @@ async def list_products(db: Session = Depends(get_db)) -> list:
             status_code=503, detail=f"Banking API unavailable: {exc}"
         ) from exc
 
-    _persist_products(db, products)
-    return products
+    normalized_products = [_normalize_product(record) for record in products]
+    _persist_products(db, normalized_products)
+    return normalized_products
