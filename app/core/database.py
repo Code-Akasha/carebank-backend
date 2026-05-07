@@ -58,6 +58,7 @@ def init_db() -> None:
     import app.models.llm_tunnel_config  # noqa: F401
     import app.models.agent_prompt_config  # noqa: F401
     import app.models.admin_action_log  # noqa: F401
+    import app.models.banking_connector_config  # noqa: F401
 
     mode = (settings.db_schema_mode or "create_all").strip().lower()
     if mode in {"create_all", "dev"}:

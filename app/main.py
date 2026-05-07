@@ -18,6 +18,7 @@ from app.routes.events import router as events_router
 from app.routes.auth import router as auth_router
 from app.routes.admin import router as admin_router
 from app.routes.admin_llm_config import router as admin_llm_config_router
+from app.routes.admin_banking_config import router as admin_banking_config_router
 from app.routes.profile import router as profile_router
 from app.routes.planning import router as planning_router
 from app.routes.actions import router as actions_router
@@ -79,6 +80,7 @@ app.include_router(auth_router)
 app.include_router(bills_router)
 app.include_router(admin_router)
 app.include_router(admin_llm_config_router)
+app.include_router(admin_banking_config_router)
 app.include_router(profile_router)
 app.include_router(planning_router)
 app.include_router(actions_router)

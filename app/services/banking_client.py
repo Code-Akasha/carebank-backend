@@ -12,6 +12,9 @@ import httpx
 import jwt
 
 from app.core.config import get_settings
+from app.core.crypto import get_encryption_manager
+from app.core.database import SessionLocal
+from app.models.banking_connector_config import BankingConnectorConfig
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +56,18 @@ class BankingClient:
         self._base_url = settings.banking_api_url.rstrip("/")
         self._secret = settings.banking_api_secret
         self._timeout = httpx.Timeout(10.0, connect=5.0)
+
+    def apply_runtime_config(
+        self,
+        base_url: str,
+        secret: str | None = None,
+        timeout_sec: int | None = None,
+    ) -> None:
+        self._base_url = base_url.rstrip("/")
+        if secret:
+            self._secret = secret
+        if timeout_sec:
+            self._timeout = httpx.Timeout(float(timeout_sec), connect=5.0)
 
     def _auth_headers(
         self, user_id: str | None, *, role: str = "user"
@@ -409,12 +424,39 @@ _client: BankingClient | None = None
 _client_lock = Lock()
 
 
+def _load_runtime_banking_config(environment: str | None = None) -> tuple[str | None, str | None, int | None]:
+    settings = get_settings()
+    env = environment or settings.environment
+    db = SessionLocal()
+    try:
+        config = (
+            db.query(BankingConnectorConfig)
+            .filter(
+                BankingConnectorConfig.environment == env,
+                BankingConnectorConfig.is_active == True,
+            )
+            .order_by(BankingConnectorConfig.updated_at.desc())
+            .first()
+        )
+        if not config:
+            return None, None, None
+        secret = None
+        if config.secret_encrypted:
+            secret = get_encryption_manager().decrypt(config.secret_encrypted)
+        return config.base_url, secret, config.request_timeout_sec
+    finally:
+        db.close()
+
+
 def get_banking_client() -> BankingClient:
     global _client
     if _client is None:
         with _client_lock:
             if _client is None:
                 _client = BankingClient()
+    base_url, secret, timeout_sec = _load_runtime_banking_config()
+    if base_url:
+        _client.apply_runtime_config(base_url, secret=secret, timeout_sec=timeout_sec)
     return _client
 
 
