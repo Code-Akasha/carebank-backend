@@ -5,7 +5,7 @@ Stores versioned system prompts for agents, environment-scoped (dev/stage/prod).
 Enables prompt customization with version history and rollback capability.
 """
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, Index, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, Index, UniqueConstraint, text
 from datetime import datetime, timezone
 from app.core.database import Base
 
@@ -40,7 +40,7 @@ class AgentPromptConfig(Base):
         UniqueConstraint(
             "agent_name", "environment", "is_active",
             name="uq_active_prompt_per_agent_env",
-            sqlite_where="is_active = true"
+            postgresql_where=text("is_active = true")
         ),
         # Index for fast lookups
         Index("ix_agent_prompt_config_agent_env_active", "agent_name", "environment", "is_active"),

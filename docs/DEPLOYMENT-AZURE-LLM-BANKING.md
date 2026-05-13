@@ -65,6 +65,33 @@ Use this if you want fewer VM ops tasks.
 
 This is cleaner operationally, but the VM approach is usually easier for students.
 
+### Option 3: Azure Container Apps + Managed Services
+
+Best if you want GitHub push to redeploy automatically with less VM maintenance.
+
+- Backend runs as a container app
+- GitHub Actions builds and deploys on every push to `develop` or `main`
+- PostgreSQL and Redis stay managed separately
+- Frontend can remain on Vercel
+
+This is the easiest option if your priority is:
+
+- push to GitHub
+- auto-build
+- auto-redeploy
+- no SSH into a VM
+
+## Auto-Redeploy Recommendation
+
+If you want every GitHub push to redeploy automatically, prefer one of these:
+
+1. **Azure App Service** with GitHub Actions deployment
+2. **Azure Container Apps** with GitHub Actions deployment
+
+Use a VM only if you specifically want full machine control. A VM can auto-update, but you must build that yourself with a self-hosted GitHub Actions runner, webhook, or SSH deployment script.
+
+For your case, since the frontend is on Vercel and you only host the FastAPI backend, I recommend **Azure Container Apps** if you want the cleanest push-to-deploy setup, or **Azure App Service** if you want the simplest Azure portal workflow.
+
 ## Required Environment Variables
 
 Backend:
@@ -105,10 +132,10 @@ On the Azure VM:
 
 1. Install Ubuntu 22.04 LTS.
 2. Install Docker and Docker Compose plugin.
-3. Clone the backend and frontend repositories.
+3. Clone the backend repository.
 4. Create production `.env` files.
-5. Bring up the stack with Docker Compose.
-6. Set up a reverse proxy for the frontend and backend.
+5. Bring up the backend stack with Docker Compose or a systemd service.
+6. Set up a reverse proxy only if you are serving directly from the VM.
 7. Open only ports 80 and 443 publicly.
 
 Recommended internal service exposure:
@@ -139,6 +166,34 @@ After deployment, verify:
 6. Banking connector can be saved.
 7. Banking provider/account/transaction reads work through the configured mock provider.
 8. Restarting the VM does not lose admin config because it is stored in the database.
+
+## GitHub Push To Redeploy
+
+### If you use Azure App Service or Azure Container Apps
+
+This is the preferred automated path.
+
+- Every push to `develop` or `main` can trigger a build and redeploy.
+- You do not need to SSH into the server.
+- The backend image can be rebuilt from the Dockerfile automatically.
+- You can keep the frontend on Vercel independently.
+
+For the workflow in this repo, set these GitHub secrets:
+
+- `AZURE_WEBAPP_NAME`
+- `AZURE_WEBAPP_PUBLISH_PROFILE`
+
+Then pushes to `main` or `develop` will deploy automatically.
+
+### If you use a VM
+
+You need extra automation.
+
+- GitHub Actions self-hosted runner on the VM, or
+- a deploy workflow that SSHs into the VM and runs `git pull` + `docker compose up -d --build`, or
+- a webhook listener on the VM that triggers a deploy script.
+
+This is possible, but it is more fragile than App Service or Container Apps.
 
 ## Local Ollama And Mock Provider Flow
 
