@@ -24,7 +24,11 @@ else:
         pool_size=5,
         max_overflow=10,
         pool_recycle=3600,
-        connect_args={"connect_timeout": 60, "options": "-c statement_timeout=30000"},
+        connect_args={
+            "connect_timeout": 10,  # Reduced from 60s to fail faster
+            "keepalives": 1,
+            "keepalives_idle": 30,
+        },
     )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -68,7 +72,16 @@ def init_db() -> None:
     import app.models.admin_action_log  # noqa: F401
     import app.models.banking_connector_config  # noqa: F401
 
-    # Skip pre-test, let SQLAlchemy pool handle connection retries naturally
+    # Test quick connection to fail fast if DB is down
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        logger.info("Database is reachable")
+    except Exception as e:
+        logger.warning(f"Database unreachable on startup (will retry on request): {e}")
+        return  # Non-fatal, continue
+
+    # If we get here, DB is reachable, so try to create schema
     mode = (settings.db_schema_mode or "create_all").strip().lower()
     if mode in {"create_all", "dev"}:
         try:
@@ -79,7 +92,6 @@ def init_db() -> None:
             logger.warning(
                 f"Database schema creation failed (non-fatal, will retry on request): {e}"
             )
-            # Don't re-raise - allow app to start and handle DB errors on first request
         return
 
     if mode in {"alembic", "migrate"}:
