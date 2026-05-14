@@ -37,12 +37,14 @@ class AgentPromptConfig(Base):
     # Constraints
     __table_args__ = (
         # Unique constraint: only one active prompt per agent/environment
-        UniqueConstraint(
+        # Use Index with unique=True for partial unique constraints (postgresql_where)
+        Index(
+            "uq_active_prompt_per_agent_env",
             "agent_name", "environment", "is_active",
-            name="uq_active_prompt_per_agent_env",
+            unique=True,
             postgresql_where=text("is_active = true")
         ),
-        # Index for fast lookups
+        # Index for fast lookups (redundant with the unique index above, but good for clarity)
         Index("ix_agent_prompt_config_agent_env_active", "agent_name", "environment", "is_active"),
     )
 
