@@ -84,17 +84,33 @@ def init_db() -> None:
     raise ValueError(f"Unsupported DB_SCHEMA_MODE={settings.db_schema_mode!r}")
 
 
-def _test_database_connection() -> None:
-    """Test database connection before attempting schema operations."""
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-            logger.info("Database connection test successful")
-    except Exception as e:
-        logger.error(f"Database connection test failed: {e}", exc_info=True)
-        raise RuntimeError(
-            f"Cannot connect to database at {settings.get_database_url()}: {e}"
-        ) from e
+def _test_database_connection(max_retries: int = 5) -> None:
+    """Test database connection with exponential backoff retries."""
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+                logger.info("Database connection test successful")
+                return
+        except Exception as e:
+            last_error = e
+            if attempt < max_retries:
+                wait_time = 2 ** (attempt - 1)  # 1s, 2s, 4s, 8s, 16s
+                logger.warning(
+                    f"Database connection attempt {attempt}/{max_retries} failed: {e}. "
+                    f"Retrying in {wait_time}s..."
+                )
+                time.sleep(wait_time)
+            else:
+                logger.error(
+                    f"Database connection failed after {max_retries} attempts: {e}",
+                    exc_info=True,
+                )
+    raise RuntimeError(
+        f"Cannot connect to database at {settings.get_database_url()} after {max_retries} "
+        f"attempts: {last_error}"
+    ) from last_error
 
 
 def _run_alembic_upgrade() -> None:
