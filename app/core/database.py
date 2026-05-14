@@ -31,8 +31,12 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+
 def init_db() -> None:
-    """Import all models so their tables are registered, then create any missing ones."""
+    """
+    Import all models and try to create schema.
+    If DB is unavailable, this is non-fatal - schema creation will be retried by the scheduler.
+    """
     import app.models.balance  # noqa: F401
     import app.models.transaction  # noqa: F401
     import app.models.product  # noqa: F401
@@ -72,8 +76,10 @@ def init_db() -> None:
             _apply_dev_schema_backfills()
             logger.info("Database schema created/verified successfully")
         except Exception as e:
-            logger.error(f"Database initialization failed: {e}", exc_info=True)
-            raise
+            logger.warning(
+                f"Database schema creation failed (non-fatal, will retry on request): {e}"
+            )
+            # Don't re-raise - allow app to start and handle DB errors on first request
         return
 
     if mode in {"alembic", "migrate"}:
