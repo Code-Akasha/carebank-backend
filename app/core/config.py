@@ -156,6 +156,7 @@ class Settings(BaseSettings):
             host=self.db_host.strip(),
             port=self.db_port,
             database=self.db_name.strip(),
+            query={"sslmode": "disable"}
         ).render_as_string(hide_password=False)
 
     def get_telegram_allow_from(self) -> set[str]:
