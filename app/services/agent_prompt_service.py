@@ -26,10 +26,10 @@ class AgentPromptService:
         """
         if not prompt or not prompt.strip():
             return False, "Prompt cannot be empty"
-        
+
         if len(prompt) > 50000:  # Max 50KB prompt
             return False, "Prompt exceeds maximum length (50KB)"
-        
+
         # Could add more sophisticated validation (e.g., template syntax checks)
         return True, None
 
@@ -41,11 +41,15 @@ class AgentPromptService:
         Retrieve the active (published) prompt for an agent in an environment.
         Returns None if no active prompt is configured.
         """
-        return db.query(AgentPromptConfig).filter(
-            AgentPromptConfig.agent_name == agent_name,
-            AgentPromptConfig.environment == environment,
-            AgentPromptConfig.is_active == True,
-        ).first()
+        return (
+            db.query(AgentPromptConfig)
+            .filter(
+                AgentPromptConfig.agent_name == agent_name,
+                AgentPromptConfig.environment == environment,
+                AgentPromptConfig.is_active,
+            )
+            .first()
+        )
 
     @staticmethod
     async def get_prompt_history(
@@ -55,10 +59,15 @@ class AgentPromptService:
         Retrieve all versions (active and inactive) of a prompt for an agent/env.
         Ordered by version descending (newest first).
         """
-        return db.query(AgentPromptConfig).filter(
-            AgentPromptConfig.agent_name == agent_name,
-            AgentPromptConfig.environment == environment,
-        ).order_by(AgentPromptConfig.version.desc()).all()
+        return (
+            db.query(AgentPromptConfig)
+            .filter(
+                AgentPromptConfig.agent_name == agent_name,
+                AgentPromptConfig.environment == environment,
+            )
+            .order_by(AgentPromptConfig.version.desc())
+            .all()
+        )
 
     @staticmethod
     async def publish_prompt(
@@ -79,7 +88,9 @@ class AgentPromptService:
         # Validate prompt
         is_valid, error = AgentPromptService._validate_prompt_template(system_prompt)
         if not is_valid:
-            logger.error(f"Prompt validation failed for {agent_name}/{environment}: {error}")
+            logger.error(
+                f"Prompt validation failed for {agent_name}/{environment}: {error}"
+            )
             raise ValueError(f"Invalid prompt: {error}")
 
         # Get current active version to determine next version number
@@ -152,11 +163,15 @@ class AgentPromptService:
             )
 
         # Get target version
-        target_prompt = db.query(AgentPromptConfig).filter(
-            AgentPromptConfig.agent_name == agent_name,
-            AgentPromptConfig.environment == environment,
-            AgentPromptConfig.version == target_version,
-        ).first()
+        target_prompt = (
+            db.query(AgentPromptConfig)
+            .filter(
+                AgentPromptConfig.agent_name == agent_name,
+                AgentPromptConfig.environment == environment,
+                AgentPromptConfig.version == target_version,
+            )
+            .first()
+        )
 
         if not target_prompt:
             raise ValueError(
@@ -165,9 +180,7 @@ class AgentPromptService:
             )
 
         if target_prompt.id == active_prompt.id:
-            raise ValueError(
-                f"Target version {target_version} is already active"
-            )
+            raise ValueError(f"Target version {target_version} is already active")
 
         # Deactivate current active version
         active_prompt.is_active = False

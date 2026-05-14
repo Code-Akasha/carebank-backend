@@ -424,7 +424,9 @@ _client: BankingClient | None = None
 _client_lock = Lock()
 
 
-def _load_runtime_banking_config(environment: str | None = None) -> tuple[str | None, str | None, int | None]:
+def _load_runtime_banking_config(
+    environment: str | None = None,
+) -> tuple[str | None, str | None, int | None]:
     settings = get_settings()
     env = environment or settings.environment
     db = SessionLocal()
@@ -433,7 +435,7 @@ def _load_runtime_banking_config(environment: str | None = None) -> tuple[str | 
             db.query(BankingConnectorConfig)
             .filter(
                 BankingConnectorConfig.environment == env,
-                BankingConnectorConfig.is_active == True,
+                BankingConnectorConfig.is_active,
             )
             .order_by(BankingConnectorConfig.updated_at.desc())
             .first()

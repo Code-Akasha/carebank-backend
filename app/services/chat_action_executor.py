@@ -391,8 +391,7 @@ def apply_planned_chat_action(
         else:
             action_label = label_map.get(execution.action_type) or execution.action_type
             response = (
-                f"Execution ID {execution.id} for {action_label} is "
-                f"{execution.status}."
+                f"Execution ID {execution.id} for {action_label} is {execution.status}."
             )
 
         if execution is not None:

@@ -88,25 +88,32 @@ async def approve_savings(
     # Execute the transfer via MockBank
     try:
         client = BankingClient()
-        tx_result = await client.trigger_transaction({
-            "user_id": user_id,
-            "amount": request.amount,
-            "type": "debit",
-            "category": "savings",
-            "merchant": "CareBank Auto-Savings",
-            "description": f"Auto-savings transfer: ₹{request.amount}",
-        })
+        tx_result = await client.trigger_transaction(
+            {
+                "user_id": user_id,
+                "amount": request.amount,
+                "type": "debit",
+                "category": "savings",
+                "merchant": "CareBank Auto-Savings",
+                "description": f"Auto-savings transfer: ₹{request.amount}",
+            }
+        )
 
         transaction_id = tx_result.get("transaction_id") or tx_result.get("id", "")
 
         # Push real-time event
-        push_event(user_id, "auto_savings_completed", {
-            "amount": request.amount,
-            "transaction_id": str(transaction_id),
-        })
+        push_event(
+            user_id,
+            "auto_savings_completed",
+            {
+                "amount": request.amount,
+                "transaction_id": str(transaction_id),
+            },
+        )
 
         # Persist notification
         from app.services.notification_service import notify_savings_transfer
+
         notify_savings_transfer(
             db,
             user_id=user_id,

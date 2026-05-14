@@ -24,6 +24,9 @@ class Beneficiary(Base):
     identifier_value = Column(
         String, nullable=False
     )  # "+919876543210", "user@upi", "1234567890"
+    phone_number = Column(String, nullable=True)
+    upi_handle = Column(String, nullable=True)
+    ifsc = Column(String, nullable=True)
 
     # Verification Status
     is_verified = Column(
@@ -49,3 +52,45 @@ class Beneficiary(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+    @property
+    def name(self) -> str | None:
+        return self.nickname
+
+    @name.setter
+    def name(self, value: str | None) -> None:
+        self.nickname = value
+
+    @property
+    def phone(self) -> str | None:
+        if self.phone_number:
+            return self.phone_number
+        return self.identifier_value if self.identifier_type == "phone" else None
+
+    @phone.setter
+    def phone(self, value: str | None) -> None:
+        if value:
+            self.identifier_type = "phone"
+            self.identifier_value = value
+
+    @property
+    def upi(self) -> str | None:
+        if self.upi_handle:
+            return self.upi_handle
+        return self.identifier_value if self.identifier_type in {"upi", "upi_id"} else None
+
+    @upi.setter
+    def upi(self, value: str | None) -> None:
+        if value:
+            self.identifier_type = "upi_id"
+            self.identifier_value = value
+
+    @property
+    def account_number(self) -> str | None:
+        return self.identifier_value if self.identifier_type == "account_number" else None
+
+    @account_number.setter
+    def account_number(self, value: str | None) -> None:
+        if value:
+            self.identifier_type = "account_number"
+            self.identifier_value = value

@@ -27,10 +27,12 @@ class LLMAdminService:
         """
         Get existing tunnel config for environment, or create a default (inactive) one.
         """
-        config = db.query(LLMTunnelConfig).filter(
-            LLMTunnelConfig.environment == environment
-        ).first()
-        
+        config = (
+            db.query(LLMTunnelConfig)
+            .filter(LLMTunnelConfig.environment == environment)
+            .first()
+        )
+
         if not config:
             config = LLMTunnelConfig(
                 environment=environment,
@@ -46,8 +48,10 @@ class LLMAdminService:
             db.add(config)
             db.commit()
             db.refresh(config)
-            logger.info(f"Created default inactive tunnel config for environment: {environment}")
-        
+            logger.info(
+                f"Created default inactive tunnel config for environment: {environment}"
+            )
+
         return config
 
     @staticmethod
@@ -64,25 +68,27 @@ class LLMAdminService:
         Update tunnel configuration for an environment.
         Encrypts sensitive auth token and logs the action.
         """
-        config = await LLMAdminService.get_or_create_tunnel_config(db, environment, user_id)
-        
+        config = await LLMAdminService.get_or_create_tunnel_config(
+            db, environment, user_id
+        )
+
         # Store previous values for audit
         before_tunnel_url = config.tunnel_url
         before_model = config.ollama_model_default
         before_timeout = config.request_timeout_sec
-        
+
         # Encrypt the auth token if provided
         if tunnel_auth_token:
             encryptor = get_encryption_manager()
             config.tunnel_auth_token_encrypted = encryptor.encrypt(tunnel_auth_token)
-        
+
         # Update configuration
         config.tunnel_url = tunnel_url
         config.ollama_model_default = ollama_model_default
         config.request_timeout_sec = request_timeout_sec
         config.updated_by = user_id
         config.updated_at = datetime.now(timezone.utc)
-        
+
         # Log the action
         audit_log = AdminActionLog(
             admin_user_id=user_id,
@@ -98,7 +104,7 @@ class LLMAdminService:
         db.commit()
         db.refresh(config)
         logger.info(f"Updated tunnel config for environment: {environment}")
-        
+
         return config
 
     @staticmethod
@@ -108,13 +114,15 @@ class LLMAdminService:
         """
         Activate tunnel configuration for an environment.
         """
-        config = await LLMAdminService.get_or_create_tunnel_config(db, environment, user_id)
-        
+        config = await LLMAdminService.get_or_create_tunnel_config(
+            db, environment, user_id
+        )
+
         if not config.is_active:
             config.is_active = True
             config.updated_by = user_id
             config.updated_at = datetime.now(timezone.utc)
-            
+
             audit_log = AdminActionLog(
                 admin_user_id=user_id,
                 action_type="llm_config_update",
@@ -129,7 +137,7 @@ class LLMAdminService:
             db.commit()
             db.refresh(config)
             logger.info(f"Activated tunnel config for environment: {environment}")
-        
+
         return config
 
     @staticmethod
@@ -139,13 +147,15 @@ class LLMAdminService:
         """
         Deactivate tunnel configuration for an environment.
         """
-        config = await LLMAdminService.get_or_create_tunnel_config(db, environment, user_id)
-        
+        config = await LLMAdminService.get_or_create_tunnel_config(
+            db, environment, user_id
+        )
+
         if config.is_active:
             config.is_active = False
             config.updated_by = user_id
             config.updated_at = datetime.now(timezone.utc)
-            
+
             audit_log = AdminActionLog(
                 admin_user_id=user_id,
                 action_type="llm_config_update",
@@ -160,7 +170,7 @@ class LLMAdminService:
             db.commit()
             db.refresh(config)
             logger.info(f"Deactivated tunnel config for environment: {environment}")
-        
+
         return config
 
     @staticmethod
@@ -170,10 +180,14 @@ class LLMAdminService:
         """
         Retrieve active tunnel config for environment, or None if not configured.
         """
-        return db.query(LLMTunnelConfig).filter(
-            LLMTunnelConfig.environment == environment,
-            LLMTunnelConfig.is_active == True,
-        ).first()
+        return (
+            db.query(LLMTunnelConfig)
+            .filter(
+                LLMTunnelConfig.environment == environment,
+                LLMTunnelConfig.is_active,
+            )
+            .first()
+        )
 
     @staticmethod
     def get_decrypted_token(config: LLMTunnelConfig) -> Optional[str]:

@@ -266,9 +266,7 @@ async def admin_webhook_dead_letters(
 ):
     client = get_banking_client()
     try:
-        response = await client.get_webhook_dead_letters(
-            status_filter=status_filter
-        )
+        response = await client.get_webhook_dead_letters(status_filter=status_filter)
     except BankingClientError as exc:
         raise HTTPException(
             status_code=exc.status_code or 503,
@@ -291,8 +289,7 @@ async def admin_webhook_dead_letters(
                 "event_type": payload.get("event_type") or record.get("event_type"),
                 "payload": payload,
                 "failed_at": record.get("created_at"),
-                "attempts": record.get("attempt_count")
-                or len(attempts),
+                "attempts": record.get("attempt_count") or len(attempts),
                 "last_error": last_error,
                 "status": record.get("status"),
             }

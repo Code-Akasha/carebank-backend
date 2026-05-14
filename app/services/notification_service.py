@@ -58,13 +58,17 @@ def create_notification(
     try:
         from app.routes.events import push_event
 
-        push_event(user_id, "notification", {
-            "id": notification.id,
-            "kind": kind,
-            "title": title,
-            "body": body,
-            "payload": payload or {},
-        })
+        push_event(
+            user_id,
+            "notification",
+            {
+                "id": notification.id,
+                "kind": kind,
+                "title": title,
+                "body": body,
+                "payload": payload or {},
+            },
+        )
     except Exception as exc:
         logger.warning("Failed to push SSE notification: %s", exc)
 

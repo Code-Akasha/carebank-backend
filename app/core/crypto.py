@@ -24,9 +24,8 @@ class EncryptionManager:
         # Fernet requires a 32-byte base64-encoded key; derive it from master_key
         import base64
         import hashlib
-        derived_key = base64.urlsafe_b64encode(
-            hashlib.sha256(master_key).digest()
-        )
+
+        derived_key = base64.urlsafe_b64encode(hashlib.sha256(master_key).digest())
         self.cipher_suite = Fernet(derived_key)
 
     def encrypt(self, plaintext: str) -> str:

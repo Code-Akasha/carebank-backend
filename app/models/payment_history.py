@@ -2,6 +2,7 @@
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from datetime import datetime, timezone
+from sqlalchemy.orm import synonym
 
 from app.core.database import Base
 
@@ -17,8 +18,8 @@ class PaymentHistory(Base):
 
     # Payment Details
     amount = Column(Float, nullable=False)
-    description = Column(String, nullable=False)
-    payment_type = Column(String, nullable=False)  # "once", "recurring"
+    description = Column(String, nullable=True, default="")
+    payment_type = Column(String, nullable=True, default="once")  # "once", "recurring"
     payment_method = Column(String, nullable=False)  # "upi", "account_transfer"
 
     # Recurring Link
@@ -30,10 +31,11 @@ class PaymentHistory(Base):
     status = Column(
         String, nullable=False, index=True
     )  # "pending", "success", "failed"
-    execution_date = Column(DateTime, nullable=False, index=True)
+    execution_date = Column(DateTime, nullable=True, index=True)
     mockbank_transaction_id = Column(
         String, nullable=True
     )  # Transaction ID from MockBank
+    transaction_id = synonym("mockbank_transaction_id")
 
     # Error Tracking
     error_reason = Column(String, nullable=True)  # Failure reason if status="failed"
@@ -42,3 +44,4 @@ class PaymentHistory(Base):
     idempotency_key = Column(String, unique=True, nullable=True)
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

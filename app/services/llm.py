@@ -8,7 +8,6 @@ import time
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from app.core.config import get_settings
-from app.core.crypto import get_encryption_manager
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +22,7 @@ def _ollama_model_exists(base_url: str, model: str) -> bool:
         response.raise_for_status()
         payload = response.json()
         models = payload.get("models", []) if isinstance(payload, dict) else []
-        names = {
-            str(item.get("name", ""))
-            for item in models
-            if isinstance(item, dict)
-        }
+        names = {str(item.get("name", "")) for item in models if isinstance(item, dict)}
         if model in names:
             return True
         if ":" not in model and f"{model}:latest" in names:
@@ -79,25 +74,28 @@ def _get_ollama_config_from_db(environment: str) -> Optional[dict]:
     """
     Retrieve runtime Ollama configuration from database for a given environment.
     Returns None if no active config is found.
-    
+
     This function is called on-demand to check for admin-configured tunnel settings
     before falling back to environment variables.
     """
     try:
         # Lazy import to avoid circular dependency
-        from sqlalchemy.orm import Session
         from app.core.database import SessionLocal
         from app.models.llm_tunnel_config import LLMTunnelConfig
         from app.services.llm_admin_service import LLMAdminService
-        
+
         db = SessionLocal()
         try:
-            config = db.query(LLMTunnelConfig).filter(
-                LLMTunnelConfig.environment == environment,
-                LLMTunnelConfig.is_active == True,
-                LLMTunnelConfig.provider_type == "ngrok",
-            ).first()
-            
+            config = (
+                db.query(LLMTunnelConfig)
+                .filter(
+                    LLMTunnelConfig.environment == environment,
+                    LLMTunnelConfig.is_active,
+                    LLMTunnelConfig.provider_type == "ngrok",
+                )
+                .first()
+            )
+
             if config:
                 # Decrypt the token if present
                 token = LLMAdminService.get_decrypted_token(config)
@@ -115,7 +113,6 @@ def _get_ollama_config_from_db(environment: str) -> Optional[dict]:
         return None
 
 
-
 def get_llm_provider(
     temperature: float = 0.7,
     max_tokens: int = 500,
@@ -123,7 +120,7 @@ def get_llm_provider(
 ) -> tuple[Optional[BaseChatModel], str]:
     """
     Factory to retrieve configured LLM.
-    
+
     Resolution order (first match wins):
     1. Runtime DB config for current environment (ngrok tunnel to local Ollama)
     2. Environment variables: OLLAMA_BASE_URL
@@ -141,7 +138,7 @@ def get_llm_provider(
     settings = get_settings()
     if not environment:
         environment = settings.environment
-    
+
     gemini_model = settings.gemini_model or "gemini-2.5-flash"
     ollama_model = settings.ollama_model or "llama3.2"
 
@@ -151,8 +148,7 @@ def get_llm_provider(
         try:
             tunnel_url = db_config["tunnel_url"]
             model = db_config["model"]
-            timeout = db_config.get("timeout_sec", 30)
-            
+
             if _ollama_is_available(tunnel_url):
                 if not _ollama_model_exists(tunnel_url, model):
                     if settings.ollama_auto_pull:
@@ -165,17 +161,13 @@ def get_llm_provider(
                                 "Ollama model %s unavailable after pull attempt in tunnel.",
                                 model,
                             )
-                            raise RuntimeError(
-                                f"Ollama model unavailable: {model}"
-                            )
+                            raise RuntimeError(f"Ollama model unavailable: {model}")
                     else:
                         logger.warning(
                             "Ollama model %s not found in tunnel and auto-pull disabled.",
                             model,
                         )
-                        raise RuntimeError(
-                            f"Ollama model unavailable: {model}"
-                        )
+                        raise RuntimeError(f"Ollama model unavailable: {model}")
 
                 from langchain_ollama import ChatOllama
 
@@ -184,7 +176,9 @@ def get_llm_provider(
                     model=model,
                     temperature=temperature,
                 )
-                logger.info(f"Using DB-configured ngrok tunnel to Ollama for environment {environment}")
+                logger.info(
+                    f"Using DB-configured ngrok tunnel to Ollama for environment {environment}"
+                )
                 return llm, f"ollama-tunnel:{model}"
             logger.info(
                 "Ollama tunnel at %s is not reachable for environment %s. Trying env-var Ollama.",
@@ -222,9 +216,7 @@ def get_llm_provider(
                             "Ollama model %s not found and auto-pull disabled.",
                             ollama_model,
                         )
-                        raise RuntimeError(
-                            f"Ollama model unavailable: {ollama_model}"
-                        )
+                        raise RuntimeError(f"Ollama model unavailable: {ollama_model}")
 
                 from langchain_ollama import ChatOllama
 

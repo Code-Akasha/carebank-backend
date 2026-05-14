@@ -47,7 +47,7 @@ async def create_beneficiary_endpoint(
     except BankingClientError as exc:
         status_code = exc.status_code or 503
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
-    return _unwrap_beneficiary(result)
+    return result
 
 
 @router.get("/")
@@ -133,4 +133,4 @@ async def verify_beneficiary_endpoint(
     except BankingClientError as exc:
         status_code = exc.status_code or 503
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
-    return _unwrap_beneficiary(result)
+    return result

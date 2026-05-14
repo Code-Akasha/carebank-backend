@@ -6,7 +6,6 @@ Includes caching with short TTL to reduce repeated tunnel calls.
 """
 
 import logging
-import asyncio
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import httpx
@@ -20,7 +19,7 @@ class OllamaModel:
     def __init__(self, name: str, size_bytes: int, available: bool = True):
         self.name = name
         self.size_bytes = size_bytes
-        self.size_gb = size_bytes / (1024 ** 3)
+        self.size_gb = size_bytes / (1024**3)
         self.available = available
 
     def to_dict(self) -> Dict[str, Any]:
@@ -43,12 +42,12 @@ class ModelDiscoveryCache:
         """Retrieve cached models if still fresh."""
         if key not in self.cache:
             return None
-        
+
         timestamp, models = self.cache[key]
         if datetime.utcnow() - timestamp > timedelta(seconds=self.ttl_seconds):
             del self.cache[key]
             return None
-        
+
         return models
 
     def set(self, key: str, models: List[OllamaModel]) -> None:
@@ -92,7 +91,7 @@ class LLMModelDiscoveryService:
             ValueError: If response format is unexpected
         """
         cache_key = tunnel_url
-        
+
         # Check cache first (unless force_refresh)
         if not force_refresh:
             cached_models = _discovery_cache.get(cache_key)
@@ -104,7 +103,7 @@ class LLMModelDiscoveryService:
             # Fetch models from Ollama tags endpoint
             models_url = f"{tunnel_url}/api/tags"
             logger.debug(f"Fetching models from {models_url}")
-            
+
             async with httpx.AsyncClient(timeout=timeout_sec) as client:
                 response = await client.get(models_url)
                 response.raise_for_status()
@@ -115,13 +114,15 @@ class LLMModelDiscoveryService:
             for model_info in data.get("models", []):
                 model_name = model_info.get("name")
                 size_bytes = model_info.get("size", 0)
-                
+
                 if model_name:
-                    models.append(OllamaModel(
-                        name=model_name,
-                        size_bytes=size_bytes,
-                        available=True,
-                    ))
+                    models.append(
+                        OllamaModel(
+                            name=model_name,
+                            size_bytes=size_bytes,
+                            available=True,
+                        )
+                    )
 
             # Cache and return
             _discovery_cache.set(cache_key, models)
@@ -185,7 +186,7 @@ class LLMModelDiscoveryService:
                 tunnel_url, timeout_sec=timeout_sec, force_refresh=True
             )
             elapsed_ms = (datetime.utcnow() - start).total_seconds() * 1000
-            
+
             return {
                 "status": "ok",
                 "models_count": len(models),

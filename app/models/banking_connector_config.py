@@ -19,7 +19,9 @@ class BankingConnectorConfig(Base):
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     created_by = Column(String, nullable=False, index=True)
     updated_by = Column(String, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     updated_at = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),

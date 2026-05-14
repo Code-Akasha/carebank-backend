@@ -2,7 +2,7 @@
 Pydantic schemas for Admin LLM Configuration API contracts.
 """
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -11,26 +11,22 @@ from datetime import datetime
 # Tunnel Configuration Schemas
 # ============================================================================
 
+
 class LLMTunnelConfigCreate(BaseModel):
     """Request schema for creating/updating tunnel configuration."""
 
     tunnel_url: str = Field(
-        ...,
-        description="Base URL of ngrok tunnel or other secure tunnel endpoint"
+        ..., description="Base URL of ngrok tunnel or other secure tunnel endpoint"
     )
     tunnel_auth_token: Optional[str] = Field(
         None,
-        description="Authentication token for the tunnel (will be encrypted at rest)"
+        description="Authentication token for the tunnel (will be encrypted at rest)",
     )
     ollama_model_default: str = Field(
-        default="qwen3:8b",
-        description="Default Ollama model to use from this tunnel"
+        default="qwen3:8b", description="Default Ollama model to use from this tunnel"
     )
     request_timeout_sec: int = Field(
-        default=30,
-        ge=5,
-        le=300,
-        description="HTTP request timeout in seconds"
+        default=30, ge=5, le=300, description="HTTP request timeout in seconds"
     )
 
     @field_validator("tunnel_url")
@@ -53,8 +49,7 @@ class LLMTunnelConfigResponse(BaseModel):
     provider_type: str
     tunnel_url: str
     tunnel_auth_token_masked: Optional[str] = Field(
-        None,
-        description="Masked token (e.g., '****...****') for display purposes"
+        None, description="Masked token (e.g., '****...****') for display purposes"
     )
     ollama_model_default: str
     request_timeout_sec: int
@@ -72,6 +67,7 @@ class LLMTunnelConfigResponse(BaseModel):
 # ============================================================================
 # Model Discovery Schemas
 # ============================================================================
+
 
 class OllamaModelInfo(BaseModel):
     """Information about an available Ollama model."""
@@ -93,11 +89,12 @@ class ConnectivityTestResult(BaseModel):
     """Result of a connectivity test to Ollama instance."""
 
     status: str = Field(
-        ...,
-        description="'ok' if connection successful, 'error' if failed"
+        ..., description="'ok' if connection successful, 'error' if failed"
     )
     models_count: Optional[int] = Field(None, description="Number of models discovered")
-    response_time_ms: Optional[float] = Field(None, description="Response time in milliseconds")
+    response_time_ms: Optional[float] = Field(
+        None, description="Response time in milliseconds"
+    )
     error: Optional[str] = Field(None, description="Error message if status is 'error'")
 
 
@@ -105,18 +102,15 @@ class ConnectivityTestResult(BaseModel):
 # Prompt Configuration Schemas
 # ============================================================================
 
+
 class AgentPromptConfigCreate(BaseModel):
     """Request schema for creating/updating an agent prompt."""
 
     system_prompt: str = Field(
-        ...,
-        description="System prompt template for the agent",
-        max_length=50000
+        ..., description="System prompt template for the agent", max_length=50000
     )
     notes: Optional[str] = Field(
-        None,
-        description="Admin notes about this prompt version",
-        max_length=1000
+        None, description="Admin notes about this prompt version", max_length=1000
     )
 
     @field_validator("system_prompt")
@@ -174,6 +168,7 @@ class PromptListResponse(BaseModel):
 # Error Response Schemas
 # ============================================================================
 
+
 class ErrorResponse(BaseModel):
     """Standard error response for LLM routes."""
 
@@ -181,8 +176,7 @@ class ErrorResponse(BaseModel):
     code: str = Field(..., description="Error code (e.g., 'llm_tunnel_unavailable')")
     message: str = Field(..., description="User-friendly error message")
     remediation: Optional[str] = Field(
-        None,
-        description="Admin-actionable remediation steps"
+        None, description="Admin-actionable remediation steps"
     )
 
 
@@ -198,6 +192,7 @@ class ValidationErrorResponse(BaseModel):
 # ============================================================================
 # Admin Action Audit Schemas
 # ============================================================================
+
 
 class AdminActionLogResponse(BaseModel):
     """Response schema for admin action audit log entry."""

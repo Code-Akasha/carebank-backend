@@ -72,7 +72,7 @@ def get_financial_forecast(
         "predicted_balance_90d": 52000,
         "safe_to_save": 3500,
         "status": "healthy",
-        "confidence": 0.88
+        "confidence": 0.88,
     }
 
 

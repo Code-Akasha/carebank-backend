@@ -80,6 +80,7 @@ class ExecutePaymentPayload(BaseModel):
         description="Payment method",
     )
     mpin: Optional[str] = Field(None, description="User MPIN for verification")
+    idempotency_key: Optional[str] = Field(None, description="Client idempotency key")
 
 
 class PaymentHistoryResponse(BaseModel):
@@ -113,8 +114,8 @@ class RecurringPaymentCreate(BaseModel):
     amount: float = Field(
         ..., gt=0, le=100000, description="Amount per cycle (max ₹100k)"
     )
-    description: str = Field(
-        ..., min_length=1, max_length=100, description="Bill/service name"
+    description: Optional[str] = Field(
+        None, min_length=1, max_length=100, description="Bill/service name"
     )
     frequency: str = Field(
         ...,
@@ -233,3 +234,9 @@ class PaymentExecutionResult(BaseModel):
     execution_id: Optional[int] = None
     transaction_id: Optional[str] = None
     error_reason: Optional[str] = None
+
+    def __getitem__(self, key: str):
+        return getattr(self, key)
+
+    def __contains__(self, key: object) -> bool:
+        return isinstance(key, str) and hasattr(self, key)

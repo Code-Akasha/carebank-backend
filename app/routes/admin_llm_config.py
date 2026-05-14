@@ -6,7 +6,6 @@ Handles tunnel configuration, model discovery, and prompt customization.
 """
 
 import logging
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -17,13 +16,10 @@ from app.schemas.admin_llm import (
     LLMTunnelConfigCreate,
     LLMTunnelConfigResponse,
     ModelListResponse,
-    OllamaModelInfo,
     ConnectivityTestResult,
     AgentPromptConfigCreate,
     AgentPromptConfigResponse,
-    AgentPromptHistoryResponse,
     PromptListResponse,
-    ErrorResponse,
 )
 from app.services.llm_admin_service import LLMAdminService
 from app.services.llm_model_discovery import LLMModelDiscoveryService
@@ -47,6 +43,7 @@ def get_db():
 # ============================================================================
 # Tunnel Configuration Endpoints
 # ============================================================================
+
 
 @router.get("/tunnel/{environment}", response_model=LLMTunnelConfigResponse)
 async def get_tunnel_config(
@@ -186,9 +183,7 @@ async def test_tunnel_connectivity(
         # Record the result
         is_success = test_result.get("status") == "ok"
         error_msg = test_result.get("error")
-        LLMAdminService.record_connectivity_check(
-            db, config, is_success, error_msg
-        )
+        LLMAdminService.record_connectivity_check(db, config, is_success, error_msg)
 
         return ConnectivityTestResult(**test_result)
     except Exception as e:
@@ -202,6 +197,7 @@ async def test_tunnel_connectivity(
 # ============================================================================
 # Model Discovery Endpoints
 # ============================================================================
+
 
 @router.get("/models", response_model=ModelListResponse)
 async def list_ollama_models(
@@ -250,6 +246,7 @@ async def list_ollama_models(
 # Prompt Configuration Endpoints
 # ============================================================================
 
+
 @router.get("/prompts", response_model=PromptListResponse)
 async def list_all_prompts(
     current_user: dict = Depends(get_current_user),
@@ -260,9 +257,11 @@ async def list_all_prompts(
     List all active agent prompts across all environments.
     """
     try:
-        prompts = db.query(AgentPromptConfig).filter(
-            AgentPromptConfig.is_active == True
-        ).all()
+        prompts = (
+            db.query(AgentPromptConfig)
+            .filter(AgentPromptConfig.is_active)
+            .all()
+        )
 
         return PromptListResponse(
             prompts=[AgentPromptConfigResponse.from_orm(p) for p in prompts],
@@ -374,9 +373,7 @@ async def rollback_agent_prompt(
             detail=str(e),
         )
     except Exception as e:
-        logger.error(
-            f"Failed to rollback prompt for {agent_name}/{environment}: {e}"
-        )
+        logger.error(f"Failed to rollback prompt for {agent_name}/{environment}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to rollback prompt",

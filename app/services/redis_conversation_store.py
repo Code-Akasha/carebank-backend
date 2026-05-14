@@ -20,7 +20,13 @@ _TTL_SECONDS = 3600  # 1 hour
 def _get_redis() -> redis.Redis:
     settings = get_settings()
     redis_url = getattr(settings, "redis_url", None) or "redis://localhost:6379"
-    return redis.from_url(redis_url, decode_responses=True)
+    return redis.from_url(
+        redis_url,
+        decode_responses=True,
+        socket_connect_timeout=1,
+        socket_timeout=1,
+        health_check_interval=30,
+    )
 
 
 class RedisConversationStore:
@@ -57,7 +63,7 @@ class RedisConversationStore:
             history = self.get(user_id)
             history.append({"role": role, "content": content})
             if len(history) > self._max_history:
-                history = history[-self._max_history:]
+                history = history[-self._max_history :]
             self._client.set(key, json.dumps(history), ex=_TTL_SECONDS)
         except Exception as exc:
             logger.warning("Redis conversation add failed: %s", exc)

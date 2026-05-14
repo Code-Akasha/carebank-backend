@@ -177,7 +177,9 @@ class PaymentAgent:
     ) -> PaymentAgentResponse:
         """Handle beneficiary selection."""
 
-        if message.lower() == "new":
+        selection = message.strip().lower()
+
+        if selection == "new":
             # New beneficiary flow
             context.state = PaymentState.ENTERING_AMOUNT
             return PaymentAgentResponse(
@@ -185,38 +187,44 @@ class PaymentAgent:
                 context=context,
             )
 
-        # Validate existing beneficiary
-        try:
-            beneficiary_id = int(message)
-            beneficiary = (
-                self.db.query(Beneficiary)
-                .filter(
-                    Beneficiary.id == beneficiary_id,
-                    Beneficiary.user_id == user_id,
-                )
-                .first()
-            )
+        beneficiaries = (
+            self.db.query(Beneficiary).filter(Beneficiary.user_id == user_id).all()
+        )
 
-            if not beneficiary:
+        # Validate existing beneficiary by number, nickname, or identifier
+        try:
+            beneficiary = None
+            beneficiary_id = int(message)
+            for item in beneficiaries:
+                if item.id == beneficiary_id:
+                    beneficiary = item
+                    break
+        except (ValueError, TypeError):
+            for item in beneficiaries:
+                alias = (item.nickname or item.identifier_value or "").strip().lower()
+                if selection == alias or selection in alias:
+                    beneficiary = item
+                    break
+
+        if not beneficiary:
+            if selection.isdigit():
                 return PaymentAgentResponse(
                     message="❌ Beneficiary not found. Please select again.",
                     context=context,
                     error="Beneficiary not found",
                 )
-
-            context.beneficiary_id = beneficiary_id
-            context.state = PaymentState.ENTERING_AMOUNT
             return PaymentAgentResponse(
-                message=f"Paying {beneficiary.nickname or beneficiary.identifier_value}.\n\nHow much?",
-                context=context,
-            )
-
-        except (ValueError, TypeError):
-            return PaymentAgentResponse(
-                message="❌ Invalid selection. Please enter the number or select 'New beneficiary'.",
+                message="❌ Invalid selection. Please enter the number or select a beneficiary name.",
                 context=context,
                 error="Invalid input",
             )
+
+        context.beneficiary_id = beneficiary.id
+        context.state = PaymentState.ENTERING_AMOUNT
+        return PaymentAgentResponse(
+            message=f"Paying {beneficiary.nickname or beneficiary.identifier_value}.\n\nHow much?",
+            context=context,
+        )
 
     def _handle_amount_entry(
         self, user_id: str, message: str, context: PaymentContext
@@ -243,7 +251,7 @@ class PaymentAgent:
             context.amount = amount
 
             # Check if user has payment methods configured
-            user = self.db.query(User).filter(User.id == user_id).first()
+            user = self.db.query(User).filter(User.user_id == user_id).first()
             available_methods = []
 
             if user.phone_number:

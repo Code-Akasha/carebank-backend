@@ -104,9 +104,8 @@ else:  # LangGraph introspects type hints at runtime
 # ---------------------------------------------------------------------------
 try:
     from app.services.redis_conversation_store import RedisConversationStore
+
     _conversation_store = RedisConversationStore(max_history=10)
-    # Verify connection
-    _conversation_store.get("__health_check__")
     logger.info("Using Redis-backed conversation store")
 except Exception:
     _conversation_store = InMemoryConversationStore(max_history=10)
@@ -154,6 +153,20 @@ def _register_agents() -> None:
 
 
 _register_agents()
+
+
+_INTENT_TO_AGENT: dict[str, str] = {
+    "actions": "CommunicationAgent",
+    "balance": "IntelligenceAgent",
+    "forecast": "IntelligenceAgent",
+    "health_score": "IntelligenceAgent",
+    "what_if": "IntelligenceAgent",
+    "auto_savings": "AutoSavingsAgent",
+    "opportunity": "OpportunityAgent",
+    "affordability": "IntelligenceAgent",
+    "planning": "CommunicationAgent",
+    "general": "CommunicationAgent",
+}
 
 
 def _get_agent(name: str) -> BaseAgent | None:
@@ -221,7 +234,7 @@ def _get_prompt_from_db(agent_name: str, prompt_key: str, fallback: str) -> str:
         from app.core.database import SessionLocal
         from app.services.agent_prompt_service import AgentPromptService
         from app.core.config import get_settings
-        
+
         settings = get_settings()
         db = SessionLocal()
         try:
@@ -237,7 +250,7 @@ def _get_prompt_from_db(agent_name: str, prompt_key: str, fallback: str) -> str:
             db.close()
     except Exception as e:
         logger.debug(f"Failed to fetch prompt from DB for {agent_name}: {e}")
-    
+
     # Fall back to hardcoded default
     return fallback
 

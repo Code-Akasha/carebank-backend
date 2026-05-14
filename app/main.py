@@ -43,6 +43,7 @@ async def lifespan(app: FastAPI):
     # no conflict with FastAPI's asyncio event loop)
     try:
         from app.services.recurring_scheduler import start_scheduler
+
         start_scheduler()
         logger.info("Recurring payment scheduler started")
     except Exception as exc:
@@ -53,6 +54,7 @@ async def lifespan(app: FastAPI):
     # Stop scheduler on shutdown
     try:
         from app.services.recurring_scheduler import stop_scheduler
+
         stop_scheduler()
         logger.info("Recurring payment scheduler stopped")
     except Exception as exc:

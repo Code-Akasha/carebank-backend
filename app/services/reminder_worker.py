@@ -65,16 +65,8 @@ def _create_notification_if_missing(
 
 
 def _load_snoozes(db: Session, *, now: datetime) -> set[tuple[str, str, int]]:
-    snoozes = (
-        db.query(BillSnooze)
-        .filter(BillSnooze.snoozed_until > now)
-        .all()
-    )
-    return {
-        (s.user_id, s.source_type, int(s.source_id))
-        for s in snoozes
-        if s.user_id
-    }
+    snoozes = db.query(BillSnooze).filter(BillSnooze.snoozed_until > now).all()
+    return {(s.user_id, s.source_type, int(s.source_id)) for s in snoozes if s.user_id}
 
 
 def _rule_to_action_type(rule: RecurringRule) -> str | None:

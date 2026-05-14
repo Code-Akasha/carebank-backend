@@ -81,6 +81,9 @@ def validate_payment_amount(
 
     Returns: (is_valid, error_message)
     """
+    if payment_amount <= 0:
+        return False, "Payment amount must be positive"
+
     # Get beneficiary to check verification status
     beneficiary = (
         db.query(Beneficiary)
@@ -115,6 +118,7 @@ def should_require_mpin(
     user_id: str,
     payment_amount: float,
     is_first_payment_to_beneficiary: bool,
+    beneficiary_is_trusted: bool = False,
 ) -> bool:
     """Determine if MPIN is required for this payment.
 
@@ -125,11 +129,14 @@ def should_require_mpin(
     """
     settings = get_or_create_payment_settings(db, user_id)
 
-    # First payment always requires MPIN
+    # Trusted beneficiaries can auto-execute within threshold.
+    if beneficiary_is_trusted and settings.auto_approve_trusted and payment_amount <= settings.mpin_threshold:
+        return False
+
+    # First payment requires MPIN only if it is not trusted/auto-approved.
     if is_first_payment_to_beneficiary:
         return True
 
-    # Check threshold
     if payment_amount > settings.mpin_threshold:
         return True
 
@@ -191,7 +198,13 @@ def execute_generic_payment(
 
     # Step 3: Check if MPIN is required
     is_first_payment = beneficiary.payment_count == 0
-    requires_mpin = should_require_mpin(db, user_id, payload.amount, is_first_payment)
+    requires_mpin = should_require_mpin(
+        db,
+        user_id,
+        payload.amount,
+        is_first_payment,
+        beneficiary_is_trusted=bool(beneficiary.is_trusted),
+    )
 
     # Step 4: Verify MPIN if required
     if requires_mpin:

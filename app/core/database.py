@@ -94,9 +94,13 @@ def _apply_dev_schema_backfills() -> None:
         return
 
     if "products" in tables:
-        product_columns = {column["name"]: column for column in inspector.get_columns("products")}
+        product_columns = {
+            column["name"]: column for column in inspector.get_columns("products")
+        }
         product_id_column = product_columns.get("id")
-        if product_id_column is not None and str(product_id_column["type"]).lower().startswith("integer"):
+        if product_id_column is not None and str(
+            product_id_column["type"]
+        ).lower().startswith("integer"):
             logger.warning(
                 "DB backfill: converting products.id from integer to varchar for provider compatibility"
             )

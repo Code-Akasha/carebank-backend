@@ -83,7 +83,9 @@ async def update_connector_config(
     return _serialize(config)
 
 
-@router.post("/connector/{environment}/test", response_model=BankingConnectorTestResponse)
+@router.post(
+    "/connector/{environment}/test", response_model=BankingConnectorTestResponse
+)
 async def test_connector(
     environment: str,
     current_user=Depends(get_current_user),
@@ -92,7 +94,9 @@ async def test_connector(
 ):
     config = BankingConnectorService.get_active_config(db, environment)
     if not config or not config.base_url:
-        return BankingConnectorTestResponse(status="error", error="Connector not configured")
+        return BankingConnectorTestResponse(
+            status="error", error="Connector not configured"
+        )
 
     client = get_banking_client()
     client.apply_runtime_config(

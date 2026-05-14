@@ -1,8 +1,10 @@
 """Recurring payment management service."""
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date as date_type
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
+
+from typing import Any
 
 from app.models.recurring_payment_rule import RecurringPaymentRule
 from app.models.beneficiary import Beneficiary
@@ -70,6 +72,7 @@ def create_recurring_payment_rule(
         payload.day_config.get("day_of_month") if payload.day_config else None
     )
     day_of_week = payload.day_config.get("day_of_week") if payload.day_config else None
+    description = payload.description or (beneficiary.nickname or beneficiary.identifier_value)
 
     # Calculate next run date
     start_date_dt = (
@@ -92,10 +95,11 @@ def create_recurring_payment_rule(
         user_id=user_id,
         beneficiary_id=payload.beneficiary_id,
         amount=payload.amount,
-        description=payload.description,
+        description=description,
         frequency=payload.frequency,
         day_of_month=day_of_month,
         day_of_week=day_of_week,
+        day_config=payload.day_config,
         start_date=payload.start_date or datetime.now(timezone.utc).date(),
         end_date=payload.end_date,
         next_run_date=next_run_date,
@@ -113,21 +117,25 @@ def create_recurring_payment_rule(
 
 def get_recurring_payment_rule(
     db: Session,
-    user_id: str,
     rule_id: int,
+    user_id: str | None = None,
 ) -> RecurringPaymentRule:
     """Get recurring payment rule by ID."""
-    rule = (
+    query = (
         db.query(RecurringPaymentRule)
-        .filter(
-            RecurringPaymentRule.id == rule_id,
-            RecurringPaymentRule.user_id == user_id,
-        )
-        .first()
+        .filter(RecurringPaymentRule.id == rule_id)
     )
+    if user_id is not None:
+        query = query.filter(RecurringPaymentRule.user_id == user_id)
+    rule = query.first()
 
     if not rule:
+        if user_id is None:
+            return None
         raise HTTPException(status_code=404, detail="Recurring payment rule not found")
+
+    if rule.status == "expired":
+        return None
 
     return rule
 
@@ -160,9 +168,10 @@ def list_recurring_payment_rules(
 
 def update_recurring_payment_rule(
     db: Session,
-    user_id: str,
     rule_id: int,
-    payload: RecurringPaymentUpdate,
+    user_id: str | None = None,
+    payload: RecurringPaymentUpdate | None = None,
+    update_data: dict[str, Any] | None = None,
 ) -> RecurringPaymentRule:
     """Update recurring payment rule.
 
@@ -172,12 +181,21 @@ def update_recurring_payment_rule(
     - end_date
     - requires_approval flag
     """
-    rule = get_recurring_payment_rule(db, user_id, rule_id)
+    rule = get_recurring_payment_rule(db, rule_id, user_id)
+    if rule is None:
+        raise HTTPException(status_code=404, detail="Recurring payment rule not found")
+
+    effective_user_id = user_id or rule.user_id
+
+    if payload is None:
+        payload = RecurringPaymentUpdate(**(update_data or {}))
 
     # Validate new amount if provided
     if payload.amount is not None:
         settings = (
-            db.query(PaymentSettings).filter(PaymentSettings.user_id == user_id).first()
+            db.query(PaymentSettings)
+            .filter(PaymentSettings.user_id == effective_user_id)
+            .first()
         )
         if payload.amount > settings.recurring_payment_max:
             raise HTTPException(
@@ -202,9 +220,9 @@ def update_recurring_payment_rule(
         # Recalculate next run date
         rule.next_run_date = calculate_next_run_date(
             rule.frequency,
-            rule.day_of_month,
-            rule.day_of_week,
-            datetime.now(timezone.utc),
+            day_of_month=rule.day_of_month,
+            day_of_week=rule.day_of_week,
+            base_date=datetime.now(timezone.utc),
         )
 
     # Update dates
@@ -223,11 +241,14 @@ def update_recurring_payment_rule(
 
 def pause_recurring_payment_rule(
     db: Session,
-    user_id: str,
     rule_id: int,
+    user_id: str | None = None,
 ) -> RecurringPaymentRule:
     """Pause a recurring payment rule (can be resumed)."""
-    rule = get_recurring_payment_rule(db, user_id, rule_id)
+    rule = get_recurring_payment_rule(db, rule_id, user_id)
+
+    if rule is None:
+        raise HTTPException(status_code=404, detail="Recurring payment rule not found")
 
     if rule.status != "active":
         raise HTTPException(status_code=400, detail="Only active rules can be paused")
@@ -241,11 +262,14 @@ def pause_recurring_payment_rule(
 
 def resume_recurring_payment_rule(
     db: Session,
-    user_id: str,
     rule_id: int,
+    user_id: str | None = None,
 ) -> RecurringPaymentRule:
     """Resume a paused recurring payment rule."""
-    rule = get_recurring_payment_rule(db, user_id, rule_id)
+    rule = get_recurring_payment_rule(db, rule_id, user_id)
+
+    if rule is None:
+        raise HTTPException(status_code=404, detail="Recurring payment rule not found")
 
     if rule.status != "paused":
         raise HTTPException(status_code=400, detail="Only paused rules can be resumed")
@@ -265,17 +289,20 @@ def resume_recurring_payment_rule(
 
 def delete_recurring_payment_rule(
     db: Session,
-    user_id: str,
     rule_id: int,
+    user_id: str | None = None,
 ) -> None:
     """Delete a recurring payment rule.
 
     Note: Soft deletes via status, not hard deletes.
     """
-    rule = get_recurring_payment_rule(db, user_id, rule_id)
+    rule = get_recurring_payment_rule(db, rule_id, user_id)
+    if rule is None:
+        return False
     rule.status = "expired"
     rule.updated_at = datetime.now(timezone.utc)
     db.commit()
+    return True
 
 
 def get_upcoming_payments(
@@ -339,6 +366,8 @@ def calculate_next_run_date(
     day_of_month: int | None = None,
     day_of_week: str | None = None,
     base_date: datetime | None = None,
+    last_run_date: date_type | datetime | None = None,
+    day_config: dict[str, Any] | None = None,
 ) -> datetime:
     """Calculate next run date based on frequency.
 
@@ -351,6 +380,18 @@ def calculate_next_run_date(
     Returns:
         Next run datetime in UTC
     """
+    if day_config:
+        day_of_month = day_config.get("day_of_month", day_of_month)
+        day_of_week = day_config.get("day_of_week", day_of_week)
+
+    if last_run_date is not None and base_date is None:
+        if isinstance(last_run_date, datetime):
+            base_date = last_run_date
+        else:
+            base_date = datetime.combine(last_run_date, datetime.min.time()).replace(
+                tzinfo=timezone.utc
+            )
+
     if base_date is None:
         base_date = datetime.now(timezone.utc)
 
@@ -358,7 +399,7 @@ def calculate_next_run_date(
     base_date = base_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
     if frequency == "daily":
-        return base_date + timedelta(days=1)
+        return (base_date + timedelta(days=1)).date()
 
     elif frequency == "weekly":
         # Find next occurrence of day_of_week
@@ -384,7 +425,7 @@ def calculate_next_run_date(
         if days_ahead == 0:
             days_ahead = 7  # Next week if today is the target day
 
-        return base_date + timedelta(days=days_ahead)
+        return (base_date + timedelta(days=days_ahead)).date()
 
     elif frequency == "monthly":
         # Run on specified day of month
@@ -417,7 +458,7 @@ def calculate_next_run_date(
                 year, month, min(day_of_month, last_day_next_month), tzinfo=timezone.utc
             )
 
-        return next_date
+        return next_date.date()
 
     elif frequency == "quarterly":
         # Run every 3 months on specified day
@@ -442,7 +483,7 @@ def calculate_next_run_date(
                 year, month, min(day_of_month, last_day), tzinfo=timezone.utc
             )
 
-        return next_date
+        return next_date.date()
 
     else:
         raise ValueError(f"Invalid frequency: {frequency}")

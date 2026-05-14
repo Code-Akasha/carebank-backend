@@ -17,17 +17,22 @@ from fastapi.testclient import TestClient
 _TEST_DB_PATH = Path(f"./test_{os.getpid()}_{uuid4().hex}.db")
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{_TEST_DB_PATH.as_posix()}")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379")
-os.environ.setdefault("OPENAI_API_KEY", "test-key")
-os.environ.setdefault("GEMINI_API_KEY", "test-key")
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["GEMINI_API_KEY"] = ""
+os.environ["OLLAMA_BASE_URL"] = ""
 os.environ.setdefault("BANKING_API_URL", "http://localhost:8001")
 os.environ["BANKING_API_SECRET"] = "test-banking-secret-0123456789abcdef-long"
 os.environ["JWT_SECRET"] = "test-jwt-secret-0123456789abcdef-long"
+os.environ["DB_SCHEMA_MODE"] = "create_all"
 os.environ.setdefault("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
     """Initialize the test database tables."""
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
     db_url = os.environ.get("DATABASE_URL", "")
     if db_url.startswith("sqlite:///"):
         db_path = db_url.replace("sqlite:///", "", 1)

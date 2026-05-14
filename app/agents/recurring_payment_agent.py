@@ -172,11 +172,10 @@ class RecurringPaymentAgent:
         )
 
         if not beneficiaries:
-            context.state = RecurringSetupState.FAILED
             return RecurringSetupResponse(
-                message="❌ No saved beneficiaries. Please save a beneficiary first.",
+                message="No saved beneficiaries found. Let's add a new one!",
                 context=context,
-                error="No beneficiaries",
+                options=[{"label": "Add new beneficiary", "value": "new"}],
             )
 
         # Build options for saved beneficiaries
@@ -201,38 +200,46 @@ class RecurringPaymentAgent:
     ) -> RecurringSetupResponse:
         """Handle beneficiary selection."""
 
-        try:
-            beneficiary_id = int(message)
-            beneficiary = (
-                self.db.query(Beneficiary)
-                .filter(
-                    Beneficiary.id == beneficiary_id,
-                    Beneficiary.user_id == user_id,
-                )
-                .first()
-            )
+        selection = message.strip().lower()
 
-            if not beneficiary:
+        beneficiaries = (
+            self.db.query(Beneficiary).filter(Beneficiary.user_id == user_id).all()
+        )
+
+        try:
+            beneficiary = None
+            beneficiary_id = int(message)
+            for item in beneficiaries:
+                if item.id == beneficiary_id:
+                    beneficiary = item
+                    break
+        except (ValueError, TypeError):
+            for item in beneficiaries:
+                alias = (item.nickname or item.identifier_value or "").strip().lower()
+                if selection == alias or selection in alias:
+                    beneficiary = item
+                    break
+
+        if not beneficiary:
+            if selection.isdigit():
                 return RecurringSetupResponse(
                     message="❌ Beneficiary not found. Please select again.",
                     context=context,
                     error="Beneficiary not found",
                 )
-
-            context.beneficiary_id = beneficiary_id
-            context.description = beneficiary.nickname or beneficiary.identifier_value
-            context.state = RecurringSetupState.ENTERING_AMOUNT
             return RecurringSetupResponse(
-                message=f"Recurring payment to {context.description}.\n\nHow much each time?",
-                context=context,
-            )
-
-        except (ValueError, TypeError):
-            return RecurringSetupResponse(
-                message="❌ Invalid selection. Please enter the number.",
+                message="❌ Invalid selection. Please enter the number or select a beneficiary name.",
                 context=context,
                 error="Invalid input",
             )
+
+        context.beneficiary_id = beneficiary.id
+        context.description = beneficiary.nickname or beneficiary.identifier_value
+        context.state = RecurringSetupState.ENTERING_AMOUNT
+        return RecurringSetupResponse(
+            message=f"Recurring payment to {context.description}.\n\nHow much each time?",
+            context=context,
+        )
 
     def _handle_amount_entry(
         self, user_id: str, message: str, context: RecurringSetupContext

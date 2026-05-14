@@ -17,22 +17,28 @@ logger = logging.getLogger(__name__)
 
 class BankingConnectorService:
     @staticmethod
-    def get_active_config(db: Session, environment: str) -> Optional[BankingConnectorConfig]:
+    def get_active_config(
+        db: Session, environment: str
+    ) -> Optional[BankingConnectorConfig]:
         return (
             db.query(BankingConnectorConfig)
             .filter(
                 BankingConnectorConfig.environment == environment,
-                BankingConnectorConfig.is_active == True,
+                BankingConnectorConfig.is_active,
             )
             .order_by(BankingConnectorConfig.updated_at.desc())
             .first()
         )
 
     @staticmethod
-    def get_or_create_config(db: Session, environment: str, user_id: str) -> BankingConnectorConfig:
-        config = db.query(BankingConnectorConfig).filter(
-            BankingConnectorConfig.environment == environment
-        ).first()
+    def get_or_create_config(
+        db: Session, environment: str, user_id: str
+    ) -> BankingConnectorConfig:
+        config = (
+            db.query(BankingConnectorConfig)
+            .filter(BankingConnectorConfig.environment == environment)
+            .first()
+        )
         if config:
             return config
 
