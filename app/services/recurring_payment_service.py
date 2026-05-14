@@ -72,7 +72,9 @@ def create_recurring_payment_rule(
         payload.day_config.get("day_of_month") if payload.day_config else None
     )
     day_of_week = payload.day_config.get("day_of_week") if payload.day_config else None
-    description = payload.description or (beneficiary.nickname or beneficiary.identifier_value)
+    description = payload.description or (
+        beneficiary.nickname or beneficiary.identifier_value
+    )
 
     # Calculate next run date
     start_date_dt = (
@@ -121,10 +123,7 @@ def get_recurring_payment_rule(
     user_id: str | None = None,
 ) -> RecurringPaymentRule:
     """Get recurring payment rule by ID."""
-    query = (
-        db.query(RecurringPaymentRule)
-        .filter(RecurringPaymentRule.id == rule_id)
-    )
+    query = db.query(RecurringPaymentRule).filter(RecurringPaymentRule.id == rule_id)
     if user_id is not None:
         query = query.filter(RecurringPaymentRule.user_id == user_id)
     rule = query.first()

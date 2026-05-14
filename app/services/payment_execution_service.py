@@ -130,7 +130,11 @@ def should_require_mpin(
     settings = get_or_create_payment_settings(db, user_id)
 
     # Trusted beneficiaries can auto-execute within threshold.
-    if beneficiary_is_trusted and settings.auto_approve_trusted and payment_amount <= settings.mpin_threshold:
+    if (
+        beneficiary_is_trusted
+        and settings.auto_approve_trusted
+        and payment_amount <= settings.mpin_threshold
+    ):
         return False
 
     # First payment requires MPIN only if it is not trusted/auto-approved.

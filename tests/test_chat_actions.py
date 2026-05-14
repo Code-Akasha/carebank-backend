@@ -208,4 +208,6 @@ def test_chat_pay_bill_explicit_approve_status_and_idempotency(client, monkeypat
     as expected. This test passes up to the approval step but the execution
     mock is not triggered. Marked for later investigation.
     """
-    pytest.skip("Mock infrastructure issue - tool not invoked during approval execution")
+    pytest.skip(
+        "Mock infrastructure issue - tool not invoked during approval execution"
+    )

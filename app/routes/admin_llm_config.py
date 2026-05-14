@@ -257,11 +257,7 @@ async def list_all_prompts(
     List all active agent prompts across all environments.
     """
     try:
-        prompts = (
-            db.query(AgentPromptConfig)
-            .filter(AgentPromptConfig.is_active)
-            .all()
-        )
+        prompts = db.query(AgentPromptConfig).filter(AgentPromptConfig.is_active).all()
 
         return PromptListResponse(
             prompts=[AgentPromptConfigResponse.from_orm(p) for p in prompts],

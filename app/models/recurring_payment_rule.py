@@ -27,7 +27,9 @@ class RecurringPaymentRule(Base):
 
     # Payment Details
     amount = Column(Float, nullable=False)  # Amount per cycle
-    description = Column(String, nullable=True, default="")  # "Yoga fees", "Dish TV bill", etc.
+    description = Column(
+        String, nullable=True, default=""
+    )  # "Yoga fees", "Dish TV bill", etc.
     day_config = Column(JSON, nullable=True)
 
     # Frequency Configuration
@@ -40,7 +42,12 @@ class RecurringPaymentRule(Base):
     # Timing
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)  # None = indefinite
-    next_run_date = Column(Date, nullable=True, index=True, default=lambda: datetime.now(timezone.utc).date())  # Next scheduled execution
+    next_run_date = Column(
+        Date,
+        nullable=True,
+        index=True,
+        default=lambda: datetime.now(timezone.utc).date(),
+    )  # Next scheduled execution
 
     # Execution Control
     status = Column(

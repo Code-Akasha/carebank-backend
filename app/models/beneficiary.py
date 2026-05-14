@@ -77,7 +77,9 @@ class Beneficiary(Base):
     def upi(self) -> str | None:
         if self.upi_handle:
             return self.upi_handle
-        return self.identifier_value if self.identifier_type in {"upi", "upi_id"} else None
+        return (
+            self.identifier_value if self.identifier_type in {"upi", "upi_id"} else None
+        )
 
     @upi.setter
     def upi(self, value: str | None) -> None:
@@ -87,7 +89,9 @@ class Beneficiary(Base):
 
     @property
     def account_number(self) -> str | None:
-        return self.identifier_value if self.identifier_type == "account_number" else None
+        return (
+            self.identifier_value if self.identifier_type == "account_number" else None
+        )
 
     @account_number.setter
     def account_number(self, value: str | None) -> None:

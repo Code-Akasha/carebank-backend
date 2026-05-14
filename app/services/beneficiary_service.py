@@ -54,7 +54,11 @@ def create_beneficiary(
     **legacy_kwargs: Any,
 ) -> Beneficiary:
     """Create a new beneficiary for the user."""
-    payload = body.model_dump() if isinstance(body, BeneficiaryCreate) else _legacy_beneficiary_payload(**legacy_kwargs)
+    payload = (
+        body.model_dump()
+        if isinstance(body, BeneficiaryCreate)
+        else _legacy_beneficiary_payload(**legacy_kwargs)
+    )
     if not payload.get("nickname"):
         return None
     if not payload.get("identifier_type") or not payload.get("identifier_value"):
@@ -100,10 +104,7 @@ def get_beneficiary(
     user_id: str | None = None,
 ) -> Beneficiary:
     """Get a specific beneficiary."""
-    query = (
-        db.query(Beneficiary)
-        .filter(Beneficiary.id == beneficiary_id)
-    )
+    query = db.query(Beneficiary).filter(Beneficiary.id == beneficiary_id)
     if user_id is not None:
         query = query.filter(Beneficiary.user_id == user_id)
     beneficiary = query.first()
