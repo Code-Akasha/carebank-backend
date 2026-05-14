@@ -64,9 +64,7 @@ def init_db() -> None:
     import app.models.admin_action_log  # noqa: F401
     import app.models.banking_connector_config  # noqa: F401
 
-    # Test database connection first
-    _test_database_connection()
-
+    # Skip pre-test, let SQLAlchemy pool handle connection retries naturally
     mode = (settings.db_schema_mode or "create_all").strip().lower()
     if mode in {"create_all", "dev"}:
         try:
