@@ -21,9 +21,11 @@ else:
     engine = create_engine(
         database_url,
         pool_pre_ping=True,
-        pool_size=10,
-        max_overflow=20,
-        connect_args={"connect_timeout": 5, "options": "-c statement_timeout=30000"},
+        pool_size=5,
+        max_overflow=10,
+        pool_recycle=3600,
+        pool_pre_ping=True,
+        connect_args={"connect_timeout": 60, "options": "-c statement_timeout=30000"},
     )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -84,7 +86,7 @@ def init_db() -> None:
     raise ValueError(f"Unsupported DB_SCHEMA_MODE={settings.db_schema_mode!r}")
 
 
-def _test_database_connection(max_retries: int = 5) -> None:
+def _test_database_connection(max_retries: int = 10) -> None:
     """Test database connection with exponential backoff retries."""
     last_error = None
     for attempt in range(1, max_retries + 1):
@@ -96,7 +98,7 @@ def _test_database_connection(max_retries: int = 5) -> None:
         except Exception as e:
             last_error = e
             if attempt < max_retries:
-                wait_time = 2 ** (attempt - 1)  # 1s, 2s, 4s, 8s, 16s
+                wait_time = min(2 ** (attempt - 1), 10)  # 1s, 2s, 4s, 8s, 10s, ...
                 logger.warning(
                     f"Database connection attempt {attempt}/{max_retries} failed: {e}. "
                     f"Retrying in {wait_time}s..."
