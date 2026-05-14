@@ -1,8 +1,10 @@
 from pathlib import Path
 import logging
+import time
 
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, inspect, text, event
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.pool import NullPool
 
 from app.core.config import get_settings
 
@@ -21,6 +23,7 @@ else:
         pool_pre_ping=True,
         pool_size=10,
         max_overflow=20,
+        connect_args={"connect_timeout": 5, "options": "-c statement_timeout=30000"},
     )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -60,10 +63,18 @@ def init_db() -> None:
     import app.models.admin_action_log  # noqa: F401
     import app.models.banking_connector_config  # noqa: F401
 
+    # Test database connection first
+    _test_database_connection()
+
     mode = (settings.db_schema_mode or "create_all").strip().lower()
     if mode in {"create_all", "dev"}:
-        Base.metadata.create_all(bind=engine)
-        _apply_dev_schema_backfills()
+        try:
+            Base.metadata.create_all(bind=engine)
+            _apply_dev_schema_backfills()
+            logger.info("Database schema created/verified successfully")
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}", exc_info=True)
+            raise
         return
 
     if mode in {"alembic", "migrate"}:
@@ -71,6 +82,19 @@ def init_db() -> None:
         return
 
     raise ValueError(f"Unsupported DB_SCHEMA_MODE={settings.db_schema_mode!r}")
+
+
+def _test_database_connection() -> None:
+    """Test database connection before attempting schema operations."""
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+            logger.info("Database connection test successful")
+    except Exception as e:
+        logger.error(f"Database connection test failed: {e}", exc_info=True)
+        raise RuntimeError(
+            f"Cannot connect to database at {settings.get_database_url()}: {e}"
+        ) from e
 
 
 def _run_alembic_upgrade() -> None:

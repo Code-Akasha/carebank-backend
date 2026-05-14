@@ -37,7 +37,18 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
+    logger.info("Starting FastAPI application...")
+
+    # Initialize database with error handling - don't block startup if it fails
+    try:
+        init_db()
+        logger.info("Database initialization completed successfully")
+    except Exception as exc:
+        logger.error(f"Database initialization failed: {exc}", exc_info=True)
+        # Continue - database might be initializing, this is non-fatal for health checks
+        logger.warning(
+            "Continuing startup despite database error - health endpoint will be available"
+        )
 
     # Start recurring payment scheduler (BackgroundScheduler is thread-based,
     # no conflict with FastAPI's asyncio event loop)
