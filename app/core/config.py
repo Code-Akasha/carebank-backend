@@ -149,14 +149,18 @@ class Settings(BaseSettings):
             return self.database_url
         from sqlalchemy.engine import URL
 
+        # Azure Database requires SSL, local postgres doesn't
+        host = self.db_host.strip()
+        sslmode = "require" if "azure" in host.lower() else "disable"
+
         return URL.create(
             drivername="postgresql",
             username=self.db_user.strip(),
             password=self.db_password.strip(),
-            host=self.db_host.strip(),
+            host=host,
             port=self.db_port,
             database=self.db_name.strip(),
-            query={"sslmode": "disable"}
+            query={"sslmode": sslmode}
         ).render_as_string(hide_password=False)
 
     def get_telegram_allow_from(self) -> set[str]:
