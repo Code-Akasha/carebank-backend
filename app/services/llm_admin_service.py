@@ -86,6 +86,7 @@ class LLMAdminService:
         config.tunnel_url = tunnel_url
         config.ollama_model_default = ollama_model_default
         config.request_timeout_sec = request_timeout_sec
+        config.is_active = True
         config.updated_by = user_id
         config.updated_at = datetime.now(timezone.utc)
 
