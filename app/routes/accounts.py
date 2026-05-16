@@ -22,10 +22,13 @@ class AccountCreateRequest(BaseModel):
     initial_deposit: float = Field(default=0.0, ge=0.0)
 
 
-def _persist_accounts(db: Session, records: list[dict]) -> None:
+def _persist_accounts(
+    db: Session, records: list[dict], *, default_user_id: str | None = None
+) -> None:
     if not records:
         return
     for record in records:
+        user_id = record.get("user_id") or default_user_id
         account = (
             db.query(Account)
             .filter(Account.account_id == record.get("account_id"))
@@ -52,7 +55,7 @@ def _persist_accounts(db: Session, records: list[dict]) -> None:
             db.add(
                 Account(
                     account_id=record.get("account_id"),
-                    user_id=record.get("user_id"),
+                    user_id=user_id,
                     provider_id=record.get("provider_id"),
                     name=record.get("name", "Unknown Account"),
                     account_type=record.get("account_type", "checking"),
@@ -81,7 +84,7 @@ async def list_accounts(
             status_code=503, detail=f"Banking API unavailable: {exc}"
         ) from exc
 
-    _persist_accounts(db, records)
+    _persist_accounts(db, records, default_user_id=current_user.user_id)
     return records
 
 
@@ -110,5 +113,7 @@ async def create_account(
             detail="Unexpected response from banking provider while creating account",
         )
 
-    _persist_accounts(db, [created_account])
+    created_account["user_id"] = created_account.get("user_id") or current_user.user_id
+
+    _persist_accounts(db, [created_account], default_user_id=current_user.user_id)
     return created_account
