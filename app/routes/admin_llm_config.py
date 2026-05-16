@@ -58,7 +58,7 @@ async def get_tunnel_config(
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user["user_id"]
+            db, environment, current_user.user_id
         )
 
         # Mask the auth token for display
@@ -112,7 +112,7 @@ async def update_tunnel_config(
             tunnel_auth_token=config_update.tunnel_auth_token,
             ollama_model_default=config_update.ollama_model_default,
             request_timeout_sec=config_update.request_timeout_sec,
-            user_id=current_user["user_id"],
+            user_id=current_user.user_id,
         )
 
         # Mask the auth token for display
@@ -165,7 +165,7 @@ async def test_tunnel_connectivity(
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user["user_id"]
+            db, environment, current_user.user_id
         )
 
         if not config.is_active or not config.tunnel_url:
@@ -212,7 +212,7 @@ async def list_ollama_models(
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user["user_id"]
+            db, environment, current_user.user_id
         )
 
         if not config.is_active or not config.tunnel_url:
