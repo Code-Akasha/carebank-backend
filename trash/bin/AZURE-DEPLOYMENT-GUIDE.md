@@ -27,15 +27,15 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Azure Container Apps                        │
+│              Azure Container Apps                       │
 ├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌──────────────┐  ┌─────────────┐  ┌──────────────┐   │
-│  │   backend    │  │ agentic-bank│  │   redis      │   │
-│  │ (FastAPI)    │  │   (proxy)   │  │              │   │
-│  └──────┬───────┘  └─────────────┘  └──────────────┘   │
-│         │                                                │
-└─────────┼────────────────────────────────────────────────┘
+│                                                         │
+│  ┌──────────────┐  ┌─────────────┐  ┌──────────────┐    │
+│  │   backend    │  │ agentic-bank│  │   redis      │    │
+│  │ (FastAPI)    │  │   (proxy)   │  │              │    │
+│  └──────┬───────┘  └─────────────┘  └──────────────┘    │
+│         │                                               │
+└─────────┼───────────────────────────────────────────────┘
           │
           ↓
    ┌─────────────────────────┐
@@ -72,6 +72,18 @@ npm run dev
 
 Then navigate to: http://localhost:5173
 - Login with: admin@carebank.demo / AdminCare2026!
+
+For the deployed Vercel frontend, the backend must allow these CORS origins:
+
+- https://carebank-frontend.vercel.app
+- https://carebank-frontend-git-develop-jefino9488s-projects.vercel.app
+- https://carebank-frontend-77s9ncsgx-jefino9488s-projects.vercel.app
+
+Azure backend setting:
+
+```bash
+CORS_ORIGINS='["http://localhost:5173","https://carebank-frontend.vercel.app","https://carebank-frontend-git-develop-jefino9488s-projects.vercel.app","https://carebank-frontend-77s9ncsgx-jefino9488s-projects.vercel.app"]'
+```
 
 ### 2. Start Ollama (Local - Optional)
 
@@ -130,6 +142,8 @@ Via frontend UI:
 2. Navigate to Payments section
 3. Initiate payment flow
 4. Backend calls agentic-bank proxy for account operations
+
+Note: the deployed backend runs with `ENVIRONMENT=production`, so admin banking actions like account creation and scenario triggers must have the `production` banking connector configured in Azure. Keep the `development` connector only for local testing.
 
 ---
 
