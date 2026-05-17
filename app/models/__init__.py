@@ -10,6 +10,9 @@ from app.models.user_profile import UserProfile
 from app.models.financial_plan import FinancialPlan
 from app.models.recurring_rule import RecurringRule
 from app.models.checklist_item import ChecklistItem
+from app.models.business_profile import BusinessProfile
+from app.models.service_plan import ServicePlan
+from app.models.bill import Bill
 
 __all__ = [
     "Transaction",
@@ -24,4 +27,7 @@ __all__ = [
     "FinancialPlan",
     "RecurringRule",
     "ChecklistItem",
+    "BusinessProfile",
+    "ServicePlan",
+    "Bill",
 ]

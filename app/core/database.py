@@ -2,9 +2,8 @@ from pathlib import Path
 import logging
 import time
 
-from sqlalchemy import create_engine, inspect, text, event
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.pool import NullPool
 
 from app.core.config import get_settings
 
@@ -33,7 +32,6 @@ else:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
 
 
 def init_db() -> None:
@@ -71,6 +69,11 @@ def init_db() -> None:
     import app.models.agent_prompt_config  # noqa: F401
     import app.models.admin_action_log  # noqa: F401
     import app.models.banking_connector_config  # noqa: F401
+
+    # Business & billing models
+    import app.models.business_profile  # noqa: F401
+    import app.models.service_plan  # noqa: F401
+    import app.models.bill  # noqa: F401
 
     # Test quick connection to fail fast if DB is down
     try:

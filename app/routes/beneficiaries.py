@@ -11,6 +11,9 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.services.banking_client import BankingClientError, get_banking_client
 
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+
 router = APIRouter(prefix="/api/beneficiaries", tags=["beneficiaries"])
 
 
@@ -36,17 +39,55 @@ def _unwrap_beneficiary(payload: Any) -> dict[str, Any]:
 async def create_beneficiary_endpoint(
     payload: BeneficiaryCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
+    db: Session = Depends(get_db),
 ):
     """Create a new beneficiary (saved contact) in the connected banking provider."""
+    # 1. Save beneficiary to local SQLite DB first to obtain an integer ID
+    nickname = payload.nickname or payload.name
+    rail = payload.payment_rail.upper()
+    identifier_type = "upi_id" if rail == "UPI" else "account_number"
+    identifier_value = payload.upi_handle if rail == "UPI" else payload.account_number
+
+    from app.schemas.payments import BeneficiaryCreate
+    from app.services.beneficiary_service import create_beneficiary
+    from app.models.beneficiary import Beneficiary
+
+    # Check if already exists in local DB
+    db_beneficiary = (
+        db.query(Beneficiary)
+        .filter(
+            Beneficiary.user_id == current_user.user_id,
+            Beneficiary.identifier_type == identifier_type,
+            Beneficiary.identifier_value == identifier_value,
+        )
+        .first()
+    )
+
+    if not db_beneficiary:
+        benef_create = BeneficiaryCreate(
+            nickname=nickname,
+            identifier_type=identifier_type,
+            identifier_value=identifier_value,
+            category=payload.nickname or "custom",
+        )
+        db_beneficiary = create_beneficiary(db, current_user.user_id, benef_create)
+
+    # 2. Call banking provider to save to MockBank using the local DB ID as beneficiary_id
     client = get_banking_client()
+    mockbank_payload = payload.model_dump(exclude_none=True)
+    mockbank_payload["beneficiary_id"] = str(db_beneficiary.id)
+
     try:
         result = await client.create_beneficiary(
             current_user.user_id,
-            payload.model_dump(exclude_none=True),
+            mockbank_payload,
         )
     except BankingClientError as exc:
         status_code = exc.status_code or 503
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
+    # Return local DB ID instead of MockBank's string ID
+    result["id"] = db_beneficiary.id
     return result
 
 

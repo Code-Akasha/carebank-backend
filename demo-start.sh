@@ -28,7 +28,7 @@ NC='\033[0m'
 
 echo -e "${BOLD}${CYAN}"
 echo "╔══════════════════════════════════════════════════════════╗"
-echo "║           CareBank Demo Launcher                        ║"
+echo "║           CareBank Demo Launcher                         ║"
 echo "╚══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -71,61 +71,34 @@ wait_for_service "Backend" "http://localhost:8000/docs" || exit 1
 
 echo ""
 
-# ── Install seed dependencies if needed ──────────────────────────────
-echo -e "${YELLOW}[4/5] Seeding demo data...${NC}"
-
-# Use the backend venv or system python
-if [ -f ".venv/bin/python" ]; then
-    PYTHON=".venv/bin/python"
-elif [ -f "../carebank-backend/.venv/bin/python" ]; then
-    PYTHON="../carebank-backend/.venv/bin/python"
-else
-    PYTHON="python3"
-fi
-
-# Install httpx and pyjwt if not present
-$PYTHON -c "import httpx, jwt" 2>/dev/null || {
-    echo "  Installing seed dependencies (httpx, pyjwt)..."
-    $PYTHON -m pip install -q httpx pyjwt
-}
-
-# Run seed script against the Docker Postgres instance exposed on 5433.
-DB_HOST=localhost \
-DB_PORT=5433 \
-DB_USER=carebank \
-DB_PASSWORD=${POSTGRES_PASSWORD:-carebank_dev_pwd} \
-DB_NAME=carebank_db \
-$PYTHON scripts/demo_seed.py --backend-url http://localhost:8000 --provider-url http://localhost:8001
+# ── Seeding Disabled ──────────────────────────────────────────────────
+echo -e "${GREEN}[4/5] Seeding skipped (Manual Setup Mode Enabled)${NC}"
 
 # ── Done ──────────────────────────────────────────────────────────────
 echo -e "${BOLD}${GREEN}"
 echo "╔══════════════════════════════════════════════════════════╗"
-echo "║           DEMO IS READY!                                ║"
+echo "║           CAREBANK IS READY (CLEAN SLATE)!               ║"
 echo "╠══════════════════════════════════════════════════════════╣"
-echo "║                                                        ║"
-echo "║  Frontend:    cd ../carebank-frontend && npm run dev    ║"
-echo "║              → http://localhost:5173                    ║"
-echo "║  Backend:     http://localhost:8000/docs                ║"
-echo "║  Proxy:       http://localhost:8001/docs                ║"
-echo "║                                                        ║"
-echo "║  Demo Logins:                                          ║"
-echo "║  rajesh@demo.com  / Demo@2026!   (GOOD health)         ║"
-echo "║  priya@demo.com   / Demo@2026!   (FAIR health)         ║"
-echo "║  amit@demo.com    / Demo@2026!   (POOR health)         ║"
-echo "║  admin@carebank.demo / AdminCare2026!  (Admin)         ║"
-echo "║                                                        ║"
-echo "║  Stop:  docker compose -f docker-compose.full.yml down ║"
-echo "║                                                        ║"
+echo "║                                                          ║"
+echo "║  Frontend:    cd ../carebank-frontend && npm run dev     ║"
+echo "║              → http://localhost:5173                     ║"
+echo "║  Backend:     http://localhost:8000/docs                 ║"
+echo "║  Proxy:       http://localhost:8001/docs                 ║"
+echo "║                                                          ║"
+echo "║  Manual Setup Instructions:                              ║"
+echo "║  1. Open http://localhost:5173                           ║"
+echo "║  2. Click 'Register' and create a new account manually   ║"
+echo "║  3. The proxy profile and default settings will be       ║"
+echo "║     auto-created on signup!                              ║"
+echo "║                                                          ║"
+echo "║  Stop:  docker compose -f docker-compose.full.yml down   ║"
+echo "║                                                          ║"
 echo "╚══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-echo -e "\n${CYAN}Demo Flow:${NC}"
+echo -e "\n${CYAN}Manual Test Flow:${NC}"
 echo "  1. Start frontend: cd ../carebank-frontend && npm run dev"
-echo "  2. Open http://localhost:5173"
-echo "  3. Login as rajesh@demo.com (good health)"
-echo "  4. Show Dashboard → Health Score (should be ~75-85)"
-echo "  5. Show Transactions (3 months of history)"
-echo "  6. Chat: 'schedule my Dish TV payment for 5th of every month'"
-echo "  7. Show Recurring Payments page"
-echo "  8. Login as admin → see all users"
-echo "  9. Login as amit@demo.com → show poor health score"
+echo "  2. Register your user at http://localhost:5173"
+echo "  3. Log in and verify your dashboard (starts with initial balance)"
+echo "  4. Create beneficiaries and set up payments manually"
+

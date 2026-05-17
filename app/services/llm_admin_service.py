@@ -21,6 +21,15 @@ class LLMAdminService:
     """Service for managing LLM tunnel configurations."""
 
     @staticmethod
+    def normalize_provider_type(provider_type: str | None) -> str:
+        provider = (provider_type or "ollama").strip().lower()
+        if provider in {"ngrok", "local", "ollama"}:
+            return "ollama"
+        if provider in {"gemini", "openai"}:
+            return provider
+        return "ollama"
+
+    @staticmethod
     async def get_or_create_tunnel_config(
         db: Session, environment: str, user_id: str
     ) -> LLMTunnelConfig:
@@ -36,7 +45,7 @@ class LLMAdminService:
         if not config:
             config = LLMTunnelConfig(
                 environment=environment,
-                provider_type="ngrok",
+                provider_type="ollama",
                 tunnel_url="",
                 tunnel_auth_token_encrypted=None,
                 ollama_model_default="qwen3:8b",
@@ -58,7 +67,8 @@ class LLMAdminService:
     async def update_tunnel_config(
         db: Session,
         environment: str,
-        tunnel_url: str,
+        provider_type: str,
+        tunnel_url: Optional[str],
         tunnel_auth_token: Optional[str],
         ollama_model_default: str,
         request_timeout_sec: int,
@@ -72,18 +82,29 @@ class LLMAdminService:
             db, environment, user_id
         )
 
+        normalized_provider = LLMAdminService.normalize_provider_type(provider_type)
+
         # Store previous values for audit
         before_tunnel_url = config.tunnel_url
         before_model = config.ollama_model_default
         before_timeout = config.request_timeout_sec
+        before_provider = LLMAdminService.normalize_provider_type(config.provider_type)
 
         # Encrypt the auth token if provided
         if tunnel_auth_token:
             encryptor = get_encryption_manager()
             config.tunnel_auth_token_encrypted = encryptor.encrypt(tunnel_auth_token)
+        elif (
+            normalized_provider in {"gemini", "openai"}
+            and not config.tunnel_auth_token_encrypted
+        ):
+            raise ValueError(
+                "tunnel_auth_token is required for Gemini/OpenAI providers"
+            )
 
         # Update configuration
-        config.tunnel_url = tunnel_url
+        config.provider_type = normalized_provider
+        config.tunnel_url = tunnel_url or ""
         config.ollama_model_default = ollama_model_default
         config.request_timeout_sec = request_timeout_sec
         config.is_active = True
@@ -97,8 +118,14 @@ class LLMAdminService:
             resource_type="tunnel",
             resource_id=environment,
             environment=environment,
-            before_value=f"url={before_tunnel_url}, model={before_model}, timeout={before_timeout}",
-            after_value=f"url={tunnel_url}, model={ollama_model_default}, timeout={request_timeout_sec}",
+            before_value=(
+                f"provider={before_provider}, url={before_tunnel_url}, model={before_model}, "
+                f"timeout={before_timeout}"
+            ),
+            after_value=(
+                f"provider={normalized_provider}, url={tunnel_url or ''}, model={ollama_model_default}, "
+                f"timeout={request_timeout_sec}"
+            ),
             status="success",
         )
         db.add(audit_log)
@@ -189,6 +216,10 @@ class LLMAdminService:
             )
             .first()
         )
+
+    @staticmethod
+    def get_config_provider_type(config: LLMTunnelConfig) -> str:
+        return LLMAdminService.normalize_provider_type(config.provider_type)
 
     @staticmethod
     def get_decrypted_token(config: LLMTunnelConfig) -> Optional[str]:

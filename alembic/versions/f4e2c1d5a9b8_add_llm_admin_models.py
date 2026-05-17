@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create LLM tunnel configuration, agent prompt configuration, and admin action log tables."""
-    
+
     # Create LLM tunnel configuration table
     op.create_table(
         "llm_tunnel_configs",

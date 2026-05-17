@@ -141,7 +141,12 @@ print("create_account", create_account_resp.status_code)
 assert create_account_resp.status_code == 200
 
 list_accounts_resp = client.get("/api/accounts/", headers=headers)
-print("list_accounts", list_accounts_resp.status_code, "count", len(list_accounts_resp.json()))
+print(
+    "list_accounts",
+    list_accounts_resp.status_code,
+    "count",
+    len(list_accounts_resp.json()),
+)
 assert list_accounts_resp.status_code == 200
 assert len(list_accounts_resp.json()) >= 1
 
@@ -153,7 +158,9 @@ transaction_resp = client.post(
 print("trigger_tx", transaction_resp.status_code)
 assert transaction_resp.status_code == 200
 
-chat_resp = client.post("/api/chat", json={"message": "show my balance"}, headers=headers)
+chat_resp = client.post(
+    "/api/chat", json={"message": "show my balance"}, headers=headers
+)
 print("chat", chat_resp.status_code)
 assert chat_resp.status_code in (200, 201)
 

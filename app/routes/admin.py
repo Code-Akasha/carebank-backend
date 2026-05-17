@@ -23,15 +23,6 @@ class UserSummary(BaseModel):
     is_active: bool
 
 
-class SimulationToggleRequest(BaseModel):
-    enabled: bool
-
-
-class ScenarioTriggerRequest(BaseModel):
-    user_id: str
-    scenario_type: str
-
-
 class WebhookReplayRequest(BaseModel):
     webhook_url: str | None = None
 
@@ -210,53 +201,6 @@ async def admin_agent_logs_for_user(
             for log in logs
         ],
     }
-
-
-@router.post("/simulation/toggle")
-async def admin_simulation_toggle(
-    body: SimulationToggleRequest,
-    _admin: User = Depends(require_admin),
-):
-    client = get_banking_client()
-    try:
-        result = await client.toggle_simulation(body.enabled)
-        return result
-    except BankingClientError as exc:
-        raise HTTPException(
-            status_code=exc.status_code or 503,
-            detail=f"Banking API unavailable: {exc}",
-        ) from exc
-
-
-@router.get("/simulation/status")
-async def admin_simulation_status(
-    _admin: User = Depends(require_admin),
-):
-    client = get_banking_client()
-    try:
-        result = await client.get_simulation_status()
-        return result
-    except BankingClientError as exc:
-        raise HTTPException(
-            status_code=exc.status_code or 503,
-            detail=f"Banking API unavailable: {exc}",
-        ) from exc
-
-
-@router.post("/scenario")
-async def admin_trigger_scenario(
-    body: ScenarioTriggerRequest,
-    _admin: User = Depends(require_admin),
-):
-    client = get_banking_client()
-    try:
-        result = await client.trigger_scenario(body.user_id, body.scenario_type)
-        return result
-    except BankingClientError as exc:
-        raise HTTPException(
-            status_code=exc.status_code or 503,
-            detail=f"Banking API unavailable: {exc}",
-        ) from exc
 
 
 @router.get("/webhooks/dead-letter")

@@ -62,9 +62,7 @@ class Dashboard:
 
     def show_status(self) -> None:
         backend = self._request_backend("GET", "/")
-        proxy = self._request_proxy(
-            "GET", "/", token=self._user_token("user_001")
-        )
+        proxy = self._request_proxy("GET", "/", token=self._user_token("user_001"))
         table = Table(title="Service Health", box=box.SIMPLE)
         table.add_column("Service")
         table.add_column("Status")

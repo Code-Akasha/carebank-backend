@@ -60,7 +60,9 @@ def main() -> int:
 
         list_accounts = client.get("/api/accounts/", headers=headers)
         list_accounts_body = list_accounts.json()
-        list_count = len(list_accounts_body) if isinstance(list_accounts_body, list) else -1
+        list_count = (
+            len(list_accounts_body) if isinstance(list_accounts_body, list) else -1
+        )
         print(
             f"list_accounts: {list_accounts.status_code} | "
             f"count={list_count} excerpt={excerpt(list_accounts_body)}"

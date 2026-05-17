@@ -15,6 +15,9 @@ class User(Base):
     password_hash = Column(String, nullable=True, default="")
     full_name = Column(String, nullable=True, default="")
     role = Column(String, default="user", nullable=False)
+    account_type = Column(
+        String, default="personal", nullable=False
+    )  # "personal" or "business"
     is_active = Column(Boolean, default=True, nullable=False)
 
     # Payment methods (for generic payment system)

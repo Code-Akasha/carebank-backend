@@ -43,5 +43,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_banking_connector_env_active", table_name="banking_connector_configs")
+    op.drop_index(
+        "ix_banking_connector_env_active", table_name="banking_connector_configs"
+    )
     op.drop_table("banking_connector_configs")

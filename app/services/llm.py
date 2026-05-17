@@ -70,7 +70,16 @@ def _ollama_is_available(base_url: str) -> bool:
         return False
 
 
-def _get_ollama_config_from_db(environment: str) -> Optional[dict]:
+def _normalize_provider_type(provider_type: str | None) -> str:
+    provider = (provider_type or "ollama").strip().lower()
+    if provider in {"ngrok", "local", "ollama"}:
+        return "ollama"
+    if provider in {"gemini", "openai"}:
+        return provider
+    return "ollama"
+
+
+def _get_llm_config_from_db(environment: str) -> Optional[dict]:
     """
     Retrieve runtime Ollama configuration from database for a given environment.
     Returns None if no active config is found.
@@ -91,15 +100,14 @@ def _get_ollama_config_from_db(environment: str) -> Optional[dict]:
                 .filter(
                     LLMTunnelConfig.environment == environment,
                     LLMTunnelConfig.is_active,
-                    LLMTunnelConfig.provider_type == "ngrok",
                 )
                 .first()
             )
 
             if config:
-                # Decrypt the token if present
                 token = LLMAdminService.get_decrypted_token(config)
                 return {
+                    "provider_type": LLMAdminService.get_config_provider_type(config),
                     "tunnel_url": config.tunnel_url,
                     "model": config.ollama_model_default,
                     "timeout_sec": config.request_timeout_sec,
@@ -109,8 +117,58 @@ def _get_ollama_config_from_db(environment: str) -> Optional[dict]:
         finally:
             db.close()
     except Exception as e:
-        logger.debug(f"Failed to retrieve Ollama config from DB: {e}")
+        logger.debug(f"Failed to retrieve LLM config from DB: {e}")
         return None
+
+
+def _build_llm_from_admin_config(config: dict, temperature: float, max_tokens: int):
+    provider_type = _normalize_provider_type(config.get("provider_type"))
+    model = str(config.get("model") or "").strip()
+    token = config.get("token")
+    tunnel_url = config.get("tunnel_url")
+
+    if provider_type == "ollama":
+        if not tunnel_url:
+            return None, "template_fallback"
+        from langchain_ollama import ChatOllama
+
+        llm = ChatOllama(
+            base_url=tunnel_url,
+            model=model or "qwen3:8b",
+            temperature=temperature,
+        )
+        return llm, f"ollama:{model or 'qwen3:8b'}"
+
+    if provider_type == "gemini":
+        if not token:
+            return None, "template_fallback"
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        llm = ChatGoogleGenerativeAI(
+            model=model or "gemini-2.5-flash",
+            google_api_key=token,
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+        )
+        return llm, f"gemini:{model or 'gemini-2.5-flash'}"
+
+    if provider_type == "openai":
+        if not token:
+            return None, "template_fallback"
+        from langchain_openai import ChatOpenAI
+
+        kwargs = {
+            "model": model or "gpt-4o-mini",
+            "api_key": token,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if tunnel_url:
+            kwargs["base_url"] = tunnel_url
+        llm = ChatOpenAI(**kwargs)
+        return llm, f"openai:{model or 'gpt-4o-mini'}"
+
+    return None, "template_fallback"
 
 
 def get_llm_provider(
@@ -122,10 +180,9 @@ def get_llm_provider(
     Factory to retrieve configured LLM.
 
     Resolution order (first match wins):
-    1. Runtime DB config for current environment (ngrok tunnel to local Ollama)
-    2. Environment variables: OLLAMA_BASE_URL
-    3. Environment variables: GEMINI_API_KEY
-    4. Fallback to templates (no LLM)
+    1. Runtime DB config for current environment (admin-managed provider config)
+    2. Environment variables: OLLAMA_BASE_URL / GEMINI_API_KEY / OPENAI_API_KEY
+    3. Fallback to templates (no LLM)
 
     Args:
         temperature: Model temperature (0.0 - 1.0)
@@ -141,54 +198,70 @@ def get_llm_provider(
 
     gemini_model = settings.gemini_model or "gemini-2.5-flash"
     ollama_model = settings.ollama_model or "llama3.2"
+    openai_model = "gpt-4o-mini"
 
-    # 1. Try DB-configured ngrok tunnel to local Ollama
-    db_config = _get_ollama_config_from_db(environment)
+    # 1. Try DB-configured provider first
+    db_config = _get_llm_config_from_db(environment)
     if db_config:
         try:
+            provider_type = _normalize_provider_type(db_config.get("provider_type"))
             tunnel_url = db_config["tunnel_url"]
             model = db_config["model"]
 
-            if _ollama_is_available(tunnel_url):
-                if not _ollama_model_exists(tunnel_url, model):
-                    if settings.ollama_auto_pull:
-                        logger.info(
-                            "Ollama model %s not found in tunnel. Attempting pull...",
-                            model,
-                        )
-                        if not _ollama_pull_model(tunnel_url, model):
+            if provider_type == "ollama":
+                if _ollama_is_available(tunnel_url):
+                    if not _ollama_model_exists(tunnel_url, model):
+                        if settings.ollama_auto_pull:
+                            logger.info(
+                                "Ollama model %s not found in tunnel. Attempting pull...",
+                                model,
+                            )
+                            if not _ollama_pull_model(tunnel_url, model):
+                                logger.warning(
+                                    "Ollama model %s unavailable after pull attempt in tunnel.",
+                                    model,
+                                )
+                                raise RuntimeError(f"Ollama model unavailable: {model}")
+                        else:
                             logger.warning(
-                                "Ollama model %s unavailable after pull attempt in tunnel.",
+                                "Ollama model %s not found in tunnel and auto-pull disabled.",
                                 model,
                             )
                             raise RuntimeError(f"Ollama model unavailable: {model}")
-                    else:
-                        logger.warning(
-                            "Ollama model %s not found in tunnel and auto-pull disabled.",
-                            model,
-                        )
-                        raise RuntimeError(f"Ollama model unavailable: {model}")
 
-                from langchain_ollama import ChatOllama
+                    from langchain_ollama import ChatOllama
 
-                llm = ChatOllama(
-                    base_url=tunnel_url,
-                    model=model,
-                    temperature=temperature,
-                )
+                    llm = ChatOllama(
+                        base_url=tunnel_url,
+                        model=model,
+                        temperature=temperature,
+                    )
+                    logger.info(
+                        f"Using DB-configured Ollama provider for environment {environment}"
+                    )
+                    return llm, f"ollama:{model}"
                 logger.info(
-                    f"Using DB-configured ngrok tunnel to Ollama for environment {environment}"
+                    "Ollama endpoint at %s is not reachable for environment %s. Trying env vars.",
+                    tunnel_url,
+                    environment,
                 )
-                return llm, f"ollama-tunnel:{model}"
-            logger.info(
-                "Ollama tunnel at %s is not reachable for environment %s. Trying env-var Ollama.",
-                tunnel_url,
-                environment,
-            )
+            else:
+                llm, provider_name = _build_llm_from_admin_config(
+                    db_config,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                if llm:
+                    logger.info(
+                        "Using DB-configured %s provider for environment %s",
+                        provider_type,
+                        environment,
+                    )
+                    return llm, provider_name
         except ImportError:
-            logger.warning("langchain-ollama not installed")
+            logger.warning("Required LangChain provider package not installed")
         except Exception as e:
-            logger.warning(f"DB-configured Ollama tunnel initialization failed: {e}")
+            logger.warning(f"DB-configured provider initialization failed: {e}")
 
     # 2. Try Environment Variable Ollama
     if settings.ollama_base_url:
@@ -251,6 +324,22 @@ def get_llm_provider(
             logger.warning("langchain-google-genai not installed")
         except Exception as e:
             logger.warning(f"Gemini initialization failed: {e}")
+
+    if settings.openai_api_key:
+        try:
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(
+                model=openai_model,
+                api_key=settings.openai_api_key,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            return llm, f"openai:{openai_model}"
+        except ImportError:
+            logger.warning("langchain-openai not installed")
+        except Exception as e:
+            logger.warning(f"OpenAI initialization failed: {e}")
 
     # 3. Fallback to Templates
     logger.warning("No LLM provider configured. Falling back to templates.")

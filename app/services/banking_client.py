@@ -8,7 +8,10 @@ from datetime import date, datetime
 from threading import Lock
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 import httpx
+
+# pyrefly: ignore [missing-import]
 import jwt
 
 from app.core.config import get_settings
@@ -55,7 +58,7 @@ class BankingClient:
         settings = get_settings()
         self._base_url = settings.banking_api_url.rstrip("/")
         self._secret = settings.banking_api_secret
-        self._timeout = httpx.Timeout(10.0, connect=5.0)
+        self._timeout = httpx.Timeout(30.0, connect=10.0)
 
     def apply_runtime_config(
         self,
@@ -67,7 +70,7 @@ class BankingClient:
         if secret:
             self._secret = secret
         if timeout_sec:
-            self._timeout = httpx.Timeout(float(timeout_sec), connect=5.0)
+            self._timeout = httpx.Timeout(float(timeout_sec), connect=10.0)
 
     def _auth_headers(
         self, user_id: str | None, *, role: str = "user"
@@ -114,7 +117,13 @@ class BankingClient:
                     f"status={status_code}: {detail}", status_code=status_code
                 ) from exc
             except httpx.HTTPError as exc:
-                logger.error("Banking API request failed: %s", exc)
+                logger.error(
+                    "Banking API request failed (%s) for %s %s: %r",
+                    type(exc).__name__,
+                    method,
+                    url,
+                    exc,
+                )
                 raise BankingClientError(str(exc)) from exc
         return data
 
@@ -337,20 +346,6 @@ class BankingClient:
                 "user_id": user_id,
                 "current_balance": balance,
             },
-        )
-
-    async def toggle_simulation(self, enabled: bool) -> dict[str, Any]:
-        return await self._request(
-            "POST",
-            "/admin/simulation/toggle",
-            user_id="admin",
-            role="admin",
-            json_body={"enabled": enabled},
-        )
-
-    async def get_simulation_status(self) -> dict[str, Any]:
-        return await self._request(
-            "GET", "/admin/simulation/status", user_id="admin", role="admin"
         )
 
     async def trigger_scenario(

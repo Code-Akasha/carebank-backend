@@ -137,10 +137,30 @@ CATEGORY_MERCHANTS: dict[str, list[str]] = {
 
 # Recurring merchants for demo
 RECURRING_MERCHANTS = [
-    {"merchant": "DishTV Services", "category": "utilities", "amount": 350, "label": "Dish TV"},
-    {"merchant": "Indane Gas Agency", "category": "utilities", "amount": 950, "label": "Gas Cylinder"},
-    {"merchant": "Jio Fiber", "category": "utilities", "amount": 799, "label": "Internet"},
-    {"merchant": "TNEB", "category": "utilities", "amount": 1200, "label": "Electricity"},
+    {
+        "merchant": "DishTV Services",
+        "category": "utilities",
+        "amount": 350,
+        "label": "Dish TV",
+    },
+    {
+        "merchant": "Indane Gas Agency",
+        "category": "utilities",
+        "amount": 950,
+        "label": "Gas Cylinder",
+    },
+    {
+        "merchant": "Jio Fiber",
+        "category": "utilities",
+        "amount": 799,
+        "label": "Internet",
+    },
+    {
+        "merchant": "TNEB",
+        "category": "utilities",
+        "amount": 1200,
+        "label": "Electricity",
+    },
 ]
 
 PERSONAS: dict[str, dict] = {
@@ -148,8 +168,13 @@ PERSONAS: dict[str, dict] = {
         "salary_range": (55000, 90000),
         "balance_buffer": (0.40, 0.65),
         "category_weights": {
-            "groceries": 0.30, "dining": 0.08, "transport": 0.12,
-            "shopping": 0.08, "utilities": 0.15, "health": 0.12, "entertainment": 0.05,
+            "groceries": 0.30,
+            "dining": 0.08,
+            "transport": 0.12,
+            "shopping": 0.08,
+            "utilities": 0.15,
+            "health": 0.12,
+            "entertainment": 0.05,
         },
         "daily_txn_range": (1, 2),
         "weekend_multiplier": 1.3,
@@ -158,8 +183,13 @@ PERSONAS: dict[str, dict] = {
         "salary_range": (40000, 70000),
         "balance_buffer": (0.10, 0.30),
         "category_weights": {
-            "groceries": 0.15, "dining": 0.25, "transport": 0.12,
-            "shopping": 0.22, "utilities": 0.10, "health": 0.06, "entertainment": 0.10,
+            "groceries": 0.15,
+            "dining": 0.25,
+            "transport": 0.12,
+            "shopping": 0.22,
+            "utilities": 0.10,
+            "health": 0.06,
+            "entertainment": 0.10,
         },
         "daily_txn_range": (2, 5),
         "weekend_multiplier": 2.0,
@@ -168,8 +198,13 @@ PERSONAS: dict[str, dict] = {
         "salary_range": (45000, 80000),
         "balance_buffer": (0.20, 0.45),
         "category_weights": {
-            "groceries": 0.22, "dining": 0.15, "transport": 0.13,
-            "shopping": 0.15, "utilities": 0.15, "health": 0.10, "entertainment": 0.10,
+            "groceries": 0.22,
+            "dining": 0.15,
+            "transport": 0.13,
+            "shopping": 0.15,
+            "utilities": 0.15,
+            "health": 0.10,
+            "entertainment": 0.10,
         },
         "daily_txn_range": (1, 4),
         "weekend_multiplier": 1.6,
@@ -178,6 +213,7 @@ PERSONAS: dict[str, dict] = {
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
 
 def _format_iso(dt: datetime) -> str:
     if dt.tzinfo is None:
@@ -225,15 +261,17 @@ def _generate_transactions(
         salary_date = datetime(year, month, 1, 9, 0, 0, tzinfo=timezone.utc)
         if salary_date <= now and salary > 0:
             txn_id += 1
-            transactions.append({
-                "id": txn_id,
-                "user_id": user_id,
-                "amount": float(salary),
-                "merchant": "Salary Credit",
-                "category": "income",
-                "date": _format_iso(salary_date),
-                "description": "Monthly salary — NEFT credit",
-            })
+            transactions.append(
+                {
+                    "id": txn_id,
+                    "user_id": user_id,
+                    "amount": float(salary),
+                    "merchant": "Salary Credit",
+                    "category": "income",
+                    "date": _format_iso(salary_date),
+                    "description": "Monthly salary — NEFT credit",
+                }
+            )
 
     # Recurring bills on 5th, 10th, 15th
     bill_schedule = [
@@ -251,15 +289,17 @@ def _generate_transactions(
                 continue
             variance = rng.uniform(0.95, 1.05)
             txn_id += 1
-            transactions.append({
-                "id": txn_id,
-                "user_id": user_id,
-                "amount": -round(amt * variance, 2),
-                "merchant": merchant,
-                "category": cat,
-                "date": _format_iso(bill_date),
-                "description": desc,
-            })
+            transactions.append(
+                {
+                    "id": txn_id,
+                    "user_id": user_id,
+                    "amount": -round(amt * variance, 2),
+                    "merchant": merchant,
+                    "category": cat,
+                    "date": _format_iso(bill_date),
+                    "description": desc,
+                }
+            )
 
     # Daily variable spending
     for day_offset in range(days - 1, -1, -1):
@@ -297,29 +337,37 @@ def _generate_transactions(
             txn_dt = date_val.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
             txn_id += 1
-            transactions.append({
-                "id": txn_id,
-                "user_id": user_id,
-                "amount": -amount,
-                "merchant": merchant,
-                "category": cat,
-                "date": _format_iso(txn_dt),
-                "description": f"{cat.title()} — {merchant}",
-            })
+            transactions.append(
+                {
+                    "id": txn_id,
+                    "user_id": user_id,
+                    "amount": -amount,
+                    "merchant": merchant,
+                    "category": cat,
+                    "date": _format_iso(txn_dt),
+                    "description": f"{cat.title()} — {merchant}",
+                }
+            )
 
     return transactions
 
 
 # ── Main ────────────────────────────────────────────────────────────────────
 
-def register_user(client: httpx.Client, email: str, password: str, full_name: str) -> dict | None:
+
+def register_user(
+    client: httpx.Client, email: str, password: str, full_name: str
+) -> dict | None:
     """Register a user via the backend API. Returns token info or None."""
     resp = client.post(
         f"{BACKEND_URL}/api/auth/register",
         json={"email": email, "password": password, "full_name": full_name},
     )
     if resp.status_code == 201:
-        return resp.json()
+        token_info = resp.json()
+        headers = {"Authorization": f"Bearer {token_info.get('access_token')}"}
+        client.get(f"{BACKEND_URL}/api/payment-settings/", headers=headers)
+        return token_info
     elif resp.status_code == 409:
         # Already exists — login instead
         resp = client.post(
@@ -327,7 +375,10 @@ def register_user(client: httpx.Client, email: str, password: str, full_name: st
             json={"email": email, "password": password},
         )
         if resp.status_code == 200:
-            return resp.json()
+            token_info = resp.json()
+            headers = {"Authorization": f"Bearer {token_info.get('access_token')}"}
+            client.get(f"{BACKEND_URL}/api/payment-settings/", headers=headers)
+            return token_info
         print(f"  ⚠️  Login failed for {email}: {resp.text}")
         return None
     else:
@@ -378,7 +429,7 @@ def inject_provider_profile(
         ],
     }
     resp = client.post(
-        f"{PROVIDER_URL}/profiles/upsert",
+        f"{PROVIDER_URL}/profiles",
         headers=headers,
         json=payload,
     )
@@ -419,9 +470,16 @@ def setup_recurring_payment(
     beneficiary_id = None
     if beneficiary_resp.status_code in (200, 201):
         data = beneficiary_resp.json()
-        beneficiary_id = data.get("id") or data.get("beneficiary_id")
-        if beneficiary_id is not None:
-            beneficiary_id = int(beneficiary_id)
+        raw_id = data.get("id") or data.get("beneficiary_id")
+        if raw_id is not None:
+            try:
+                beneficiary_id = int(raw_id)
+            except ValueError:
+                import re
+
+                match = re.search(r"\d+", str(raw_id))
+                if match:
+                    beneficiary_id = int(match.group())
     elif beneficiary_resp.status_code == 409:
         pass  # already exists
 
@@ -431,9 +489,16 @@ def setup_recurring_payment(
         if list_resp.status_code == 200:
             for b in list_resp.json():
                 if b.get("name") == beneficiary_name:
-                    beneficiary_id = b.get("id")
-                    if beneficiary_id is not None:
-                        beneficiary_id = int(beneficiary_id)
+                    raw_id = b.get("id")
+                    if raw_id is not None:
+                        try:
+                            beneficiary_id = int(raw_id)
+                        except ValueError:
+                            import re
+
+                            match = re.search(r"\d+", str(raw_id))
+                            if match:
+                                beneficiary_id = int(match.group())
                     break
 
     if not beneficiary_id:
@@ -457,7 +522,9 @@ def setup_recurring_payment(
         return True
     if rule_resp.status_code == 409:
         return True
-    print(f"  ⚠️  Recurring rule creation failed: {rule_resp.status_code} {rule_resp.text}")
+    print(
+        f"  ⚠️  Recurring rule creation failed: {rule_resp.status_code} {rule_resp.text}"
+    )
     return False
 
 
@@ -466,10 +533,16 @@ def main():
     parser = argparse.ArgumentParser(description="CareBank Demo Seed Script")
     parser.add_argument("--backend-url", default=BACKEND_URL)
     parser.add_argument("--provider-url", default=PROVIDER_URL)
-    parser.add_argument("--skip-transactions", action="store_true",
-                        help="Skip generating transaction history")
-    parser.add_argument("--skip-recurring", action="store_true",
-                        help="Skip setting up recurring payments")
+    parser.add_argument(
+        "--skip-transactions",
+        action="store_true",
+        help="Skip generating transaction history",
+    )
+    parser.add_argument(
+        "--skip-recurring",
+        action="store_true",
+        help="Skip setting up recurring payments",
+    )
     args = parser.parse_args()
 
     BACKEND_URL = args.backend_url.rstrip("/")
@@ -486,7 +559,9 @@ def main():
 
     # ── 1. Register Admin ──────────────────────────────────────────────
     print("\n── 1. Registering Admin ──")
-    result = register_user(client, ADMIN["email"], ADMIN["password"], ADMIN["full_name"])
+    result = register_user(
+        client, ADMIN["email"], ADMIN["password"], ADMIN["full_name"]
+    )
     if result:
         promote_user_role(ADMIN["email"], "admin")
         print(f"  ✅ Admin: {ADMIN['email']} (ID: {result.get('user_id', 'N/A')})")
@@ -501,7 +576,11 @@ def main():
             service_ids[svc["email"]] = uid
             # Inject balance into proxy
             inject_provider_profile(
-                client, uid, svc["full_name"], svc["initial_balance"], [],
+                client,
+                uid,
+                svc["full_name"],
+                svc["initial_balance"],
+                [],
                 provider_admin_token,
             )
             print(f"  ✅ {svc['full_name']}: {svc['email']} (ID: {uid})")
@@ -512,7 +591,9 @@ def main():
     print("\n── 3. Registering Demo Users (with transaction history) ──")
     demo_tokens: dict[str, dict] = {}
     for user in DEMO_USERS:
-        result = register_user(client, user["email"], user["password"], user["full_name"])
+        result = register_user(
+            client, user["email"], user["password"], user["full_name"]
+        )
         if not result:
             continue
 
@@ -534,11 +615,17 @@ def main():
 
             # Inject into proxy
             ok = inject_provider_profile(
-                client, uid, user["full_name"], user["initial_balance"],
-                txns, provider_admin_token,
+                client,
+                uid,
+                user["full_name"],
+                user["initial_balance"],
+                txns,
+                provider_admin_token,
             )
             if ok:
-                print(f"  ✅ {user['full_name']}: {user['email']} (ID: {uid}, {len(txns)} txns)")
+                print(
+                    f"  ✅ {user['full_name']}: {user['email']} (ID: {uid}, {len(txns)} txns)"
+                )
             else:
                 print(f"  ⚠️  {user['full_name']}: registered but txns injection failed")
         else:
@@ -555,16 +642,26 @@ def main():
 
         if rajesh and dishtv_id:
             ok = setup_recurring_payment(
-                client, rajesh["token"], rajesh["user_id"],
-                dishtv_id, "DishTV Services", 350, 5,
+                client,
+                rajesh["token"],
+                rajesh["user_id"],
+                dishtv_id,
+                "DishTV Services",
+                350,
+                5,
                 "Monthly DTH subscription",
             )
             print(f"  {'✅' if ok else '❌'} Rajesh → DishTV (₹350/month on 5th)")
 
             if rent_id:
                 ok = setup_recurring_payment(
-                    client, rajesh["token"], rajesh["user_id"],
-                    rent_id, "City Rentals", 12000, 1,
+                    client,
+                    rajesh["token"],
+                    rajesh["user_id"],
+                    rent_id,
+                    "City Rentals",
+                    12000,
+                    1,
                     "Monthly rent payment",
                 )
                 print(f"  {'✅' if ok else '❌'} Rajesh → Rent (₹12,000/month on 1st)")
@@ -573,8 +670,13 @@ def main():
         priya = demo_tokens.get("priya@demo.com", {})
         if priya and indane_id:
             ok = setup_recurring_payment(
-                client, priya["token"], priya["user_id"],
-                indane_id, "Indane Gas Agency", 950, 10,
+                client,
+                priya["token"],
+                priya["user_id"],
+                indane_id,
+                "Indane Gas Agency",
+                950,
+                10,
                 "Monthly gas cylinder",
             )
             print(f"  {'✅' if ok else '❌'} Priya → Indane Gas (₹950/month on 10th)")
@@ -583,8 +685,13 @@ def main():
         amit = demo_tokens.get("amit@demo.com", {})
         if amit and dishtv_id:
             ok = setup_recurring_payment(
-                client, amit["token"], amit["user_id"],
-                dishtv_id, "DishTV Services", 350, 5,
+                client,
+                amit["token"],
+                amit["user_id"],
+                dishtv_id,
+                "DishTV Services",
+                350,
+                5,
                 "Monthly DTH subscription",
             )
             print(f"  {'✅' if ok else '❌'} Amit → DishTV (₹350/month on 5th)")

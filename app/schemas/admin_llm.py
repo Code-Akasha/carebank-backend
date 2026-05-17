@@ -2,9 +2,10 @@
 Pydantic schemas for Admin LLM Configuration API contracts.
 """
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List
+from typing import Literal, Optional, List
 from datetime import datetime
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 # ============================================================================
@@ -13,26 +14,55 @@ from datetime import datetime
 
 
 class LLMTunnelConfigCreate(BaseModel):
-    """Request schema for creating/updating tunnel configuration."""
+    """Request schema for creating/updating LLM provider configuration."""
 
-    tunnel_url: str = Field(
-        ..., description="Base URL of ngrok tunnel or other secure tunnel endpoint"
+    provider_type: Literal["ollama", "gemini", "openai"] = Field(
+        default="ollama",
+        description="Configured provider type",
+    )
+
+    tunnel_url: Optional[str] = Field(
+        None,
+        description="Base URL for Ollama or OpenAI-compatible endpoints",
     )
     tunnel_auth_token: Optional[str] = Field(
         None,
-        description="Authentication token for the tunnel (will be encrypted at rest)",
+        description="API key or auth token for the selected provider (encrypted at rest)",
     )
     ollama_model_default: str = Field(
-        default="qwen3:8b", description="Default Ollama model to use from this tunnel"
+        default="qwen3:8b",
+        description="Default model to use for the selected provider",
     )
     request_timeout_sec: int = Field(
         default=30, ge=5, le=300, description="HTTP request timeout in seconds"
     )
 
+    @model_validator(mode="after")
+    def validate_provider_config(self):
+        provider = (self.provider_type or "ollama").strip().lower()
+        if provider in {"ngrok", "local", "ollama"}:
+            provider = "ollama"
+
+        if provider == "ollama":
+            if not self.tunnel_url or not self.tunnel_url.strip():
+                raise ValueError("tunnel_url is required for local Ollama")
+            self.tunnel_url = self.tunnel_url.strip()
+        elif self.tunnel_url:
+            self.tunnel_url = self.tunnel_url.strip()
+
+        if not self.ollama_model_default or not self.ollama_model_default.strip():
+            raise ValueError("ollama_model_default cannot be empty")
+
+        self.provider_type = provider  # type: ignore[assignment]
+        self.ollama_model_default = self.ollama_model_default.strip()
+        return self
+
     @field_validator("tunnel_url")
     @classmethod
     def validate_tunnel_url(cls, v: str) -> str:
-        """Validate tunnel URL format."""
+        """Validate tunnel URL format when provided."""
+        if not v:
+            return v
         v = v.strip()
         if not v.startswith(("http://", "https://")):
             raise ValueError("tunnel_url must start with http:// or https://")
@@ -42,7 +72,7 @@ class LLMTunnelConfigCreate(BaseModel):
 
 
 class LLMTunnelConfigResponse(BaseModel):
-    """Response schema for tunnel configuration."""
+    """Response schema for LLM provider configuration."""
 
     id: int
     environment: str
@@ -62,6 +92,17 @@ class LLMTunnelConfigResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class LLMProviderConfigResponse(BaseModel):
+    """Convenience response wrapper for provider summaries."""
+
+    provider_type: str
+    provider_label: str
+    tunnel_url: Optional[str] = None
+    ollama_model_default: str
+
+    model_config = {"from_attributes": True}
 
 
 # ============================================================================

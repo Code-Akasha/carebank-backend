@@ -31,6 +31,31 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/admin/llm", tags=["admin-llm-config"])
 
 
+def _serialize_config(config) -> LLMTunnelConfigResponse:
+    token_masked = None
+    if config.tunnel_auth_token_encrypted:
+        encryptor = get_encryption_manager()
+        token_masked = encryptor.mask_sensitive_value(
+            config.tunnel_auth_token_encrypted
+        )
+
+    return LLMTunnelConfigResponse(
+        id=config.id,
+        environment=config.environment,
+        provider_type=LLMAdminService.get_config_provider_type(config),
+        tunnel_url=config.tunnel_url or "",
+        tunnel_auth_token_masked=token_masked,
+        ollama_model_default=config.ollama_model_default,
+        request_timeout_sec=config.request_timeout_sec,
+        is_active=config.is_active,
+        last_connectivity_check=config.last_connectivity_check,
+        last_error=config.last_error,
+        created_by=config.created_by,
+        created_at=config.created_at,
+        updated_at=config.updated_at,
+    )
+
+
 def get_db():
     """Dependency to get database session."""
     db = SessionLocal()
@@ -60,30 +85,7 @@ async def get_tunnel_config(
         config = await LLMAdminService.get_or_create_tunnel_config(
             db, environment, current_user.user_id
         )
-
-        # Mask the auth token for display
-        token_masked = None
-        if config.tunnel_auth_token_encrypted:
-            encryptor = get_encryption_manager()
-            token_masked = encryptor.mask_sensitive_value(
-                config.tunnel_auth_token_encrypted
-            )
-
-        return LLMTunnelConfigResponse(
-            id=config.id,
-            environment=config.environment,
-            provider_type=config.provider_type,
-            tunnel_url=config.tunnel_url,
-            tunnel_auth_token_masked=token_masked,
-            ollama_model_default=config.ollama_model_default,
-            request_timeout_sec=config.request_timeout_sec,
-            is_active=config.is_active,
-            last_connectivity_check=config.last_connectivity_check,
-            last_error=config.last_error,
-            created_by=config.created_by,
-            created_at=config.created_at,
-            updated_at=config.updated_at,
-        )
+        return _serialize_config(config)
     except Exception as e:
         logger.error(f"Failed to get tunnel config for {environment}: {e}")
         raise HTTPException(
@@ -108,36 +110,14 @@ async def update_tunnel_config(
         config = await LLMAdminService.update_tunnel_config(
             db,
             environment=environment,
+            provider_type=config_update.provider_type,
             tunnel_url=config_update.tunnel_url,
             tunnel_auth_token=config_update.tunnel_auth_token,
             ollama_model_default=config_update.ollama_model_default,
             request_timeout_sec=config_update.request_timeout_sec,
             user_id=current_user.user_id,
         )
-
-        # Mask the auth token for display
-        token_masked = None
-        if config.tunnel_auth_token_encrypted:
-            encryptor = get_encryption_manager()
-            token_masked = encryptor.mask_sensitive_value(
-                config.tunnel_auth_token_encrypted
-            )
-
-        return LLMTunnelConfigResponse(
-            id=config.id,
-            environment=config.environment,
-            provider_type=config.provider_type,
-            tunnel_url=config.tunnel_url,
-            tunnel_auth_token_masked=token_masked,
-            ollama_model_default=config.ollama_model_default,
-            request_timeout_sec=config.request_timeout_sec,
-            is_active=config.is_active,
-            last_connectivity_check=config.last_connectivity_check,
-            last_error=config.last_error,
-            created_by=config.created_by,
-            created_at=config.created_at,
-            updated_at=config.updated_at,
-        )
+        return _serialize_config(config)
     except ValueError as e:
         logger.error(f"Validation error updating tunnel config: {e}")
         raise HTTPException(
@@ -172,6 +152,12 @@ async def test_tunnel_connectivity(
             return ConnectivityTestResult(
                 status="error",
                 error="Tunnel not configured or inactive for this environment",
+            )
+
+        if LLMAdminService.get_config_provider_type(config) != "ollama":
+            return ConnectivityTestResult(
+                status="error",
+                error="Connectivity test is only available for local Ollama providers",
             )
 
         # Perform connectivity test
@@ -214,6 +200,12 @@ async def list_ollama_models(
         config = await LLMAdminService.get_or_create_tunnel_config(
             db, environment, current_user.user_id
         )
+
+        if LLMAdminService.get_config_provider_type(config) != "ollama":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Model discovery is only available for local Ollama providers",
+            )
 
         if not config.is_active or not config.tunnel_url:
             raise HTTPException(

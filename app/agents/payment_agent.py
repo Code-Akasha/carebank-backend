@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.payment_settings import PaymentSettings
 from app.schemas.payments import ExecutePaymentPayload
 from app.services.payment_execution_service import execute_generic_payment
+from app.agents.base import BaseAgent, AgentInput, AgentOutput, AgentStatus
 
 logger = logging.getLogger(__name__)
 
@@ -459,6 +460,93 @@ class PaymentAgent:
         """Close DB session."""
         if self.db:
             self.db.close()
+
+
+class ConversationalPaymentAgent(BaseAgent):
+    """BaseAgent wrapper for PaymentAgent state machine."""
+
+    @property
+    def name(self) -> str:
+        return "PaymentAgent"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Handles conversational, one-time peer-to-peer payments via state machine."
+        )
+
+    @property
+    def capabilities(self) -> list[str]:
+        return ["payment_execution", "conversational_payment"]
+
+    def _invoke(self, agent_input: AgentInput) -> AgentOutput:
+        context = agent_input.context
+        conversation_state = self._conversation_state_from_context(context)
+
+        # Restore PaymentContext if exists
+        saved_context_dict = conversation_state.get("payment_context")
+        if isinstance(saved_context_dict, dict):
+            try:
+                payment_context = PaymentContext(**saved_context_dict)
+            except Exception:
+                payment_context = PaymentContext(user_id=agent_input.user_id)
+        else:
+            payment_context = PaymentContext(user_id=agent_input.user_id)
+            # Pre-fill amount if detected by coordinator
+            if context.amount is not None:
+                payment_context.amount = context.amount
+
+        agent = PaymentAgent()
+        try:
+            result = agent.process_message(
+                user_id=agent_input.user_id,
+                message=agent_input.message,
+                context=payment_context,
+            )
+
+            # Map options to UI actions
+            ui_actions = []
+            if result.options:
+                ui_actions = [
+                    {"label": opt["label"], "message": opt["value"]}
+                    for opt in result.options
+                ]
+
+            # Update pending state
+            clear_pending = False
+            pending_state = {}
+            if result.context.state in (PaymentState.COMPLETE, PaymentState.FAILED):
+                clear_pending = True
+            else:
+                pending_state = {
+                    "pending_intent": "payment",
+                    "payment_context": result.context.model_dump(),
+                }
+
+            return AgentOutput(
+                response=result.message,
+                agent_name=self.name,
+                status=AgentStatus.success if not result.error else AgentStatus.error,
+                metadata={
+                    "pending_state": pending_state,
+                    "clear_pending": clear_pending,
+                    "ui_actions": ui_actions,
+                    "error": result.error,
+                },
+            )
+        finally:
+            agent.close()
+
+    @staticmethod
+    def _conversation_state_from_context(ctx) -> dict:
+        state = (
+            ctx.model_extra.get("conversation_state")
+            if hasattr(ctx, "model_extra")
+            else None
+        )
+        if isinstance(state, dict):
+            return state
+        return {}
 
 
 def create_payment_agent() -> PaymentAgent:

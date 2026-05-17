@@ -141,6 +141,7 @@ def _register_agents() -> None:
     from app.agents.communication import CommunicationAgent
     from app.agents.opportunity import OpportunityAgent
     from app.agents.auto_savings import AutoSavingsAgent
+    from app.agents.payment_agent import ConversationalPaymentAgent
 
     _AGENT_CLASSES.update(
         {
@@ -148,6 +149,7 @@ def _register_agents() -> None:
             "CommunicationAgent": CommunicationAgent,
             "OpportunityAgent": OpportunityAgent,
             "AutoSavingsAgent": AutoSavingsAgent,
+            "PaymentAgent": ConversationalPaymentAgent,
         }
     )
 
@@ -166,6 +168,7 @@ _INTENT_TO_AGENT: dict[str, str] = {
     "affordability": "IntelligenceAgent",
     "planning": "CommunicationAgent",
     "general": "CommunicationAgent",
+    "payment": "PaymentAgent",
 }
 
 
@@ -195,7 +198,7 @@ class ClassificationResult(BaseModel):
     """Structured output from LLM intent classification."""
 
     intent: str = Field(
-        description="One of: actions, balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, planning, general"
+        description="One of: actions, payment, balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, planning, general"
     )
     confidence: float = Field(description="0.0 to 1.0 confidence in classification")
     parameters: dict = Field(
@@ -293,7 +296,8 @@ Intent codes (use these exactly):
 - affordability: "Can I afford...", "should I buy..." purchase questions
 - advice: "How can I save more", "improve my spending", "where am I overspending", "cut back" advice
 - auto_savings: Savings advice and micro-savings
-- opportunity: Product recommendations and offers
+- payment: Make a one-time peer-to-peer or bill payment
+- opportunity: Recommendations on optimizing expenses
 - planning: Scheduling, recurring payment setup, reminder/checklist planning requests
 - general: Non-financial questions or small talk
 

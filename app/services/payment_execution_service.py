@@ -16,6 +16,7 @@ from app.services.payment_settings_service import (
     get_or_create_payment_settings,
     verify_mpin,
 )
+from app.services.banking_client import trigger_transaction_sync, BankingClientError
 
 
 # Payment limits by verification status
@@ -232,10 +233,34 @@ def execute_generic_payment(
     idempotency_key = str(uuid4())
     error_reason = None
     try:
-        # TODO: Call MockBank integration here
-        # For now, assume transaction succeeds
-        mockbank_transaction_id = f"MB-{uuid4().hex[:16].upper()}"
+        # Pass the idempotency key in the payload for caching and deduplication
+        proxy_payload = {
+            "user_id": user_id,
+            "amount": payload.amount,
+            "type": "payment",
+            "merchant": beneficiary.identifier_value
+            or beneficiary.nickname
+            or "Unknown",
+            "description": payload.description or "Payment",
+            "category": "transfer",
+            "payment_rail": payload.payment_method.upper()
+            if payload.payment_method
+            else "UPI",
+            "idempotency_key": idempotency_key,
+        }
+
+        response = trigger_transaction_sync(proxy_payload)
+
+        # Extract the mockbank transaction ID from the proxy response
+        transaction_data = response.get("transaction") or {}
+        mockbank_transaction_id = str(
+            transaction_data.get("id") or f"MB-{uuid4().hex[:16].upper()}"
+        )
         transaction_status = "success"
+    except BankingClientError as e:
+        transaction_status = "failed"
+        error_reason = str(e)
+        mockbank_transaction_id = None
     except Exception as e:
         transaction_status = "failed"
         error_reason = str(e)

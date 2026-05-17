@@ -23,7 +23,9 @@ GRAY = "#F8FAFC"
 GRAY_STROKE = "#CBD5E1"
 
 
-def get_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+def get_font(
+    size: int, bold: bool = False
+) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     candidates = [
         ("C:/Windows/Fonts/aptos.ttf", False),
         ("C:/Windows/Fonts/aptosb.ttf", True),
@@ -74,14 +76,32 @@ class Canvas:
         self.height = height
         self.draw.text((width // 2, 36), title, font=FONT_26B, fill=TITLE, anchor="mm")
 
-    def section(self, x: int, y: int, w: int, h: int, title: str, subtitle: str) -> None:
-        self.draw.rounded_rectangle((x, y, x + w, y + h), radius=22, outline=GRAY_STROKE, width=3, fill=GRAY)
+    def section(
+        self, x: int, y: int, w: int, h: int, title: str, subtitle: str
+    ) -> None:
+        self.draw.rounded_rectangle(
+            (x, y, x + w, y + h), radius=22, outline=GRAY_STROKE, width=3, fill=GRAY
+        )
         self.draw.text((x + 18, y + 20), title, font=FONT_19B, fill=TITLE)
         self.draw.text((x + 18, y + 48), subtitle, font=FONT_12, fill=MUTED)
 
-    def box(self, x: int, y: int, w: int, h: int, title: str, bullets: list[str], fill: str, stroke: str) -> None:
-        self.draw.rounded_rectangle((x, y, x + w, y + h), radius=18, outline=stroke, width=3, fill=fill)
-        self.draw.text((x + w / 2, y + 24), title, font=FONT_17B, fill=TITLE, anchor="mm")
+    def box(
+        self,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        title: str,
+        bullets: list[str],
+        fill: str,
+        stroke: str,
+    ) -> None:
+        self.draw.rounded_rectangle(
+            (x, y, x + w, y + h), radius=18, outline=stroke, width=3, fill=fill
+        )
+        self.draw.text(
+            (x + w / 2, y + 24), title, font=FONT_17B, fill=TITLE, anchor="mm"
+        )
         yy = y + 50
         for bullet in bullets:
             lines = wrap(self.draw, bullet, FONT_13, w - 30)
@@ -97,7 +117,11 @@ class Canvas:
             lx = (x1 + x2) / 2
             ly = (y1 + y2) / 2 - 12
             tw = self.draw.textlength(label, font=FONT_11B)
-            self.draw.rounded_rectangle((lx - tw / 2 - 10, ly - 6, lx + tw / 2 + 10, ly + 14), radius=10, fill=WHITE)
+            self.draw.rounded_rectangle(
+                (lx - tw / 2 - 10, ly - 6, lx + tw / 2 + 10, ly + 14),
+                radius=10,
+                fill=WHITE,
+            )
             self.draw.text((lx, ly + 4), label, font=FONT_11B, fill=MUTED, anchor="mm")
 
     def note(self, x: int, y: int, text: str, width: int) -> None:
@@ -125,14 +149,107 @@ class Canvas:
 
 def overall() -> None:
     c = Canvas(1400, 900, "CareBank Overall System Architecture")
-    c.section(60, 90, 1280, 740, "End-to-End Platform", "Frontend, backend, MockBank, data stores, and provider integrations")
-    c.box(110, 190, 250, 180, "Frontend", ["React + Vite UI", "JWT login/session", "Dashboard, chat, planning", "Notifications and MPIN UX", "Optional SSE stream"], BLUE, BLUE_STROKE)
-    c.box(420, 140, 330, 270, "CareBank Backend", ["FastAPI routes and auth", "Coordinator + specialist agents", "Deterministic finance core", "Compliance guard", "Action engine + planning", "Admin and observability"], GREEN, GREEN_STROKE)
-    c.box(810, 190, 250, 180, "MockBank", ["Balances and transactions", "Policies and rail caps", "Products, schedules", "Beneficiaries and transfers", "Lifecycle webhooks"], AMBER, AMBER_STROKE)
-    c.box(1110, 190, 190, 180, "LLM Providers", ["OpenAI / Gemini", "Optional Ollama", "Text tasks only"], PINK, PINK_STROKE)
-    c.box(430, 520, 220, 140, "Postgres", ["Users, plans, actions", "sessions, audit logs", "transactions, pgvector"], BLUE, BLUE_STROKE)
-    c.box(720, 520, 220, 140, "Redis", ["Pub/Sub events", "SSE fanout", "Worker queue path"], BLUE, BLUE_STROKE)
-    c.box(1010, 520, 280, 140, "Webhook / Event Path", ["Queued, running, success", "failure, rollback", "Signed callback + reconcile"], AMBER, AMBER_STROKE)
+    c.section(
+        60,
+        90,
+        1280,
+        740,
+        "End-to-End Platform",
+        "Frontend, backend, MockBank, data stores, and provider integrations",
+    )
+    c.box(
+        110,
+        190,
+        250,
+        180,
+        "Frontend",
+        [
+            "React + Vite UI",
+            "JWT login/session",
+            "Dashboard, chat, planning",
+            "Notifications and MPIN UX",
+            "Optional SSE stream",
+        ],
+        BLUE,
+        BLUE_STROKE,
+    )
+    c.box(
+        420,
+        140,
+        330,
+        270,
+        "CareBank Backend",
+        [
+            "FastAPI routes and auth",
+            "Coordinator + specialist agents",
+            "Deterministic finance core",
+            "Compliance guard",
+            "Action engine + planning",
+            "Admin and observability",
+        ],
+        GREEN,
+        GREEN_STROKE,
+    )
+    c.box(
+        810,
+        190,
+        250,
+        180,
+        "MockBank",
+        [
+            "Balances and transactions",
+            "Policies and rail caps",
+            "Products, schedules",
+            "Beneficiaries and transfers",
+            "Lifecycle webhooks",
+        ],
+        AMBER,
+        AMBER_STROKE,
+    )
+    c.box(
+        1110,
+        190,
+        190,
+        180,
+        "LLM Providers",
+        ["OpenAI / Gemini", "Optional Ollama", "Text tasks only"],
+        PINK,
+        PINK_STROKE,
+    )
+    c.box(
+        430,
+        520,
+        220,
+        140,
+        "Postgres",
+        ["Users, plans, actions", "sessions, audit logs", "transactions, pgvector"],
+        BLUE,
+        BLUE_STROKE,
+    )
+    c.box(
+        720,
+        520,
+        220,
+        140,
+        "Redis",
+        ["Pub/Sub events", "SSE fanout", "Worker queue path"],
+        BLUE,
+        BLUE_STROKE,
+    )
+    c.box(
+        1010,
+        520,
+        280,
+        140,
+        "Webhook / Event Path",
+        [
+            "Queued, running, success",
+            "failure, rollback",
+            "Signed callback + reconcile",
+        ],
+        AMBER,
+        AMBER_STROKE,
+    )
     c.arrow(360, 280, 420, 280, "JWT API calls")
     c.arrow(750, 280, 810, 280, "Service JWT")
     c.arrow(1060, 280, 1110, 280, "NLG / classify")
@@ -145,14 +262,117 @@ def overall() -> None:
 
 def backend() -> None:
     c = Canvas(1500, 980, "CareBank Backend Architecture")
-    c.section(60, 90, 1380, 850, "Backend Layers", "FastAPI, orchestration, services, safety, persistence, and integrations")
-    c.box(100, 150, 270, 630, "HTTP / API Layer", ["Routes for auth, chat, actions", "planning, transactions, products", "notifications, admin, bot", "balances, schedules, profile"], BLUE, BLUE_STROKE)
-    c.box(430, 150, 250, 190, "Coordinator Agent", ["Intent classification", "Task planning", "LangGraph state", "Response synthesis"], GREEN, GREEN_STROKE)
-    c.box(430, 390, 250, 250, "Specialist Agents", ["Intelligence", "Opportunity", "Communication", "Auto-savings", "Tool registry"], GREEN, GREEN_STROKE)
-    c.box(740, 130, 300, 220, "Deterministic and Safety Core", ["Finance calculations", "Affordability and health score", "Compliance guard", "Redaction and disclosures"], AMBER, AMBER_STROKE)
-    c.box(740, 400, 300, 270, "Business Services", ["Action executor and policy", "Action request + idempotency", "Banking client", "Forecast, anomaly, NLG", "Planning and reminders", "Event dispatcher, MPIN"], PINK, PINK_STROKE)
-    c.box(1100, 170, 270, 180, "External Integrations", ["MockBank API", "Telegram webhook", "LLM providers"], AMBER, AMBER_STROKE)
-    c.box(1100, 430, 270, 180, "Persistence and Events", ["Postgres models", "Redis Pub/Sub and SSE", "Audit trail", "Worker path planned"], BLUE, BLUE_STROKE)
+    c.section(
+        60,
+        90,
+        1380,
+        850,
+        "Backend Layers",
+        "FastAPI, orchestration, services, safety, persistence, and integrations",
+    )
+    c.box(
+        100,
+        150,
+        270,
+        630,
+        "HTTP / API Layer",
+        [
+            "Routes for auth, chat, actions",
+            "planning, transactions, products",
+            "notifications, admin, bot",
+            "balances, schedules, profile",
+        ],
+        BLUE,
+        BLUE_STROKE,
+    )
+    c.box(
+        430,
+        150,
+        250,
+        190,
+        "Coordinator Agent",
+        [
+            "Intent classification",
+            "Task planning",
+            "LangGraph state",
+            "Response synthesis",
+        ],
+        GREEN,
+        GREEN_STROKE,
+    )
+    c.box(
+        430,
+        390,
+        250,
+        250,
+        "Specialist Agents",
+        [
+            "Intelligence",
+            "Opportunity",
+            "Communication",
+            "Auto-savings",
+            "Tool registry",
+        ],
+        GREEN,
+        GREEN_STROKE,
+    )
+    c.box(
+        740,
+        130,
+        300,
+        220,
+        "Deterministic and Safety Core",
+        [
+            "Finance calculations",
+            "Affordability and health score",
+            "Compliance guard",
+            "Redaction and disclosures",
+        ],
+        AMBER,
+        AMBER_STROKE,
+    )
+    c.box(
+        740,
+        400,
+        300,
+        270,
+        "Business Services",
+        [
+            "Action executor and policy",
+            "Action request + idempotency",
+            "Banking client",
+            "Forecast, anomaly, NLG",
+            "Planning and reminders",
+            "Event dispatcher, MPIN",
+        ],
+        PINK,
+        PINK_STROKE,
+    )
+    c.box(
+        1100,
+        170,
+        270,
+        180,
+        "External Integrations",
+        ["MockBank API", "Telegram webhook", "LLM providers"],
+        AMBER,
+        AMBER_STROKE,
+    )
+    c.box(
+        1100,
+        430,
+        270,
+        180,
+        "Persistence and Events",
+        [
+            "Postgres models",
+            "Redis Pub/Sub and SSE",
+            "Audit trail",
+            "Worker path planned",
+        ],
+        BLUE,
+        BLUE_STROKE,
+    )
     c.arrow(370, 250, 430, 240, "Validated request")
     c.arrow(555, 340, 555, 390, "Route tasks")
     c.arrow(680, 240, 740, 240, "Exact math")
@@ -167,13 +387,80 @@ def backend() -> None:
 
 def frontend() -> None:
     c = Canvas(1400, 860, "CareBank Frontend Architecture")
-    c.section(60, 90, 1280, 700, "Client Application", "Web UI structure and integration with the backend")
-    c.box(100, 220, 220, 150, "Entry Shell", ["Vite bootstrap", "Navigation shell", "Environment config"], BLUE, BLUE_STROKE)
-    c.box(390, 150, 260, 190, "Authentication UX", ["Login / onboarding", "JWT storage", "MPIN setup / verify"], GREEN, GREEN_STROKE)
-    c.box(390, 400, 260, 230, "Feature Screens", ["Dashboard and health", "Chat and recommendations", "Simulation", "Planning / checklist", "Transactions and alerts"], GREEN, GREEN_STROKE)
-    c.box(720, 150, 280, 190, "API Client Layer", ["REST calls to backend", "JWT headers", "Response normalization"], AMBER, AMBER_STROKE)
-    c.box(720, 410, 280, 170, "Realtime Updates", ["Optional EventSource/SSE", "Live nudges", "Notification refresh"], AMBER, AMBER_STROKE)
-    c.box(1080, 260, 220, 200, "CareBank Backend", ["Auth", "Chat", "Planning", "Actions", "Events"], PINK, PINK_STROKE)
+    c.section(
+        60,
+        90,
+        1280,
+        700,
+        "Client Application",
+        "Web UI structure and integration with the backend",
+    )
+    c.box(
+        100,
+        220,
+        220,
+        150,
+        "Entry Shell",
+        ["Vite bootstrap", "Navigation shell", "Environment config"],
+        BLUE,
+        BLUE_STROKE,
+    )
+    c.box(
+        390,
+        150,
+        260,
+        190,
+        "Authentication UX",
+        ["Login / onboarding", "JWT storage", "MPIN setup / verify"],
+        GREEN,
+        GREEN_STROKE,
+    )
+    c.box(
+        390,
+        400,
+        260,
+        230,
+        "Feature Screens",
+        [
+            "Dashboard and health",
+            "Chat and recommendations",
+            "Simulation",
+            "Planning / checklist",
+            "Transactions and alerts",
+        ],
+        GREEN,
+        GREEN_STROKE,
+    )
+    c.box(
+        720,
+        150,
+        280,
+        190,
+        "API Client Layer",
+        ["REST calls to backend", "JWT headers", "Response normalization"],
+        AMBER,
+        AMBER_STROKE,
+    )
+    c.box(
+        720,
+        410,
+        280,
+        170,
+        "Realtime Updates",
+        ["Optional EventSource/SSE", "Live nudges", "Notification refresh"],
+        AMBER,
+        AMBER_STROKE,
+    )
+    c.box(
+        1080,
+        260,
+        220,
+        200,
+        "CareBank Backend",
+        ["Auth", "Chat", "Planning", "Actions", "Events"],
+        PINK,
+        PINK_STROKE,
+    )
     c.arrow(320, 295, 390, 245, "Boot / auth")
     c.arrow(320, 295, 390, 500, "Route to screens")
     c.arrow(650, 245, 720, 245, "JWT REST")
@@ -181,19 +468,111 @@ def frontend() -> None:
     c.arrow(1000, 245, 1080, 315, "REST")
     c.arrow(1000, 490, 1080, 390, "SSE")
     c.arrow(1080, 440, 650, 610, "Push updates")
-    c.note(100, 710, "Frontend repo was not available in this workspace, so this diagram reflects the interfaces documented in the backend architecture and the open IDE context.", 1180)
+    c.note(
+        100,
+        710,
+        "Frontend repo was not available in this workspace, so this diagram reflects the interfaces documented in the backend architecture and the open IDE context.",
+        1180,
+    )
     c.save("03-frontend-architecture.png")
 
 
 def mockbank() -> None:
     c = Canvas(1450, 900, "MockBank Architecture")
-    c.section(60, 90, 1330, 740, "Banking Simulation Layer", "Execution, policies, lifecycle states, and webhook delivery")
-    c.box(100, 280, 220, 150, "CareBank Backend", ["Trusted client", "Short-lived service JWT", "Fetches and actions"], BLUE, BLUE_STROKE)
-    c.box(390, 150, 300, 220, "MockBank API", ["Accounts and balances", "Transactions and products", "Beneficiaries and schedules", "Transfer trigger endpoints"], AMBER, AMBER_STROKE)
-    c.box(390, 470, 300, 220, "Policy Engine", ["Rail limits and action caps", "Verification and cooldowns", "Funds checks", "Idempotency enforcement"], GREEN, GREEN_STROKE)
-    c.box(760, 150, 280, 220, "Transaction Lifecycle", ["queued -> running -> success", "failure / reversal", "Settlement metadata", "Replay-safe ids"], PINK, PINK_STROKE)
-    c.box(760, 470, 280, 220, "Webhook Delivery", ["HMAC signed callbacks", "Retry with backoff", "Dead-letter replay path", "Backend reconciliation"], PINK, PINK_STROKE)
-    c.box(1110, 300, 220, 210, "MockBank Storage", ["Current mock persistence", "Schedules", "Beneficiaries", "Dead-letter records", "Postgres path planned"], BLUE, BLUE_STROKE)
+    c.section(
+        60,
+        90,
+        1330,
+        740,
+        "Banking Simulation Layer",
+        "Execution, policies, lifecycle states, and webhook delivery",
+    )
+    c.box(
+        100,
+        280,
+        220,
+        150,
+        "CareBank Backend",
+        ["Trusted client", "Short-lived service JWT", "Fetches and actions"],
+        BLUE,
+        BLUE_STROKE,
+    )
+    c.box(
+        390,
+        150,
+        300,
+        220,
+        "MockBank API",
+        [
+            "Accounts and balances",
+            "Transactions and products",
+            "Beneficiaries and schedules",
+            "Transfer trigger endpoints",
+        ],
+        AMBER,
+        AMBER_STROKE,
+    )
+    c.box(
+        390,
+        470,
+        300,
+        220,
+        "Policy Engine",
+        [
+            "Rail limits and action caps",
+            "Verification and cooldowns",
+            "Funds checks",
+            "Idempotency enforcement",
+        ],
+        GREEN,
+        GREEN_STROKE,
+    )
+    c.box(
+        760,
+        150,
+        280,
+        220,
+        "Transaction Lifecycle",
+        [
+            "queued -> running -> success",
+            "failure / reversal",
+            "Settlement metadata",
+            "Replay-safe ids",
+        ],
+        PINK,
+        PINK_STROKE,
+    )
+    c.box(
+        760,
+        470,
+        280,
+        220,
+        "Webhook Delivery",
+        [
+            "HMAC signed callbacks",
+            "Retry with backoff",
+            "Dead-letter replay path",
+            "Backend reconciliation",
+        ],
+        PINK,
+        PINK_STROKE,
+    )
+    c.box(
+        1110,
+        300,
+        220,
+        210,
+        "MockBank Storage",
+        [
+            "Current mock persistence",
+            "Schedules",
+            "Beneficiaries",
+            "Dead-letter records",
+            "Postgres path planned",
+        ],
+        BLUE,
+        BLUE_STROKE,
+    )
     c.arrow(320, 355, 390, 270, "Fetch / execute")
     c.arrow(540, 370, 540, 470, "Validate")
     c.arrow(690, 260, 760, 260, "Approved txn")
@@ -206,18 +585,95 @@ def mockbank() -> None:
 
 def flow() -> None:
     c = Canvas(1600, 950, "CareBank Operational Flow")
-    c.section(60, 90, 1480, 800, "Transaction-to-Nudge and Action Flow", "How events, analysis, approval, execution, and user updates move through the system")
+    c.section(
+        60,
+        90,
+        1480,
+        800,
+        "Transaction-to-Nudge and Action Flow",
+        "How events, analysis, approval, execution, and user updates move through the system",
+    )
     items = [
-        (110, 220, "1. User or Bank Event", ["App request or new", "bank transaction arrives"], BLUE, BLUE_STROKE),
-        (380, 220, "2. Backend Intake", ["JWT validated", "user_id scoped", "request routed"], GREEN, GREEN_STROKE),
-        (650, 220, "3. Coordinator Planning", ["Intent classified", "tasks decomposed", "agent path chosen"], GREEN, GREEN_STROKE),
-        (920, 220, "4. Data Retrieval", ["Fetch balances,", "transactions, products,", "policies"], AMBER, AMBER_STROKE),
-        (1190, 220, "5. Analysis Layer", ["Forecasting / anomaly", "deterministic math"], PINK, PINK_STROKE),
-        (1190, 560, "6. Decision Output", ["Nudge, warning,", "plan, or proposal"], BLUE, BLUE_STROKE),
-        (920, 560, "7. Approval Gate", ["Ask user or apply", "policy threshold"], AMBER, AMBER_STROKE),
-        (650, 560, "8. Action Execution", ["Action engine triggers", "MockBank transfer"], GREEN, GREEN_STROKE),
-        (380, 560, "9. Webhook Reconcile", ["Signed lifecycle", "updates reconciled"], PINK, PINK_STROKE),
-        (110, 560, "10. User Update", ["REST/SSE response", "audit trail persisted"], BLUE, BLUE_STROKE),
+        (
+            110,
+            220,
+            "1. User or Bank Event",
+            ["App request or new", "bank transaction arrives"],
+            BLUE,
+            BLUE_STROKE,
+        ),
+        (
+            380,
+            220,
+            "2. Backend Intake",
+            ["JWT validated", "user_id scoped", "request routed"],
+            GREEN,
+            GREEN_STROKE,
+        ),
+        (
+            650,
+            220,
+            "3. Coordinator Planning",
+            ["Intent classified", "tasks decomposed", "agent path chosen"],
+            GREEN,
+            GREEN_STROKE,
+        ),
+        (
+            920,
+            220,
+            "4. Data Retrieval",
+            ["Fetch balances,", "transactions, products,", "policies"],
+            AMBER,
+            AMBER_STROKE,
+        ),
+        (
+            1190,
+            220,
+            "5. Analysis Layer",
+            ["Forecasting / anomaly", "deterministic math"],
+            PINK,
+            PINK_STROKE,
+        ),
+        (
+            1190,
+            560,
+            "6. Decision Output",
+            ["Nudge, warning,", "plan, or proposal"],
+            BLUE,
+            BLUE_STROKE,
+        ),
+        (
+            920,
+            560,
+            "7. Approval Gate",
+            ["Ask user or apply", "policy threshold"],
+            AMBER,
+            AMBER_STROKE,
+        ),
+        (
+            650,
+            560,
+            "8. Action Execution",
+            ["Action engine triggers", "MockBank transfer"],
+            GREEN,
+            GREEN_STROKE,
+        ),
+        (
+            380,
+            560,
+            "9. Webhook Reconcile",
+            ["Signed lifecycle", "updates reconciled"],
+            PINK,
+            PINK_STROKE,
+        ),
+        (
+            110,
+            560,
+            "10. User Update",
+            ["REST/SSE response", "audit trail persisted"],
+            BLUE,
+            BLUE_STROKE,
+        ),
     ]
     for x, y, title, lines, fill, stroke in items:
         c.box(x, y, 220, 120, title, lines, fill, stroke)
@@ -230,7 +686,12 @@ def flow() -> None:
     c.arrow(920, 620, 870, 620)
     c.arrow(650, 620, 600, 620)
     c.arrow(380, 620, 330, 620)
-    c.note(970, 760, "If no action is required, the system can return from step 6 directly to the user with advice only. If approval is needed, the action engine pauses at step 7 until the user confirms.", 500)
+    c.note(
+        970,
+        760,
+        "If no action is required, the system can return from step 6 directly to the user with advice only. If approval is needed, the action engine pauses at step 7 until the user confirms.",
+        500,
+    )
     c.save("05-operational-flow.png")
 
 
