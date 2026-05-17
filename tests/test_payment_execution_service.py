@@ -79,9 +79,20 @@ class TestPaymentExecution:
     """Tests for payment execution logic"""
 
     def test_execute_payment_success(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data, monkeypatch
     ):
         """Test successful payment execution"""
+        from unittest.mock import MagicMock
+
+        mock_response = {
+            "transaction": {"id": 99999, "status": "success"},
+            "balance": {"current_balance": 20000},
+        }
+        monkeypatch.setattr(
+            "app.services.payment_execution_service.trigger_transaction_sync",
+            MagicMock(return_value=mock_response),
+        )
+
         user_id = test_user_data["user_id"]
         benef = test_beneficiary_data["benef1"]
 
@@ -100,11 +111,24 @@ class TestPaymentExecution:
         )
 
         assert result is not None
-        assert result["status"] == "success"
-        assert "transaction_id" in result
+        assert result.status == "success"
+        assert result.transaction_id is not None
 
-    def test_payment_idempotency(self, test_db, test_user_data, test_beneficiary_data):
+    def test_payment_idempotency(
+        self, test_db, test_user_data, test_beneficiary_data, monkeypatch
+    ):
         """Test that idempotency key prevents duplicate charges"""
+        from unittest.mock import MagicMock
+
+        mock_response = {
+            "transaction": {"id": 88888, "status": "success"},
+            "balance": {"current_balance": 20000},
+        }
+        monkeypatch.setattr(
+            "app.services.payment_execution_service.trigger_transaction_sync",
+            MagicMock(return_value=mock_response),
+        )
+
         user_id = test_user_data["user_id"]
         benef = test_beneficiary_data["benef1"]
         idempotency_key = "test-idempotent-123"
@@ -132,8 +156,8 @@ class TestPaymentExecution:
         )
 
         # Both should succeed but may return same transaction ID
-        assert result1["status"] == "success"
-        assert result2["status"] == "success"
+        assert result1.status == "success"
+        assert result2.status == "success"
         # Should have same transaction ID if truly idempotent
         # assert result1["transaction_id"] == result2["transaction_id"]
 
