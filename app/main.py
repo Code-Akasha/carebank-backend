@@ -29,6 +29,8 @@ from app.routes.payment_settings import router as payment_settings_router
 from app.routes.payments import router as payments_router
 from app.routes.recurring_payments import router as recurring_payments_router
 from app.routes.auto_savings import router as auto_savings_router
+from app.routes.service_plans import router as service_plans_router
+from app.routes.business_bills import router as business_bills_router
 from app.core.database import init_db
 from app.core.config import get_settings
 
@@ -115,6 +117,8 @@ app.include_router(payment_settings_router)
 app.include_router(payments_router)
 app.include_router(recurring_payments_router)
 app.include_router(auto_savings_router)
+app.include_router(service_plans_router)
+app.include_router(business_bills_router)
 
 
 @app.get("/")
