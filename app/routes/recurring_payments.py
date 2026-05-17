@@ -148,3 +148,18 @@ async def delete_recurring_payment(
     """
     delete_recurring_payment_rule(db, current_user.user_id, rule_id)
     return {"message": "Recurring payment rule deleted successfully"}
+
+
+@router.post("/{rule_id}/execute")
+async def execute_recurring_payment_now(
+    rule_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Manually trigger a recurring payment execution."""
+    # Verify the rule belongs to the user
+    rule = get_recurring_payment_rule(db, current_user.user_id, rule_id)
+    from app.services.recurring_scheduler import schedule_manual_recurring_execution
+
+    schedule_manual_recurring_execution(str(rule.id), delay_seconds=0)
+    return {"message": "Recurring payment execution scheduled successfully"}

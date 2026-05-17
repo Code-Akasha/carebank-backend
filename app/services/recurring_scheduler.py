@@ -130,7 +130,63 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
         # Check if requires_approval
         if rule.requires_approval:
             logger.info(
-                f"Recurring rule {rule.id} requires approval, skipping auto-execution"
+                f"Recurring rule {rule.id} requires approval, creating action request"
+            )
+            from app.models.action_request import ActionRequest
+            from app.services.idempotency import hash_payload
+            from datetime import timedelta
+
+            action_type = "pay_bill"
+            if rule.category == "rent":
+                action_type = "pay_rent"
+            elif rule.category == "gas":
+                action_type = "pay_gas"
+            elif rule.category in ["saving", "investment"]:
+                action_type = "transfer_savings"
+
+            payload = {
+                "amount": float(rule.amount),
+                "description": rule.description,
+                "category": rule.category,
+                "source_type": "recurring_rule",
+                "source_id": rule.id,
+                "due_date": rule.next_run_date.isoformat()
+                if rule.next_run_date
+                else None,
+            }
+
+            idemp_key = f"recurring_{rule.id}_{rule.next_run_date.isoformat()}"
+            existing = (
+                db.query(ActionRequest)
+                .filter(
+                    ActionRequest.idempotency_key == idemp_key,
+                    ActionRequest.user_id == rule.user_id,
+                )
+                .first()
+            )
+
+            if not existing:
+                req = ActionRequest(
+                    user_id=rule.user_id,
+                    action_type=action_type,
+                    action_payload_json=payload,
+                    policy_snapshot_json={
+                        "allowed": True,
+                        "requires_approval": True,
+                        "reason": "recurring_rule",
+                    },
+                    status="pending",
+                    idempotency_key=idemp_key,
+                    request_hash=hash_payload(payload),
+                    expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+                )
+                db.add(req)
+
+            rule.next_run_date = calculate_next_run_date(
+                rule.frequency,
+                rule.day_of_month,
+                rule.day_of_week,
+                datetime.now(timezone.utc),
             )
             rule.updated_at = datetime.now(timezone.utc)
             db.commit()
