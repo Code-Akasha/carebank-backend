@@ -16,6 +16,7 @@ from app.core.security import (
 from app.models.user import User
 from app.models.business_profile import BusinessProfile
 from app.models.beneficiary import Beneficiary
+from app.models.admin_action_log import AdminActionLog
 from app.services.banking_client import get_banking_client
 from app.services.mpin_service import set_mpin
 
@@ -32,6 +33,13 @@ class RegisterRequest(BaseModel):
     business_name: str | None = None
     business_category: str | None = None
     business_description: str | None = None
+
+
+class BootstrapSuperAdminRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+    phone_number: str | None = None
 
 
 class LoginRequest(BaseModel):
@@ -76,6 +84,10 @@ def _generate_user_id(db: Session) -> str:
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Could not allocate a unique user ID",
     )
+
+
+def _has_admin_user(db: Session) -> bool:
+    return db.query(User).filter(User.role == "admin").first() is not None
 
 
 @router.post(
@@ -154,6 +166,78 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
         logging.getLogger(__name__).warning(
             "Proxy profile seeding failed for %s (non-fatal): %s", user_id, exc
+        )
+
+    token = create_access_token(
+        {"user_id": user.user_id, "email": user.email, "role": user.role}
+    )
+    return TokenResponse(
+        access_token=token,
+        user_id=user.user_id,
+        role=user.role,
+        full_name=user.full_name,
+    )
+
+
+@router.post(
+    "/bootstrap-super-admin",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def bootstrap_super_admin(
+    body: BootstrapSuperAdminRequest,
+    db: Session = Depends(get_db),
+):
+    if _has_admin_user(db):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Super admin already exists",
+        )
+
+    existing = db.query(User).filter(User.email == body.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+        )
+
+    user_id = _generate_user_id(db)
+    user = User(
+        user_id=user_id,
+        email=body.email,
+        password_hash=hash_password(body.password),
+        full_name=body.full_name,
+        role="admin",
+        account_type="personal",
+        phone_number=body.phone_number,
+        is_active=True,
+    )
+    db.add(user)
+
+    db.add(
+        AdminActionLog(
+            admin_user_id=user_id,
+            action_type="bootstrap_super_admin",
+            resource_type="user",
+            resource_id=user_id,
+            environment=None,
+            before_value=None,
+            after_value=f"email={body.email}, role=admin, full_name={body.full_name}",
+            status="success",
+        )
+    )
+    db.commit()
+    db.refresh(user)
+
+    try:
+        client = get_banking_client()
+        await client.create_profile(user_id, balance=25000.0)
+    except Exception as exc:
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "Proxy profile seeding failed for bootstrap admin %s (non-fatal): %s",
+            user_id,
+            exc,
         )
 
     token = create_access_token(
