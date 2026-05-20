@@ -38,6 +38,7 @@ services:
       PROXY_WEBHOOK_SECRET: ${PROXY_WEBHOOK_SECRET:-supersecret123}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      PROXY_DATABASE_URL: postgresql://carebank:${DB_PASSWORD:-carebank_pwd}@postgres:5432/carebank_db
       PROXY_DB_PATH: /data/agentic_proxy.db
       PYTHONUNBUFFERED: 1
     ports:

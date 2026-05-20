@@ -31,6 +31,7 @@ if [ ! -f "$PROXY_DIR/.env" ]; then
 GEMINI_API_KEY=
 BANKING_API_SECRET=supersecret123
 PROXY_WEBHOOK_SECRET=supersecret123
+PROXY_DATABASE_URL=
 PROXY_DB_PATH=./agentic_proxy.db
 EOT
 fi
@@ -74,6 +75,10 @@ load_env_file "$PROXY_DIR/.env"
 : "${PG_SUPERUSER_PORT:=$DB_PORT}"
 : "${PG_SUPERUSER_USER:=postgres}"
 : "${PG_SUPERUSER_DB:=postgres}"
+if [ -z "${PROXY_DATABASE_URL:-}" ] && [ -n "${DB_HOST:-}" ] && [ -n "${DB_PORT:-}" ] && [ -n "${DB_USER:-}" ] && [ -n "${DB_PASSWORD:-}" ] && [ -n "${DB_NAME:-}" ]; then
+  PROXY_DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
+  export PROXY_DATABASE_URL
+fi
 if [ -z "${PG_SUPERUSER_PASSWORD:-}" ] && [ -n "${DB_PASSWORD:-}" ]; then
   PG_SUPERUSER_PASSWORD="$DB_PASSWORD"
   export PG_SUPERUSER_PASSWORD
@@ -116,7 +121,7 @@ if [ "$RUN_PROXY" = "1" ]; then
 fi
 
 if [ "$RUN_PROXY" = "1" ] && [ -d "$PROXY_DIR/.venv" ]; then
-  (cd "$PROXY_DIR" && uv pip install -q python-dotenv google-generativeai httpx pyjwt)
+  (cd "$PROXY_DIR" && uv pip install -q python-dotenv google-generativeai httpx pyjwt psycopg2-binary)
 fi
 
 echo "Initialising database tables..."
