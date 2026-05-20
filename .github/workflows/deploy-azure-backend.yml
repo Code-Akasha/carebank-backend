@@ -50,7 +50,8 @@ jobs:
             if az containerapp update \
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
-              --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}; then
+              --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+              --set-env-vars DB_SCHEMA_MODE=alembic; then
               exit 0
             fi
 

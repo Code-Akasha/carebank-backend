@@ -101,7 +101,7 @@ services:
       DB_USER: carebank
       DB_PASSWORD: ${DB_PASSWORD:-carebank_pwd}
       DB_NAME: carebank_db
-      DB_SCHEMA_MODE: create_all
+      DB_SCHEMA_MODE: alembic
       REDIS_URL: redis://redis:6379
       BANKING_API_URL: http://agentic-proxy:8001
       BANKING_API_SECRET: ${BANKING_API_SECRET:-supersecret123}

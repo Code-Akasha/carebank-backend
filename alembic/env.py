@@ -33,7 +33,11 @@ import app.models.idempotency_record  # noqa: F401
 config = context.config
 
 # Override sqlalchemy.url from app settings (env-based)
-config.set_main_option("sqlalchemy.url", get_settings().get_database_url())
+# Set the SQLAlchemy URL from runtime settings.
+# Escape '%' characters so ConfigParser in Alembic does not attempt interpolation
+# when URLs contain percent-encoded characters (e.g. passwords with special chars).
+url = get_settings().get_database_url()
+config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
