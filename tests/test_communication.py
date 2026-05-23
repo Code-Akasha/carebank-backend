@@ -64,6 +64,20 @@ class TestNLGService:
         assert result["provider"] == "template_fallback"
         assert "fits your budget" in result["text"].lower()
 
+    def test_template_fallback_greeting(self, monkeypatch):
+        monkeypatch.setattr(
+            "app.services.nlg.get_llm_provider",
+            lambda *args, **kwargs: (None, "template_fallback"),
+        )
+        result = generate_response(
+            "Social Spender",
+            "User query: hi",
+            "Provide a helpful, personalized response summarizing the data.",
+        )
+        assert result["provider"] == "template_fallback"
+        assert "what would you like to check" in result["text"].lower()
+        assert "user query: hi" not in result["text"].lower()
+
 
 # ── Compliance Guard Tests ────────────────────────────────────────────
 

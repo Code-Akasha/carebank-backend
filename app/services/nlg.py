@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 from langchain_core.prompts import PromptTemplate
@@ -19,6 +20,17 @@ PERSONA_PROMPT_MAP = {
 }
 
 DEFAULT_PERSONA = PERSONA_PROMPT_MAP["Balanced Manager"]
+
+_GREETING_QUERIES = {
+    "hi",
+    "hello",
+    "hey",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "thanks",
+    "thank you",
+}
 
 BASE_PROMPT = """You are a helpful financial assistant for CareBank.
 
@@ -92,7 +104,7 @@ def _template_fallback(
     task_description: str,
 ) -> dict[str, Any]:
     """Fallback generator when LLMs fail or are misconfigured. Avoids hallucinating data."""
-    structured = _structured_fallback_text(data_context)
+    structured = _structured_fallback_text(persona, data_context)
     if structured:
         return {
             "text": structured,
@@ -135,15 +147,75 @@ def _template_fallback(
     }
 
 
-def _structured_fallback_text(data_context: str) -> str | None:
+def _generate_conversational_reply(
+    persona: str,
+    user_query: str,
+) -> dict[str, Any] | None:
+    llm, provider = get_llm_provider(
+        temperature=0.4,
+        max_tokens=160,
+    )
+    if not llm:
+        return None
+
+    prompt = PromptTemplate.from_template(
+        """You are a helpful financial assistant for CareBank.
+
+Persona: {persona}
+User message: {user_query}
+
+Reply with a short, friendly, natural answer. Do not mention policies or internal systems. Keep it to 1-2 sentences.
+""",
+    )
+    chain = prompt | llm
+
+    try:
+        response = chain.invoke({"persona": persona, "user_query": user_query})
+        model_name, tokens_used = _extract_generation_metadata(provider, response)
+        return {
+            "text": response.content.strip(),
+            "provider": provider,
+            "persona": persona,
+            "model": model_name,
+            "tokens": tokens_used,
+        }
+    except Exception as exc:
+        logger.warning("Conversational LLM fallback failed: %s", exc)
+        return None
+
+
+def _structured_fallback_text(persona: str, data_context: str) -> str | None:
     payload = _parse_json_like_context(data_context)
     if payload is None:
-        if isinstance(data_context, str) and data_context.startswith("User query:"):
-            query = data_context.split("User query:", 1)[1].strip().rstrip('"')
-            return (
-                f"I can help with that. For example, ask me about your balance, upcoming bills, transactions, or whether you can afford a purchase. "
-                f"If you meant '{query}', try phrasing it a little more directly."
-            )
+        if isinstance(data_context, str):
+            normalized_context = data_context.strip()
+            if (
+                len(normalized_context) >= 2
+                and normalized_context[0] == '"'
+                and normalized_context[-1] == '"'
+            ):
+                normalized_context = normalized_context[1:-1]
+
+            if normalized_context.startswith("User query:"):
+                query = (
+                    normalized_context.split("User query:", 1)[1].strip().rstrip('"')
+                )
+                normalized_query = re.sub(r"\s+", " ", query.lower()).strip(" .!?,")
+                if normalized_query in _GREETING_QUERIES:
+                    reply = _generate_conversational_reply(persona, query)
+                    if reply:
+                        return reply["text"]
+                return (
+                    "Hi! I can help with balances, transactions, spending, savings, or payments. "
+                    "What would you like to check?"
+                )
+                reply = _generate_conversational_reply(persona, query)
+                if reply:
+                    return reply["text"]
+                return (
+                    "I can help with balances, upcoming bills, transactions, or whether you can afford a purchase. "
+                    f"If you meant '{query}', please ask a bit more specifically."
+                )
         return None
 
     metadata = _extract_primary_metadata(payload)
