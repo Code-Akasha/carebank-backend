@@ -160,6 +160,7 @@ _register_agents()
 
 _INTENT_TO_AGENT: dict[str, str] = {
     "actions": "CommunicationAgent",
+    "advice": "IntelligenceAgent",
     "balance": "IntelligenceAgent",
     "forecast": "IntelligenceAgent",
     "health_score": "IntelligenceAgent",
