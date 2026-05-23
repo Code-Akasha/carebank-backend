@@ -78,6 +78,23 @@ def _normalize_provider_type(provider_type: str | None) -> str:
     return "ollama"
 
 
+def _build_gemini_llm(
+    api_key: str,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+):
+    """Construct a ChatGoogleGenerativeAI instance."""
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
+    return ChatGoogleGenerativeAI(
+        model=model,
+        google_api_key=api_key,
+        temperature=temperature,
+        max_output_tokens=max_tokens,
+    )
+
+
 def _get_llm_config_from_db(environment: str) -> dict | None:
     """Retrieve runtime Ollama configuration from database for a given environment.
     Returns None if no active config is found.
@@ -140,15 +157,12 @@ def _build_llm_from_admin_config(config: dict, temperature: float, max_tokens: i
     if provider_type == "gemini":
         if not token:
             return None, "template_fallback"
-        from langchain_google_genai import ChatGoogleGenerativeAI
-
-        llm = ChatGoogleGenerativeAI(
-            model=model or "gemini-2.5-flash",
-            google_api_key=token,
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-        )
-        return llm, f"gemini:{model or 'gemini-2.5-flash'}"
+        try:
+            llm = _build_gemini_llm(token, model or "gemini-2.5-flash", temperature, max_tokens)
+            return llm, f"gemini:{model or 'gemini-2.5-flash'}"
+        except ImportError:
+            logger.warning("langchain-google-genai not installed")
+            return None, "template_fallback"
 
     if provider_type == "openai":
         if not token:
@@ -306,16 +320,18 @@ def get_llm_provider(
         except Exception as e:
             logger.warning(f"Ollama initialization failed: {e}")
 
-    # 3. Try Gemini API
+    # 3. Try Gemini API (fallback when Ollama is unavailable)
     if settings.gemini_api_key:
         try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
-
-            llm = ChatGoogleGenerativeAI(
-                model=gemini_model,
-                google_api_key=settings.gemini_api_key,
-                temperature=temperature,
-                max_output_tokens=max_tokens,
+            llm = _build_gemini_llm(
+                settings.gemini_api_key,
+                gemini_model,
+                temperature,
+                max_tokens,
+            )
+            logger.info(
+                "🔁 Gemini fallback activated (Ollama unavailable) — using %s",
+                gemini_model,
             )
             return llm, f"gemini:{gemini_model}"
         except ImportError:
