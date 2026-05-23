@@ -1,6 +1,5 @@
 [tool.ruff]
 # Use project defaults; ruff binary in .venv will read this config
-line-length = 88
 
 [tool.ruff.lint]
 # Many test files intentionally use pytest fixtures, bare `assert`, and have
@@ -20,4 +19,5 @@ per-file-ignores = {"tests/**.py" = [
  ]}
 
 [tool.ruff.format]
-line-length = 88
+# left intentionally minimal to avoid compatibility issues with older ruff
+# versions in CI; formatting defaults will be used.
