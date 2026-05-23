@@ -1,0 +1,23 @@
+[tool.ruff]
+# Use project defaults; ruff binary in .venv will read this config
+line-length = 88
+
+[tool.ruff.lint]
+# Many test files intentionally use pytest fixtures, bare `assert`, and have
+# minimal docstrings/annotations. Silence noisy checks in tests only so CI
+# linter run focuses on production code logic while preserving test behavior.
+per-file-ignores = {"tests/**.py" = [
+  "S101", # use of assert (allowed in tests)
+  "ANN001", # missing type annotation for function arg in tests
+  "ANN201", # missing return type annotation for test functions
+  "ANN202", # missing return type for private helpers in tests
+  "D100", "D103", # missing docstrings in test modules/functions
+  "PLR2004", # magic number comparisons in tests
+  "COM812", # trailing comma fixes in tests
+  "PLW0108", # lambda may be unnecessary (tests often use small lambdas)
+  "ARG001", # unused function arg (common in test fixtures)
+  "INP001"  # implicit namespace package warnings for tests folder
+ ]}
+
+[tool.ruff.format]
+line-length = 88
