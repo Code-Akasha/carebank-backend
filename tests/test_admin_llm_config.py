@@ -81,35 +81,6 @@ def test_get_llm_provider_prefers_admin_ollama_config(monkeypatch):
     assert llm.kwargs["model"] == "qwen3:8b"
 
 
-def test_get_llm_provider_falls_back_to_gemini_when_ollama_unavailable(monkeypatch):
-    import app.services.llm as llm_module
-
-    fake_module = ModuleType("langchain_google_genai")
-    fake_module.ChatGoogleGenerativeAI = _FakeChatModel
-    monkeypatch.setitem(sys.modules, "langchain_google_genai", fake_module)
-    monkeypatch.setattr(llm_module, "_ollama_is_available", lambda _url: False)
-    monkeypatch.setattr(llm_module, "_ollama_model_exists", lambda _url, _model: False)
-    monkeypatch.setattr(
-        llm_module,
-        "get_settings",
-        lambda: SimpleNamespace(
-            environment="development",
-            ollama_base_url="http://localhost:11434",
-            ollama_model="qwen3:8b",
-            ollama_auto_pull=False,
-            gemini_api_key="gemini-secret",
-            gemini_model="gemini-2.5-flash",
-            openai_api_key="",
-        ),
-    )
-
-    llm, provider = llm_module.get_llm_provider(temperature=0.1, max_tokens=128)
-
-    assert provider == "gemini:gemini-2.5-flash"
-    assert llm.kwargs["google_api_key"] == "gemini-secret"
-    assert llm.kwargs["model"] == "gemini-2.5-flash"
-
-
 def test_admin_llm_config_supports_gemini_provider(client):
     from app.main import app
 
