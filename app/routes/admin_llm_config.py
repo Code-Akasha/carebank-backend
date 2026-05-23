@@ -9,6 +9,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.crypto import get_encryption_manager
 from app.core.database import SessionLocal
 from app.core.security import get_current_user, require_admin
@@ -24,7 +25,7 @@ from app.schemas.admin_llm import (
 )
 from app.services.agent_prompt_service import AgentPromptService
 from app.services.llm_admin_service import LLMAdminService
-from app.services.llm_model_discovery import LLMModelDiscoveryService
+from app.services.llm_model_discovery import GeminiModelDiscovery, LLMModelDiscoveryService
 
 logger = logging.getLogger(__name__)
 
@@ -150,24 +151,45 @@ async def test_tunnel_connectivity(
         )
 
         if not config.is_active or not config.tunnel_url:
+            provider_type = LLMAdminService.get_config_provider_type(config)
+            # Gemini can work without a tunnel_url if a token is configured
+            if provider_type != "gemini" or not config.tunnel_auth_token_encrypted:
+                return ConnectivityTestResult(
+                    status="error",
+                    error="Tunnel not configured or inactive for this environment",
+                )
+
+        provider_type = LLMAdminService.get_config_provider_type(config)
+
+        if provider_type == "gemini":
+            # Resolve API key: DB token takes priority, then env var
+            api_key = LLMAdminService.get_decrypted_token(config)
+            if not api_key:
+                settings = get_settings()
+                api_key = settings.gemini_api_key
+            if not api_key:
+                return ConnectivityTestResult(
+                    status="error",
+                    error="No Gemini API key configured (set tunnel_auth_token or GEMINI_API_KEY env var)",
+                )
+            test_result = GeminiModelDiscovery.test_connectivity(api_key)
+            LLMAdminService.record_connectivity_check(
+                db, config, test_result.get("status") == "ok", test_result.get("error")
+            )
+            return ConnectivityTestResult(**test_result)
+
+        if provider_type != "ollama":
             return ConnectivityTestResult(
                 status="error",
-                error="Tunnel not configured or inactive for this environment",
+                error=f"Connectivity test not supported for provider: {provider_type}",
             )
 
-        if LLMAdminService.get_config_provider_type(config) != "ollama":
-            return ConnectivityTestResult(
-                status="error",
-                error="Connectivity test is only available for local Ollama providers",
-            )
-
-        # Perform connectivity test
+        # Ollama connectivity test
         test_result = await LLMModelDiscoveryService.test_connectivity(
             config.tunnel_url,
             timeout_sec=config.request_timeout_sec,
         )
 
-        # Record the result
         is_success = test_result.get("status") == "ok"
         error_msg = test_result.get("error")
         LLMAdminService.record_connectivity_check(db, config, is_success, error_msg)
@@ -187,14 +209,18 @@ async def test_tunnel_connectivity(
 
 
 @router.get("/models", response_model=ModelListResponse)
-async def list_ollama_models(
+async def list_llm_models(
     environment: str,
     current_user: dict = Depends(get_current_user),
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ModelListResponse:
-    """List available Ollama models from configured tunnel for an environment.
-    Results are cached for 60 seconds.
+    """List available LLM models for the configured provider in an environment.
+
+    - **Ollama**: fetches model list from the tunnel endpoint.
+    - **Gemini**: fetches model list via the google-genai SDK (filtered to
+      models that support generateContent).
+    Results are cached in memory.
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
@@ -203,19 +229,39 @@ async def list_ollama_models(
             current_user.user_id,
         )
 
-        if LLMAdminService.get_config_provider_type(config) != "ollama":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Model discovery is only available for local Ollama providers",
+        provider_type = LLMAdminService.get_config_provider_type(config)
+
+        if provider_type == "gemini":
+            # Resolve API key: DB token first, then env var fallback
+            api_key = LLMAdminService.get_decrypted_token(config)
+            if not api_key:
+                settings = get_settings()
+                api_key = settings.gemini_api_key
+            if not api_key:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No Gemini API key configured (set tunnel_auth_token or GEMINI_API_KEY env var)",
+                )
+            gemini_models = GeminiModelDiscovery.list_models(api_key)
+            model_list = [m.to_dict() for m in gemini_models]
+            return ModelListResponse(
+                models=model_list,
+                model_count=len(model_list),
             )
 
+        if provider_type != "ollama":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Model discovery is not supported for provider: {provider_type}",
+            )
+
+        # Ollama path
         if not config.is_active or not config.tunnel_url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Tunnel not configured or inactive for this environment",
             )
 
-        # Discover models
         models = await LLMModelDiscoveryService.discover_models(
             config.tunnel_url,
             timeout_sec=config.request_timeout_sec,
@@ -275,7 +321,7 @@ async def get_prompt_history(
     Includes both active and inactive versions.
     """
     try:
-        history = await AgentPromptService.get_prompt_history(
+        history = AgentPromptService.get_prompt_history(
             db,
             agent_name,
             environment,
