@@ -160,7 +160,8 @@ def list_recurring_payment_rules(
 
     # Order by next_run_date, then by creation date
     query = query.order_by(
-        RecurringPaymentRule.next_run_date, RecurringPaymentRule.created_at,
+        RecurringPaymentRule.next_run_date,
+        RecurringPaymentRule.created_at,
     )
 
     return query.all()
@@ -456,7 +457,10 @@ def calculate_next_run_date(
                 - timedelta(days=1)
             ).day
             next_date = datetime(
-                year, month, min(day_of_month, last_day_next_month), tzinfo=timezone.utc,
+                year,
+                month,
+                min(day_of_month, last_day_next_month),
+                tzinfo=timezone.utc,
             )
 
         return next_date.date()
@@ -481,7 +485,10 @@ def calculate_next_run_date(
                 - timedelta(days=1)
             ).day
             next_date = datetime(
-                year, month, min(day_of_month, last_day), tzinfo=timezone.utc,
+                year,
+                month,
+                min(day_of_month, last_day),
+                tzinfo=timezone.utc,
             )
 
         return next_date.date()

@@ -14,7 +14,11 @@ class PaymentSettings(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(
-        String, ForeignKey("users.user_id"), unique=True, index=True, nullable=False,
+        String,
+        ForeignKey("users.user_id"),
+        unique=True,
+        index=True,
+        nullable=False,
     )
 
     # MPIN & Security
@@ -23,22 +27,26 @@ class PaymentSettings(Base):
     # Approval Thresholds
     mpin_threshold = Column(Float, default=50000.0)  # Amount above which MPIN required
     auto_approve_trusted = Column(
-        Boolean, default=True,
+        Boolean,
+        default=True,
     )  # Auto-approve trusted beneficiaries within threshold
 
     # Daily Limits
     daily_limit = Column(
-        Float, default=1000000.0,
+        Float,
+        default=1000000.0,
     )  # Max total per day across all payments
     daily_limit_used_date = Column(DateTime)  # When daily limit was last reset
     daily_limit_used = Column(Float, default=0.0)  # Amount used today
 
     # Recurring Payment Limits
     recurring_payment_max = Column(
-        Float, default=100000.0,
+        Float,
+        default=100000.0,
     )  # Max amount per recurring cycle
     max_active_recurring_rules = Column(
-        Integer, default=10,
+        Integer,
+        default=10,
     )  # Max number of active recurring rules
 
     # Transaction Limits (by verification status)

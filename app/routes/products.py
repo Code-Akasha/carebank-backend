@@ -66,7 +66,8 @@ async def get_bank_policies() -> dict:
         return await client.get_banking_policies()
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}",
+            status_code=503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
 
@@ -78,7 +79,8 @@ async def get_bank_plans() -> dict:
         return await client.get_bank_plans()
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}",
+            status_code=503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
 
@@ -90,7 +92,8 @@ async def list_products(db: Session = Depends(get_db)) -> list:
         products = await client.get_products()
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}",
+            status_code=503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     normalized_products = [_normalize_product(record) for record in products]

@@ -183,7 +183,9 @@ def discover_bill_candidates(
         if rule.id in checklist_rule_ids_included:
             continue
         if not _matches_action_type(
-            normalized_type, category=rule.category, title=rule.title,
+            normalized_type,
+            category=rule.category,
+            title=rule.title,
         ):
             continue
 

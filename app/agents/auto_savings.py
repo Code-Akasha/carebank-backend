@@ -58,7 +58,8 @@ class AutoSavingsAgent(BaseAgent):
             surplus = predicted_balance - safety_threshold
             suggested_amount = min(transfer_cap, int(surplus * savings_ratio))
             goal_progress = self._estimate_goal_progress(
-                profile, suggested_amount=suggested_amount,
+                profile,
+                suggested_amount=suggested_amount,
             )
 
             if suggested_amount >= 50:
@@ -93,7 +94,8 @@ class AutoSavingsAgent(BaseAgent):
                 "intent_handled": "auto_savings",
                 "suggested_amount": 0,
                 "goal_progress": self._estimate_goal_progress(
-                    profile, suggested_amount=0,
+                    profile,
+                    suggested_amount=0,
                 ),
                 "safety_threshold": safety_threshold,
                 "savings_ratio": savings_ratio,
@@ -110,7 +112,9 @@ class AutoSavingsAgent(BaseAgent):
             return get_transactions_sync(user_id=user_id)
         except BankingClientError as exc:
             logger.warning(
-                "AutoSavingsAgent fallback transactions for %s: %s", user_id, exc,
+                "AutoSavingsAgent fallback transactions for %s: %s",
+                user_id,
+                exc,
             )
             return generate_mock_transactions(user_id, days=90)
 
@@ -127,7 +131,9 @@ class AutoSavingsAgent(BaseAgent):
             return get_accounts_sync(user_id)
         except BankingClientError as exc:
             logger.warning(
-                "AutoSavingsAgent fallback accounts for %s: %s", user_id, exc,
+                "AutoSavingsAgent fallback accounts for %s: %s",
+                user_id,
+                exc,
             )
             return [
                 {
@@ -138,7 +144,9 @@ class AutoSavingsAgent(BaseAgent):
             ]
 
     def _derive_safety_threshold(
-        self, accounts: list[dict], profile: UserProfile | None,
+        self,
+        accounts: list[dict],
+        profile: UserProfile | None,
     ) -> float:
         if not accounts:
             profile_floor = float(profile.min_safe_balance) if profile else 5000.0
@@ -148,7 +156,8 @@ class AutoSavingsAgent(BaseAgent):
             accounts[0],
         )
         available = checking.get("available_balance") or checking.get(
-            "current_balance", 0.0,
+            "current_balance",
+            0.0,
         )
         dynamic_floor = max(3000.0, available * 0.3)
         profile_floor = float(profile.min_safe_balance) if profile else 0.0
@@ -165,7 +174,9 @@ class AutoSavingsAgent(BaseAgent):
         return 500
 
     def _estimate_goal_progress(
-        self, profile: UserProfile | None, suggested_amount: float,
+        self,
+        profile: UserProfile | None,
+        suggested_amount: float,
     ) -> float:
         if not profile:
             return 0.60

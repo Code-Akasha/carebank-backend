@@ -33,7 +33,9 @@ class AgentPromptService:
 
     @staticmethod
     async def get_active_prompt(
-        db: Session, agent_name: str, environment: str,
+        db: Session,
+        agent_name: str,
+        environment: str,
     ) -> AgentPromptConfig | None:
         """Retrieve the active (published) prompt for an agent in an environment.
         Returns None if no active prompt is configured.
@@ -50,7 +52,9 @@ class AgentPromptService:
 
     @staticmethod
     async def get_prompt_history(
-        db: Session, agent_name: str, environment: str,
+        db: Session,
+        agent_name: str,
+        environment: str,
     ) -> list[AgentPromptConfig]:
         """Retrieve all versions (active and inactive) of a prompt for an agent/env.
         Ordered by version descending (newest first).
@@ -90,7 +94,9 @@ class AgentPromptService:
 
         # Get current active version to determine next version number
         active_prompt = await AgentPromptService.get_active_prompt(
-            db, agent_name, environment,
+            db,
+            agent_name,
+            environment,
         )
         next_version = (active_prompt.version + 1) if active_prompt else 1
 
@@ -149,7 +155,9 @@ class AgentPromptService:
         """
         # Get current active version
         active_prompt = await AgentPromptService.get_active_prompt(
-            db, agent_name, environment,
+            db,
+            agent_name,
+            environment,
         )
         if not active_prompt:
             raise ValueError(
@@ -209,8 +217,7 @@ class AgentPromptService:
 
     @staticmethod
     def get_available_agents(db: Session) -> list[str]:
-        """Get list of unique agent names that have prompts configured.
-        """
+        """Get list of unique agent names that have prompts configured."""
         agents = db.query(AgentPromptConfig.agent_name).distinct().all()
         return [agent[0] for agent in agents]
 
@@ -229,7 +236,9 @@ class AgentPromptService:
 
         for agent_name, default_prompt in default_agents.items():
             existing = await AgentPromptService.get_active_prompt(
-                db, agent_name, environment,
+                db,
+                agent_name,
+                environment,
             )
             if not existing:
                 prompt = AgentPromptConfig(

@@ -77,7 +77,8 @@ def apply_planned_chat_action(
 
         object_label = object_map.get(requested_action_type, "bill")
         action_label = label_map.get(
-            requested_action_type, requested_action_type.replace("_", " "),
+            requested_action_type,
+            requested_action_type.replace("_", " "),
         )
 
         def _format_amount(value: Any) -> str:
@@ -653,7 +654,8 @@ def apply_planned_chat_action(
             "transfer_savings": "transfer to savings",
         }
         action_label = label_map.get(
-            tool_action_type, tool_action_type.replace("_", " "),
+            tool_action_type,
+            tool_action_type.replace("_", " "),
         )
         amount_str = f"₹{amount:,.2f}" if amount > 0 else ""
 
@@ -740,7 +742,9 @@ def apply_planned_chat_action(
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning(
-                "execute_direct_payment failed for %s: %s", current_user.user_id, exc,
+                "execute_direct_payment failed for %s: %s",
+                current_user.user_id,
+                exc,
             )
             return (
                 f"I tried to process your payment, but it failed. Reason: {exc}",

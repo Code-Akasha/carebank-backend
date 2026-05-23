@@ -16,14 +16,19 @@ class AdminActionLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     admin_user_id = Column(
-        String, nullable=False, index=True,
+        String,
+        nullable=False,
+        index=True,
     )  # user_id of admin performing action
     action_type = Column(
-        String, nullable=False, index=True,
+        String,
+        nullable=False,
+        index=True,
     )  # e.g., "llm_config_update", "prompt_publish", "prompt_rollback"
     resource_type = Column(String, nullable=False)  # e.g., "tunnel", "prompt", "model"
     resource_id = Column(
-        String, nullable=True,
+        String,
+        nullable=True,
     )  # e.g., "coordinator" for agent name, or tunnel id
     environment = Column(String, nullable=True, index=True)  # "dev" | "stage" | "prod"
 
@@ -37,7 +42,10 @@ class AdminActionLog(Base):
 
     # Metadata
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True,
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True,
     )
 
     # Index for fast audit trail queries by admin user and time

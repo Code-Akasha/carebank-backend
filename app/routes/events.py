@@ -67,7 +67,8 @@ async def _event_stream(user_id: str) -> AsyncGenerator[str, None]:
             if pubsub:
                 try:
                     message = await pubsub.get_message(
-                        ignore_subscribe_messages=True, timeout=1.0,
+                        ignore_subscribe_messages=True,
+                        timeout=1.0,
                     )
                     if message and message.get("type") == "message":
                         raw = message.get("data")

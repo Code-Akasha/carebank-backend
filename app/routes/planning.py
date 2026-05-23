@@ -38,7 +38,9 @@ router = APIRouter(prefix="/api/planning", tags=["planning"])
 
 
 @router.post(
-    "/plans", response_model=FinancialPlanResponse, status_code=status.HTTP_201_CREATED,
+    "/plans",
+    response_model=FinancialPlanResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 def create_plan(
     body: FinancialPlanCreate,

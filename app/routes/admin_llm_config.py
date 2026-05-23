@@ -82,7 +82,9 @@ async def get_tunnel_config(
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user.user_id,
+            db,
+            environment,
+            current_user.user_id,
         )
         return _serialize_config(config)
     except Exception as e:
@@ -142,7 +144,9 @@ async def test_tunnel_connectivity(
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user.user_id,
+            db,
+            environment,
+            current_user.user_id,
         )
 
         if not config.is_active or not config.tunnel_url:
@@ -194,7 +198,9 @@ async def list_ollama_models(
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user.user_id,
+            db,
+            environment,
+            current_user.user_id,
         )
 
         if LLMAdminService.get_config_provider_type(config) != "ollama":
@@ -241,8 +247,7 @@ async def list_all_prompts(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> PromptListResponse:
-    """List all active agent prompts across all environments.
-    """
+    """List all active agent prompts across all environments."""
     try:
         prompts = db.query(AgentPromptConfig).filter(AgentPromptConfig.is_active).all()
 
@@ -271,7 +276,9 @@ async def get_prompt_history(
     """
     try:
         history = await AgentPromptService.get_prompt_history(
-            db, agent_name, environment,
+            db,
+            agent_name,
+            environment,
         )
 
         return PromptListResponse(
@@ -334,8 +341,7 @@ async def rollback_agent_prompt(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> AgentPromptConfigResponse:
-    """Rollback an agent prompt to a specific previous version in an environment.
-    """
+    """Rollback an agent prompt to a specific previous version in an environment."""
     try:
         rolled_back = await AgentPromptService.rollback_prompt(
             db,

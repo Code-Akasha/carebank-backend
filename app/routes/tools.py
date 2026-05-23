@@ -70,7 +70,8 @@ def get_available_tools():
                 description=f"Execute {action_type} action",
                 payload_schema=schema_dict,
                 requires_approval=metadata.get("requires_approval", {}).get(
-                    action_type, False,
+                    action_type,
+                    False,
                 ),
                 max_amount=metadata.get("max_amount_per_action", {}).get(action_type),
                 default_merchant=defaults.get("merchant"),

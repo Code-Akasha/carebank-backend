@@ -21,7 +21,8 @@ def _clear_admin_users() -> None:
 def test_bootstrap_super_admin_allows_first_admin(client, monkeypatch):
     _clear_admin_users()
     monkeypatch.setattr(
-        "app.routes.auth.get_banking_client", lambda: _BootstrapBankingClient(),
+        "app.routes.auth.get_banking_client",
+        lambda: _BootstrapBankingClient(),
     )
 
     response = client.post(
@@ -57,7 +58,8 @@ def test_bootstrap_super_admin_allows_first_admin(client, monkeypatch):
 def test_bootstrap_super_admin_is_one_time_only(client, monkeypatch):
     _clear_admin_users()
     monkeypatch.setattr(
-        "app.routes.auth.get_banking_client", lambda: _BootstrapBankingClient(),
+        "app.routes.auth.get_banking_client",
+        lambda: _BootstrapBankingClient(),
     )
 
     first_response = client.post(

@@ -1,7 +1,6 @@
-"""Unit tests for payment_execution_service.py
-"""
+"""Unit tests for payment_execution_service.py."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -15,24 +14,32 @@ from app.services.payment_execution_service import (
 
 @pytest.mark.unit
 class TestPaymentValidation:
-    """Tests for payment validation logic"""
+    """Tests for payment validation logic."""
 
     def test_validate_payment_success(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test successful payment validation"""
         user_id = test_user_data["user_id"]
 
         # Test that method validation passes for UPI
         is_available, error = validate_payment_method_available(
-            db=test_db, user_id=user_id, payment_method="upi",
+            db=test_db,
+            user_id=user_id,
+            payment_method="upi",
         )
 
         assert is_available
         assert error is None
 
     def test_validate_payment_invalid_amount(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test validation with invalid amount"""
         user_id = test_user_data["user_id"]
@@ -51,7 +58,10 @@ class TestPaymentValidation:
         assert error is not None
 
     def test_validate_payment_exceeds_daily_limit(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test validation when daily limit exceeded"""
         # This test verifies the validation logic exists
@@ -60,14 +70,19 @@ class TestPaymentValidation:
         assert callable(validate_payment_method_available)
 
     def test_validate_payment_unverified_beneficiary(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test validation with unverified beneficiary"""
         user_id = test_user_data["user_id"]
 
         # Test that validation functions handle unverified cases
         is_available, error = validate_payment_method_available(
-            db=test_db, user_id=user_id, payment_method="account",
+            db=test_db,
+            user_id=user_id,
+            payment_method="account",
         )
 
         # Either available or has a specific error
@@ -76,10 +91,14 @@ class TestPaymentValidation:
 
 @pytest.mark.unit
 class TestPaymentExecution:
-    """Tests for payment execution logic"""
+    """Tests for payment execution logic."""
 
     def test_execute_payment_success(
-        self, test_db, test_user_data, test_beneficiary_data, monkeypatch,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
+        monkeypatch,
     ):
         """Test successful payment execution"""
         from unittest.mock import MagicMock
@@ -115,7 +134,11 @@ class TestPaymentExecution:
         assert result.transaction_id is not None
 
     def test_payment_idempotency(
-        self, test_db, test_user_data, test_beneficiary_data, monkeypatch,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
+        monkeypatch,
     ):
         """Test that idempotency key prevents duplicate charges"""
         from unittest.mock import MagicMock
@@ -164,7 +187,7 @@ class TestPaymentExecution:
 
 @pytest.mark.unit
 class TestPaymentHistory:
-    """Tests for payment history operations"""
+    """Tests for payment history operations."""
 
     def test_get_payment_history(self, test_db, test_user_data):
         """Test retrieving payment history"""
@@ -184,7 +207,10 @@ class TestPaymentHistory:
         assert isinstance(history, list)
 
     def test_calculate_daily_spent(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test calculating daily spent amount"""
         from app.models.payment_history import PaymentHistory
@@ -201,8 +227,8 @@ class TestPaymentHistory:
                 amount=10000,
                 payment_method="upi",
                 status="success",
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
             test_db.add(payment)
         test_db.commit()
@@ -220,7 +246,10 @@ class TestPaymentHistory:
         assert daily_spent == 30000  # 3 payments of ₹10k
 
     def test_calculate_daily_spent_excludes_failed(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test that failed payments don't count toward daily spent"""
         from app.models.payment_history import PaymentHistory
@@ -237,8 +266,8 @@ class TestPaymentHistory:
             payment_method="upi",
             status="failed",
             error_reason="Insufficient funds",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
 
         # Add successful payment
@@ -249,8 +278,8 @@ class TestPaymentHistory:
             amount=10000,
             payment_method="upi",
             status="success",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
 
         test_db.add_all([payment_failed, payment_success])
@@ -272,21 +301,21 @@ class TestPaymentHistory:
 
 @pytest.mark.unit
 class TestPaymentLimits:
-    """Tests for payment amount limits"""
+    """Tests for payment amount limits."""
 
     def test_upi_limit_verified(self, test_db, test_user_data, test_beneficiary_data):
-        """Test UPI limit for verified users is ₹2-5L"""
+        """Test UPI limit for verified users is ₹2-5L."""
         # UPI verified limit: ₹2-5L
         # This is enforced in validation
 
     def test_account_limit_verified(self, test_db, test_user_data):
-        """Test account limit for verified users is ₹5-1L"""
+        """Test account limit for verified users is ₹5-1L."""
         # Account transfer limit: ₹5-1L
 
     def test_daily_limit_enforcement(self, test_db, test_user_data):
-        """Test that daily limit is enforced"""
+        """Test that daily limit is enforced."""
         # Daily limit: ₹10L
 
     def test_recurring_payment_limit(self, test_db, test_user_data):
-        """Test recurring payment limit is ₹1L per cycle"""
+        """Test recurring payment limit is ₹1L per cycle."""
         # Recurring limit: ₹1L per recurring cycle

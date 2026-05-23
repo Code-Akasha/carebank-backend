@@ -69,10 +69,12 @@ async def admin_list_users(
         }
         if u.user_id in bulk_balances:
             entry["current_balance"] = bulk_balances[u.user_id].get(
-                "current_balance", 0.0,
+                "current_balance",
+                0.0,
             )
             entry["available_balance"] = bulk_balances[u.user_id].get(
-                "available_balance", 0.0,
+                "available_balance",
+                0.0,
             )
             return entry
         try:
@@ -98,7 +100,8 @@ async def admin_get_user(
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
         )
 
     client = get_banking_client()

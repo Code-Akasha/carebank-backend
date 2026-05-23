@@ -39,7 +39,8 @@ def create_plan(
 def list_plans(
     current_user: Annotated[User, Depends(get_current_user)],
     business_user_id: str | None = Query(
-        None, description="Filter by business user ID",
+        None,
+        description="Filter by business user ID",
     ),
     active_only: bool = Query(True),
     db: Session = Depends(get_db),

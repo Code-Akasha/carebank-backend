@@ -17,7 +17,9 @@ class User(Base):
     full_name = Column(String, nullable=True, default="")
     role = Column(String, default="user", nullable=False)
     account_type = Column(
-        String, default="personal", nullable=False,
+        String,
+        default="personal",
+        nullable=False,
     )  # "personal" or "business"
     is_active = Column(Boolean, default=True, nullable=False)
 

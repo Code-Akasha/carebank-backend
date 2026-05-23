@@ -32,7 +32,8 @@ def create_bill(db: Session, business_user_id: str, payload: BillCreate) -> dict
     target = db.query(User).filter(User.user_id == payload.target_user_id).first()
     if not target:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Target user not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target user not found",
         )
 
     # Resolve plan name and amount
@@ -106,7 +107,9 @@ def create_bill(db: Session, business_user_id: str, payload: BillCreate) -> dict
 
 
 def list_bills_issued(
-    db: Session, business_user_id: str, status_filter: str | None = None,
+    db: Session,
+    business_user_id: str,
+    status_filter: str | None = None,
 ) -> list[dict]:
     """List bills issued by a business."""
     query = db.query(Bill).filter(Bill.business_user_id == business_user_id)
@@ -123,7 +126,9 @@ def list_bills_issued(
 
 
 def list_bills_received(
-    db: Session, user_id: str, status_filter: str | None = None,
+    db: Session,
+    user_id: str,
+    status_filter: str | None = None,
 ) -> list[dict]:
     """List bills received by a user."""
     query = db.query(Bill).filter(Bill.target_user_id == user_id)
@@ -153,7 +158,8 @@ def pay_bill(
     bill = db.query(Bill).filter(Bill.id == bill_id).first()
     if not bill:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Bill not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bill not found",
         )
     if bill.target_user_id != user_id:
         raise HTTPException(
@@ -170,7 +176,8 @@ def pay_bill(
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
         )
 
     mpin_result = verify_mpin(db=db, current_user=user, mpin=mpin)
@@ -246,11 +253,13 @@ def cancel_bill(db: Session, business_user_id: str, bill_id: int) -> dict:
     bill = db.query(Bill).filter(Bill.id == bill_id).first()
     if not bill:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Bill not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bill not found",
         )
     if bill.business_user_id != business_user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not your bill",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not your bill",
         )
     if bill.status != "pending":
         raise HTTPException(

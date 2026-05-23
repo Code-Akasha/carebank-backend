@@ -14,10 +14,16 @@ class Bill(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     business_user_id = Column(
-        String, ForeignKey("users.user_id"), index=True, nullable=False,
+        String,
+        ForeignKey("users.user_id"),
+        index=True,
+        nullable=False,
     )
     target_user_id = Column(
-        String, ForeignKey("users.user_id"), index=True, nullable=False,
+        String,
+        ForeignKey("users.user_id"),
+        index=True,
+        nullable=False,
     )
     service_plan_id = Column(Integer, ForeignKey("service_plans.id"), nullable=True)
 
@@ -30,7 +36,9 @@ class Bill(Base):
 
     # Status tracking
     status = Column(
-        String, default="pending", nullable=False,
+        String,
+        default="pending",
+        nullable=False,
     )  # pending, paid, cancelled, overdue
     due_date = Column(Date, nullable=True)
     paid_at = Column(DateTime, nullable=True)

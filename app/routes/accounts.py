@@ -23,7 +23,10 @@ class AccountCreateRequest(BaseModel):
 
 
 def _persist_accounts(
-    db: Session, records: list[dict], *, default_user_id: str | None = None,
+    db: Session,
+    records: list[dict],
+    *,
+    default_user_id: str | None = None,
 ) -> None:
     if not records:
         return
@@ -41,15 +44,18 @@ def _persist_accounts(
             account.currency = record.get("currency", account.currency)
             account.institution = record.get("institution", account.institution)
             account.current_balance = record.get(
-                "current_balance", account.current_balance,
+                "current_balance",
+                account.current_balance,
             )
             account.available_balance = record.get(
-                "available_balance", account.available_balance,
+                "available_balance",
+                account.available_balance,
             )
             account.status = record.get("status", account.status)
             account.provider_id = record.get("provider_id", account.provider_id)
             account.last_statement_date = record.get(
-                "last_statement_date", account.last_statement_date,
+                "last_statement_date",
+                account.last_statement_date,
             )
         else:
             db.add(
@@ -81,7 +87,8 @@ async def list_accounts(
         records = await client.get_accounts(current_user.user_id)
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}",
+            status_code=503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     _persist_accounts(db, records, default_user_id=current_user.user_id)

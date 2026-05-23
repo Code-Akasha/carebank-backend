@@ -303,10 +303,12 @@ async def reconcile_action_executions(
 async def mockbank_lifecycle_webhook(
     request: Request,
     x_carebank_signature: Annotated[
-        str | None, Header(alias="X-CareBank-Signature"),
+        str | None,
+        Header(alias="X-CareBank-Signature"),
     ] = None,
     x_carebank_timestamp: Annotated[
-        str | None, Header(alias="X-CareBank-Timestamp"),
+        str | None,
+        Header(alias="X-CareBank-Timestamp"),
     ] = None,
     db: Session = Depends(get_db),
 ):
@@ -317,7 +319,8 @@ async def mockbank_lifecycle_webhook(
         timestamp=x_carebank_timestamp,
     ):
         raise HTTPException(
-            status_code=401, detail="Invalid MockBank webhook signature",
+            status_code=401,
+            detail="Invalid MockBank webhook signature",
         )
 
     try:

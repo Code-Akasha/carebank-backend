@@ -1,5 +1,4 @@
-"""Pydantic schemas for Admin LLM Configuration API contracts.
-"""
+"""Pydantic schemas for Admin LLM Configuration API contracts."""
 
 from datetime import datetime
 from typing import Literal
@@ -32,7 +31,10 @@ class LLMTunnelConfigCreate(BaseModel):
         description="Default model to use for the selected provider",
     )
     request_timeout_sec: int = Field(
-        default=30, ge=5, le=300, description="HTTP request timeout in seconds",
+        default=30,
+        ge=5,
+        le=300,
+        description="HTTP request timeout in seconds",
     )
 
     @model_validator(mode="after")
@@ -77,7 +79,8 @@ class LLMTunnelConfigResponse(BaseModel):
     provider_type: str
     tunnel_url: str
     tunnel_auth_token_masked: str | None = Field(
-        None, description="Masked token (e.g., '****...****') for display purposes",
+        None,
+        description="Masked token (e.g., '****...****') for display purposes",
     )
     ollama_model_default: str
     request_timeout_sec: int
@@ -128,11 +131,13 @@ class ConnectivityTestResult(BaseModel):
     """Result of a connectivity test to Ollama instance."""
 
     status: str = Field(
-        ..., description="'ok' if connection successful, 'error' if failed",
+        ...,
+        description="'ok' if connection successful, 'error' if failed",
     )
     models_count: int | None = Field(None, description="Number of models discovered")
     response_time_ms: float | None = Field(
-        None, description="Response time in milliseconds",
+        None,
+        description="Response time in milliseconds",
     )
     error: str | None = Field(None, description="Error message if status is 'error'")
 
@@ -146,10 +151,14 @@ class AgentPromptConfigCreate(BaseModel):
     """Request schema for creating/updating an agent prompt."""
 
     system_prompt: str = Field(
-        ..., description="System prompt template for the agent", max_length=50000,
+        ...,
+        description="System prompt template for the agent",
+        max_length=50000,
     )
     notes: str | None = Field(
-        None, description="Admin notes about this prompt version", max_length=1000,
+        None,
+        description="Admin notes about this prompt version",
+        max_length=1000,
     )
 
     @field_validator("system_prompt")
@@ -215,7 +224,8 @@ class ErrorResponse(BaseModel):
     code: str = Field(..., description="Error code (e.g., 'llm_tunnel_unavailable')")
     message: str = Field(..., description="User-friendly error message")
     remediation: str | None = Field(
-        None, description="Admin-actionable remediation steps",
+        None,
+        description="Admin-actionable remediation steps",
     )
 
 

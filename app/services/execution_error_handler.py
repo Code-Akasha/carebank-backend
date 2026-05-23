@@ -35,7 +35,8 @@ class ExecutionErrorMessage:
 
 
 def format_execution_error(
-    exc: Exception, action_type: str | None = None,
+    exc: Exception,
+    action_type: str | None = None,
 ) -> ExecutionErrorMessage:
     """Convert an exception into a user-friendly error message.
 

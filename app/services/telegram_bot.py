@@ -30,7 +30,10 @@ class TelegramBot:
     # ------------------------------------------------------------------
 
     async def set_webhook(
-        self, url: str, *, secret_token: str | None = None,
+        self,
+        url: str,
+        *,
+        secret_token: str | None = None,
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "url": url,

@@ -31,17 +31,20 @@ def upgrade() -> None:
     op.drop_table("payment_history")
 
     op.drop_index(
-        op.f("ix_recurring_payment_rules_id"), table_name="recurring_payment_rules",
+        op.f("ix_recurring_payment_rules_id"),
+        table_name="recurring_payment_rules",
     )
     op.drop_index(
         op.f("ix_recurring_payment_rules_next_run_date"),
         table_name="recurring_payment_rules",
     )
     op.drop_index(
-        op.f("ix_recurring_payment_rules_status"), table_name="recurring_payment_rules",
+        op.f("ix_recurring_payment_rules_status"),
+        table_name="recurring_payment_rules",
     )
     op.drop_index(
-        op.f("ix_recurring_payment_rules_user_id"), table_name="recurring_payment_rules",
+        op.f("ix_recurring_payment_rules_user_id"),
+        table_name="recurring_payment_rules",
     )
     op.drop_table("recurring_payment_rules")
 
@@ -78,7 +81,10 @@ def downgrade() -> None:
         sa.Column("next_run_date", sa.DATE(), autoincrement=False, nullable=False),
         sa.Column("status", sa.VARCHAR(), autoincrement=False, nullable=True),
         sa.Column(
-            "requires_approval", sa.BOOLEAN(), autoincrement=False, nullable=True,
+            "requires_approval",
+            sa.BOOLEAN(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column("total_executions", sa.INTEGER(), autoincrement=False, nullable=True),
         sa.Column(
@@ -88,16 +94,28 @@ def downgrade() -> None:
             nullable=True,
         ),
         sa.Column(
-            "last_execution_status", sa.VARCHAR(), autoincrement=False, nullable=True,
+            "last_execution_status",
+            sa.VARCHAR(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column(
-            "last_failure_reason", sa.VARCHAR(), autoincrement=False, nullable=True,
+            "last_failure_reason",
+            sa.VARCHAR(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column(
-            "created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "created_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column(
-            "updated_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "updated_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
             ["beneficiary_id"],
@@ -142,29 +160,50 @@ def downgrade() -> None:
         sa.Column("nickname", sa.VARCHAR(), autoincrement=False, nullable=True),
         sa.Column("identifier_type", sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column(
-            "identifier_value", sa.VARCHAR(), autoincrement=False, nullable=False,
+            "identifier_value",
+            sa.VARCHAR(),
+            autoincrement=False,
+            nullable=False,
         ),
         sa.Column("is_verified", sa.BOOLEAN(), autoincrement=False, nullable=True),
         sa.Column("is_trusted", sa.BOOLEAN(), autoincrement=False, nullable=True),
         sa.Column(
-            "verification_method", sa.VARCHAR(), autoincrement=False, nullable=True,
+            "verification_method",
+            sa.VARCHAR(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column(
-            "verified_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "verified_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column("category", sa.VARCHAR(), autoincrement=False, nullable=True),
         sa.Column(
-            "last_used_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "last_used_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column("payment_count", sa.INTEGER(), autoincrement=False, nullable=True),
         sa.Column(
-            "linked_carebank_user_id", sa.VARCHAR(), autoincrement=False, nullable=True,
+            "linked_carebank_user_id",
+            sa.VARCHAR(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column(
-            "created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "created_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column(
-            "updated_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "updated_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
             ["linked_carebank_user_id"],
@@ -172,12 +211,17 @@ def downgrade() -> None:
             name=op.f("beneficiaries_linked_carebank_user_id_fkey"),
         ),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["users.user_id"], name=op.f("beneficiaries_user_id_fkey"),
+            ["user_id"],
+            ["users.user_id"],
+            name=op.f("beneficiaries_user_id_fkey"),
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("beneficiaries_pkey")),
     )
     op.create_index(
-        op.f("ix_beneficiaries_user_id"), "beneficiaries", ["user_id"], unique=False,
+        op.f("ix_beneficiaries_user_id"),
+        "beneficiaries",
+        ["user_id"],
+        unique=False,
     )
     op.create_index(op.f("ix_beneficiaries_id"), "beneficiaries", ["id"], unique=False)
     op.create_table(
@@ -195,7 +239,10 @@ def downgrade() -> None:
         sa.Column("payment_type", sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column("payment_method", sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column(
-            "recurring_rule_id", sa.INTEGER(), autoincrement=False, nullable=True,
+            "recurring_rule_id",
+            sa.INTEGER(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column("status", sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column(
@@ -205,12 +252,18 @@ def downgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "mockbank_transaction_id", sa.VARCHAR(), autoincrement=False, nullable=True,
+            "mockbank_transaction_id",
+            sa.VARCHAR(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column("error_reason", sa.VARCHAR(), autoincrement=False, nullable=True),
         sa.Column("idempotency_key", sa.VARCHAR(), autoincrement=False, nullable=True),
         sa.Column(
-            "created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "created_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
             ["beneficiary_id"],
@@ -223,7 +276,9 @@ def downgrade() -> None:
             name=op.f("payment_history_recurring_rule_id_fkey"),
         ),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["users.user_id"], name=op.f("payment_history_user_id_fkey"),
+            ["user_id"],
+            ["users.user_id"],
+            name=op.f("payment_history_user_id_fkey"),
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("payment_history_pkey")),
         sa.UniqueConstraint(
@@ -234,13 +289,22 @@ def downgrade() -> None:
         ),
     )
     op.create_index(
-        op.f("ix_payment_history_user_id"), "payment_history", ["user_id"], unique=False,
+        op.f("ix_payment_history_user_id"),
+        "payment_history",
+        ["user_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_payment_history_status"), "payment_history", ["status"], unique=False,
+        op.f("ix_payment_history_status"),
+        "payment_history",
+        ["status"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_payment_history_id"), "payment_history", ["id"], unique=False,
+        op.f("ix_payment_history_id"),
+        "payment_history",
+        ["id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_payment_history_execution_date"),
@@ -260,7 +324,10 @@ def downgrade() -> None:
             nullable=True,
         ),
         sa.Column(
-            "auto_approve_trusted", sa.BOOLEAN(), autoincrement=False, nullable=True,
+            "auto_approve_trusted",
+            sa.BOOLEAN(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column(
             "daily_limit",
@@ -293,13 +360,21 @@ def downgrade() -> None:
             nullable=True,
         ),
         sa.Column(
-            "created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "created_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.Column(
-            "updated_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True,
+            "updated_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["users.user_id"], name=op.f("payment_settings_user_id_fkey"),
+            ["user_id"],
+            ["users.user_id"],
+            name=op.f("payment_settings_user_id_fkey"),
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("payment_settings_pkey")),
     )
@@ -310,6 +385,9 @@ def downgrade() -> None:
         unique=True,
     )
     op.create_index(
-        op.f("ix_payment_settings_id"), "payment_settings", ["id"], unique=False,
+        op.f("ix_payment_settings_id"),
+        "payment_settings",
+        ["id"],
+        unique=False,
     )
     # ### end Alembic commands ###

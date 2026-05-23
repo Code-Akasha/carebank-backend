@@ -7,6 +7,7 @@ from enum import Enum
 from pydantic import BaseModel
 
 from app.core.database import SessionLocal
+from sqlalchemy.orm import Session
 from app.models.beneficiary import Beneficiary
 from app.models.payment_settings import PaymentSettings
 from app.schemas.payments import RecurringPaymentCreate
@@ -94,12 +95,15 @@ class RecurringPaymentAgent:
 
     """
 
-    def __init__(self, db: SessionLocal | None = None):
+    def __init__(self, db: Session | None = None):
         """Initialize agent with optional DB session."""
         self.db = db or SessionLocal()
 
     def process_message(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Process user message and return agent response."""
         try:
@@ -135,7 +139,8 @@ class RecurringPaymentAgent:
                 return RecurringSetupResponse(
                     message="✅ Recurring payment set up successfully! Setup another one?",
                     context=RecurringSetupContext(
-                        user_id=user_id, state=RecurringSetupState.START,
+                        user_id=user_id,
+                        state=RecurringSetupState.START,
                     ),
                     options=[{"label": "Yes, setup another", "value": "yes"}],
                 )
@@ -159,7 +164,10 @@ class RecurringPaymentAgent:
             )
 
     def _handle_start(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle initial state - ask which beneficiary."""
         # Get saved beneficiaries
@@ -192,7 +200,10 @@ class RecurringPaymentAgent:
         )
 
     def _handle_beneficiary_selection(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle beneficiary selection."""
         selection = message.strip().lower()
@@ -237,7 +248,10 @@ class RecurringPaymentAgent:
         )
 
     def _handle_amount_entry(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle amount input."""
         try:
@@ -286,7 +300,10 @@ class RecurringPaymentAgent:
             )
 
     def _handle_frequency_selection(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle frequency selection."""
         if message.lower() not in ["daily", "weekly", "monthly", "quarterly"]:
@@ -331,7 +348,10 @@ class RecurringPaymentAgent:
             )
 
     def _handle_frequency_config(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle frequency configuration (day of week/month)."""
         if context.frequency == "weekly":
@@ -375,7 +395,10 @@ class RecurringPaymentAgent:
         )
 
     def _handle_start_date(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle start date input."""
         if message.strip() == "":
@@ -397,7 +420,10 @@ class RecurringPaymentAgent:
         )
 
     def _handle_end_date(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle end date input."""
         if message.strip() == "":
@@ -423,7 +449,10 @@ class RecurringPaymentAgent:
         )
 
     def _handle_approval(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle approval requirement."""
         if message.lower() in ["yes", "y"]:
@@ -441,7 +470,8 @@ class RecurringPaymentAgent:
         return self._generate_confirmation(context)
 
     def _generate_confirmation(
-        self, context: RecurringSetupContext,
+        self,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Generate confirmation message."""
         # Format frequency display
@@ -483,7 +513,10 @@ class RecurringPaymentAgent:
         )
 
     def _handle_confirmation(
-        self, user_id: str, message: str, context: RecurringSetupContext,
+        self,
+        user_id: str,
+        message: str,
+        context: RecurringSetupContext,
     ) -> RecurringSetupResponse:
         """Handle final confirmation."""
         if message.lower() == "no":

@@ -91,13 +91,16 @@ def _has_admin_user(db: Session) -> bool:
 
 
 @router.post(
-    "/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED,
+    "/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 async def register(body: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == body.email).first()
     if existing:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Email already registered",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered",
         )
 
     # Validate business fields
@@ -165,7 +168,9 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
         import logging
 
         logging.getLogger(__name__).warning(
-            "Proxy profile seeding failed for %s (non-fatal): %s", user_id, exc,
+            "Proxy profile seeding failed for %s (non-fatal): %s",
+            user_id,
+            exc,
         )
 
     token = create_access_token(
@@ -197,7 +202,8 @@ async def bootstrap_super_admin(
     existing = db.query(User).filter(User.email == body.email).first()
     if existing:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Email already registered",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered",
         )
 
     user_id = _generate_user_id(db)
@@ -256,12 +262,14 @@ async def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
         )
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is deactivated",
         )
 
     token = create_access_token(
@@ -297,7 +305,8 @@ async def update_phone(
     phone = (body.get("phone_number") or "").strip()
     if not phone:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="phone_number is required",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="phone_number is required",
         )
     current_user.phone_number = phone
     current_user.phone_verified = False

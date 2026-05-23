@@ -3,7 +3,9 @@ def calculate_surplus(income: float, expenses: float) -> float:
 
 
 def forecast_impact(
-    current_balance: float, scheduled_expenses: float, simulated_expense: float,
+    current_balance: float,
+    scheduled_expenses: float,
+    simulated_expense: float,
 ) -> float:
     """Calculates the end of month balance if a simulated expense is incurred.
     This guarantees accuracy for the What-If Simulator feature.

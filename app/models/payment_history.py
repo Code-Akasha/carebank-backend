@@ -25,16 +25,21 @@ class PaymentHistory(Base):
 
     # Recurring Link
     recurring_rule_id = Column(
-        Integer, ForeignKey("recurring_payment_rules.id"), nullable=True,
+        Integer,
+        ForeignKey("recurring_payment_rules.id"),
+        nullable=True,
     )
 
     # Execution Details
     status = Column(
-        String, nullable=False, index=True,
+        String,
+        nullable=False,
+        index=True,
     )  # "pending", "success", "failed"
     execution_date = Column(DateTime, nullable=True, index=True)
     mockbank_transaction_id = Column(
-        String, nullable=True,
+        String,
+        nullable=True,
     )  # Transaction ID from MockBank
     transaction_id = synonym("mockbank_transaction_id")
 

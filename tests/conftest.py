@@ -1,5 +1,4 @@
-"""Shared test fixtures and configuration for CareBank backend tests.
-"""
+"""Shared test fixtures and configuration for CareBank backend tests."""
 
 import atexit
 import os
@@ -288,6 +287,7 @@ def stub_llm_classifiers():
     """
     try:
         import app.agents.coordinator as coordinator
+
         # Ensure conversation state uses in-memory store during tests
         try:
             from app.services.conversation_store import InMemoryConversationStore
@@ -295,6 +295,7 @@ def stub_llm_classifiers():
             coordinator._conversation_store = InMemoryConversationStore(max_history=50)
         except Exception:
             pass
+
         # Replace structured LLM classification hooks with safe fallbacks.
         def _safe_intent_classifier(message, history):
             # If message looks like an action request, prefer 'actions' intent.
@@ -313,14 +314,27 @@ def stub_llm_classifiers():
                     amount = coordinator._extract_amount_from_text(message)
                 except Exception:
                     amount = None
-                action_verbs = ("pay", "transfer", "send", "schedule", "set up", "setup", "auto", "remind", "book", "create")
+                action_verbs = (
+                    "pay",
+                    "transfer",
+                    "send",
+                    "schedule",
+                    "set up",
+                    "setup",
+                    "auto",
+                    "remind",
+                    "book",
+                    "create",
+                )
                 has_verb = any(v in lower for v in action_verbs)
                 has_destination = " to " in lower or " my " in lower or "for " in lower
                 if has_verb and (amount is not None or has_destination):
                     return coordinator.ClassificationResult(
                         intent="actions",
                         confidence=0.88,
-                        parameters={"amount": float(amount) if amount is not None else None},
+                        parameters={
+                            "amount": float(amount) if amount is not None else None
+                        },
                     )
             except Exception:
                 pass
@@ -329,8 +343,8 @@ def stub_llm_classifiers():
             return coordinator._classify_intent_keywords(message)
 
         coordinator._classify_intent_with_llm = _safe_intent_classifier
-        coordinator._classify_action_request_with_llm = (
-            lambda message, history: coordinator._classify_action_request_fallback(message)
+        coordinator._classify_action_request_with_llm = lambda message, history: (
+            coordinator._classify_action_request_fallback(message)
         )
     except Exception:
         # If coordinator can't be imported for some reason, skip stubbing.

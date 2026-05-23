@@ -40,7 +40,8 @@ async def simulate(
         balance = await client.get_balance(current_user.user_id)
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}",
+            status_code=503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     if not transactions:

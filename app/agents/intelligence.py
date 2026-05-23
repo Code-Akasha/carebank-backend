@@ -244,7 +244,9 @@ class IntelligenceAgent(BaseAgent):
                     },
                 )
             logger.warning(
-                "Falling back to default balance data for %s: %s", user_id, exc,
+                "Falling back to default balance data for %s: %s",
+                user_id,
+                exc,
             )
             balance = {
                 "current_balance": 25000.0,
@@ -286,7 +288,9 @@ class IntelligenceAgent(BaseAgent):
         except BankingClientError as exc:
             if _is_production_env():
                 logger.warning(
-                    "Could not fetch affordability data for %s: %s", user_id, exc,
+                    "Could not fetch affordability data for %s: %s",
+                    user_id,
+                    exc,
                 )
                 return AgentOutput(
                     agent_name=self.name,
@@ -299,7 +303,9 @@ class IntelligenceAgent(BaseAgent):
                     },
                 )
             logger.warning(
-                "Falling back to default affordability data for %s: %s", user_id, exc,
+                "Falling back to default affordability data for %s: %s",
+                user_id,
+                exc,
             )
             balance = {"available_balance": 25000.0}
 
@@ -410,11 +416,15 @@ class IntelligenceAgent(BaseAgent):
         except BankingClientError as exc:
             if _is_production_env():
                 logger.error(
-                    "Transaction fetch failed in production for %s: %s", user_id, exc,
+                    "Transaction fetch failed in production for %s: %s",
+                    user_id,
+                    exc,
                 )
                 raise
             logger.warning(
-                "Falling back to generated transactions for %s: %s", user_id, exc,
+                "Falling back to generated transactions for %s: %s",
+                user_id,
+                exc,
             )
             return generate_mock_transactions(user_id)
 
@@ -425,7 +435,9 @@ class IntelligenceAgent(BaseAgent):
         except BankingClientError as exc:
             if _is_production_env():
                 logger.error(
-                    "Balance fetch failed in production for %s: %s", user_id, exc,
+                    "Balance fetch failed in production for %s: %s",
+                    user_id,
+                    exc,
                 )
                 raise
             logger.warning("Falling back to default balance for %s: %s", user_id, exc)

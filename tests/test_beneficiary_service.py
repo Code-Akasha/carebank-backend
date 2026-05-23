@@ -1,5 +1,4 @@
-"""Unit tests for beneficiary_service.py
-"""
+"""Unit tests for beneficiary_service.py"""
 
 from datetime import datetime
 
@@ -76,7 +75,10 @@ class TestBeneficiaryService:
         assert benef is None
 
     def test_list_beneficiaries_for_user(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test listing beneficiaries for a user"""
         user_id = test_user_data["user_id"]
@@ -88,7 +90,10 @@ class TestBeneficiaryService:
         assert benefs[1].user_id == user_id
 
     def test_list_beneficiaries_isolation(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test that beneficiaries are isolated per user"""
         from app.models.user import User

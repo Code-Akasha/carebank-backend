@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 class BankingConnectorService:
     @staticmethod
     def get_active_config(
-        db: Session, environment: str,
+        db: Session,
+        environment: str,
     ) -> BankingConnectorConfig | None:
         return (
             db.query(BankingConnectorConfig)
@@ -31,7 +32,9 @@ class BankingConnectorService:
 
     @staticmethod
     def get_or_create_config(
-        db: Session, environment: str, user_id: str,
+        db: Session,
+        environment: str,
+        user_id: str,
     ) -> BankingConnectorConfig:
         config = (
             db.query(BankingConnectorConfig)

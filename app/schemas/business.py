@@ -76,10 +76,13 @@ class BillCreate(BaseModel):
 
     target_user_id: str = Field(..., min_length=1)
     service_plan_id: int | None = Field(
-        None, description="Link to a service plan for auto-pricing",
+        None,
+        description="Link to a service plan for auto-pricing",
     )
     plan_name: str | None = Field(
-        None, max_length=200, description="Manual plan name if no plan_id",
+        None,
+        max_length=200,
+        description="Manual plan name if no plan_id",
     )
     quantity: float = Field(default=1.0, gt=0, le=100000)
     amount: float | None = Field(

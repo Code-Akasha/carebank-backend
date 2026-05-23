@@ -74,25 +74,20 @@ class PayRentPayload(BankTransactionPayload):
     """Payload for pay_rent action."""
 
 
-
 class PayBillPayload(BankTransactionPayload):
     """Payload for pay_bill action."""
-
 
 
 class PayGasPayload(BankTransactionPayload):
     """Payload for pay_gas action."""
 
 
-
 class PayUtilityPayload(BankTransactionPayload):
     """Payload for pay_utility action."""
 
 
-
 class TransferSavingsPayload(BankTransactionPayload):
     """Payload for transfer_savings action."""
-
 
 
 # ============================================================================
@@ -185,5 +180,6 @@ class ToolExecutionResult(BaseModel):
         description="Tool-specific metadata",
     )
     error: str | None = Field(
-        default=None, description="Error message if execution failed",
+        default=None,
+        description="Error message if execution failed",
     )

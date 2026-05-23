@@ -259,7 +259,9 @@ class ActionToolRegistry:
         return None
 
     def validate_payload(
-        self, action_type: str, payload: dict,
+        self,
+        action_type: str,
+        payload: dict,
     ) -> tuple[bool, str | None]:
         """Validate payload against tool schema.
 

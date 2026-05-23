@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import datetime, timezone, timedelta
 
 from app.core.database import SessionLocal
 from app.services.reminder_worker import run_reminder_worker
@@ -27,7 +27,7 @@ def test_reminder_worker_creates_d3_notification(client):
     token, _ = _register_and_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     due_date = today + timedelta(days=3)
 
     create_rule = client.post(
@@ -64,7 +64,7 @@ def test_reminder_worker_due_day_creates_action_request(client):
     token, _ = _register_and_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
 
     create_rule = client.post(
         "/api/planning/recurring-rules",

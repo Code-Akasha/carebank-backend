@@ -39,7 +39,8 @@ class OpportunityAgent(BaseAgent):
         ]
 
     def _detect_unused_subscriptions(
-        self, transactions: list[dict[str, Any]],
+        self,
+        transactions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         # Hardcoding unused pattern matching for testing purpose
         # In a real app we'd look for recurring payments without corresponding login data etc
@@ -114,7 +115,9 @@ class OpportunityAgent(BaseAgent):
             return get_transactions_sync(user_id=user_id)
         except BankingClientError as exc:
             logger.warning(
-                "OpportunityAgent fallback transactions for %s: %s", user_id, exc,
+                "OpportunityAgent fallback transactions for %s: %s",
+                user_id,
+                exc,
             )
             return generate_mock_transactions(user_id, days=30)
 
@@ -137,7 +140,9 @@ class OpportunityAgent(BaseAgent):
             return get_accounts_sync(user_id)
         except BankingClientError as exc:
             logger.warning(
-                "OpportunityAgent fallback accounts for %s: %s", user_id, exc,
+                "OpportunityAgent fallback accounts for %s: %s",
+                user_id,
+                exc,
             )
             return [
                 {
@@ -239,7 +244,8 @@ class OpportunityAgent(BaseAgent):
         }
 
     def _pick_underutilized_account(
-        self, accounts: list[dict[str, Any]],
+        self,
+        accounts: list[dict[str, Any]],
     ) -> dict[str, Any] | None:
         if not accounts:
             return None

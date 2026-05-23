@@ -44,7 +44,9 @@ def test_chat_action_create_then_approve_executes(client, monkeypatch):
         }
 
     monkeypatch.setattr(
-        action_policy, "get_action_policy_sync", fake_get_action_policy_sync,
+        action_policy,
+        "get_action_policy_sync",
+        fake_get_action_policy_sync,
     )
 
     created = client.post(
@@ -82,7 +84,12 @@ def test_chat_action_create_then_approve_executes(client, monkeypatch):
 
 
 def _create_recurring_rule(
-    client, headers, *, category: str, title: str, amount: float,
+    client,
+    headers,
+    *,
+    category: str,
+    title: str,
+    amount: float,
 ):
     day = date.today().day
     response = client.post(
@@ -103,7 +110,8 @@ def _create_recurring_rule(
 
 
 def test_chat_pay_rent_discovers_and_emits_buttons_then_pay_now_creates_request(
-    client, monkeypatch,
+    client,
+    monkeypatch,
 ):
     token, _ = _register_and_token(client)
     headers = {"Authorization": f"Bearer {token}"}
@@ -131,7 +139,9 @@ def test_chat_pay_rent_discovers_and_emits_buttons_then_pay_now_creates_request(
         }
 
     monkeypatch.setattr(
-        action_policy, "get_action_policy_sync", fake_get_action_policy_sync,
+        action_policy,
+        "get_action_policy_sync",
+        fake_get_action_policy_sync,
     )
 
     discovered = client.post(

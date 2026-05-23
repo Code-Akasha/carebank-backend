@@ -29,13 +29,16 @@ class RecurringPaymentRule(Base):
     # Payment Details
     amount = Column(Float, nullable=False)  # Amount per cycle
     description = Column(
-        String, nullable=True, default="",
+        String,
+        nullable=True,
+        default="",
     )  # "Yoga fees", "Dish TV bill", etc.
     day_config = Column(JSON, nullable=True)
 
     # Frequency Configuration
     frequency = Column(
-        String, nullable=False,
+        String,
+        nullable=False,
     )  # "daily", "weekly", "monthly", "quarterly"
     day_of_month = Column(Integer, nullable=True)  # 1-31 for monthly frequency
     day_of_week = Column(String, nullable=True)  # "monday", "tuesday", etc. for weekly
@@ -52,7 +55,9 @@ class RecurringPaymentRule(Base):
 
     # Execution Control
     status = Column(
-        String, default="active", index=True,
+        String,
+        default="active",
+        index=True,
     )  # "active", "paused", "expired"
     requires_approval = Column(Boolean, default=True)  # User must approve each payment
 

@@ -204,7 +204,10 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
 
         # Execute payment
         result = execute_generic_payment(
-            db, rule.user_id, payload, recurring_rule_id=str(rule.id),
+            db,
+            rule.user_id,
+            payload,
+            recurring_rule_id=str(rule.id),
         )
 
         # Update recurring rule execution stats
@@ -228,7 +231,8 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
 
     except Exception as exc:
         logger.error(
-            f"Failed to execute recurring payment rule {rule.id}: {exc}", exc_info=True,
+            f"Failed to execute recurring payment rule {rule.id}: {exc}",
+            exc_info=True,
         )
         rule.last_execution_status = "failed"
         rule.updated_at = datetime.now(timezone.utc)
@@ -275,7 +279,8 @@ def _execute_rule_by_id(rule_id: str) -> None:
             logger.warning(f"Recurring payment rule {rule_id} not found")
     except Exception as exc:
         logger.error(
-            f"Failed to execute recurring rule {rule_id}: {exc}", exc_info=True,
+            f"Failed to execute recurring rule {rule_id}: {exc}",
+            exc_info=True,
         )
     finally:
         db.close()

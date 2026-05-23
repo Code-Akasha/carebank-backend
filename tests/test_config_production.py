@@ -27,7 +27,8 @@ def test_production_settings_reject_http_backend_url():
     kwargs["backend_public_url"] = "http://backend.example.com"
 
     with pytest.raises(
-        ValidationError, match="BACKEND_PUBLIC_URL must use https:// in production",
+        ValidationError,
+        match="BACKEND_PUBLIC_URL must use https:// in production",
     ):
         Settings(**kwargs)
 

@@ -106,7 +106,8 @@ def _linear_fallback(transactions: list[dict], periods: int) -> dict:
         "lower_bound": round(predicted - 1.645 * std, 2),
         "upper_bound": round(predicted + 1.645 * std, 2),
         "forecast_error": round(
-            min(std / abs(predicted), 1.0) if predicted != 0 else 0.5, 4,
+            min(std / abs(predicted), 1.0) if predicted != 0 else 0.5,
+            4,
         ),
         "daily_forecast": [],
     }

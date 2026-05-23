@@ -14,12 +14,17 @@ class BusinessProfile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(
-        String, ForeignKey("users.user_id"), unique=True, index=True, nullable=False,
+        String,
+        ForeignKey("users.user_id"),
+        unique=True,
+        index=True,
+        nullable=False,
     )
 
     business_name = Column(String, nullable=False)
     category = Column(
-        String, nullable=False,
+        String,
+        nullable=False,
     )  # gas, electricity, telecom, housing, etc.
     description = Column(Text, nullable=True)
     gst_number = Column(String, nullable=True)

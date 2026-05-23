@@ -9,7 +9,10 @@ class IdempotencyRecord(Base):
     __tablename__ = "idempotency_records"
     __table_args__ = (
         UniqueConstraint(
-            "user_id", "scope", "idempotency_key", name="uq_idempotency_scope_key",
+            "user_id",
+            "scope",
+            "idempotency_key",
+            name="uq_idempotency_scope_key",
         ),
     )
 

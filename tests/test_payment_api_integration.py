@@ -1,5 +1,4 @@
-"""Integration tests for payment API endpoints
-"""
+"""Integration tests for payment API endpoints"""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -31,21 +30,27 @@ class TestBeneficiaryAPI:
         # assert response.status_code == 200
 
     def test_update_beneficiary_endpoint(
-        self, client: TestClient, test_beneficiary_data,
+        self,
+        client: TestClient,
+        test_beneficiary_data,
     ):
         """Test PUT /api/beneficiaries/{id}"""
         # response = client.put(f"/api/beneficiaries/{benef_id}", json=update_data, headers=auth_headers)
         # assert response.status_code == 200
 
     def test_delete_beneficiary_endpoint(
-        self, client: TestClient, test_beneficiary_data,
+        self,
+        client: TestClient,
+        test_beneficiary_data,
     ):
         """Test DELETE /api/beneficiaries/{id}"""
         # response = client.delete(f"/api/beneficiaries/{benef_id}", headers=auth_headers)
         # assert response.status_code == 204
 
     def test_verify_beneficiary_endpoint(
-        self, client: TestClient, test_beneficiary_data,
+        self,
+        client: TestClient,
+        test_beneficiary_data,
     ):
         """Test POST /api/beneficiaries/{id}/verify"""
         # response = client.post(f"/api/beneficiaries/{benef_id}/verify", json={"method": "otp"}, headers=auth_headers)
@@ -57,7 +62,9 @@ class TestPaymentSettingsAPI:
     """Tests for payment settings endpoints"""
 
     def test_get_payment_settings_endpoint(
-        self, client: TestClient, test_payment_settings,
+        self,
+        client: TestClient,
+        test_payment_settings,
     ):
         """Test GET /api/payment-settings"""
         # response = client.get("/api/payment-settings", headers=auth_headers)
@@ -107,7 +114,9 @@ class TestRecurringPaymentAPI:
     """Tests for recurring payment endpoints"""
 
     def test_create_recurring_payment_endpoint(
-        self, client: TestClient, test_beneficiary_data,
+        self,
+        client: TestClient,
+        test_beneficiary_data,
     ):
         """Test POST /api/recurring-payments"""
         # payload = {
@@ -125,35 +134,45 @@ class TestRecurringPaymentAPI:
         # assert response.status_code == 200
 
     def test_get_recurring_payment_endpoint(
-        self, client: TestClient, test_recurring_rule_data,
+        self,
+        client: TestClient,
+        test_recurring_rule_data,
     ):
         """Test GET /api/recurring-payments/{id}"""
         # response = client.get(f"/api/recurring-payments/{rule_id}", headers=auth_headers)
         # assert response.status_code == 200
 
     def test_update_recurring_payment_endpoint(
-        self, client: TestClient, test_recurring_rule_data,
+        self,
+        client: TestClient,
+        test_recurring_rule_data,
     ):
         """Test PUT /api/recurring-payments/{id}"""
         # response = client.put(f"/api/recurring-payments/{rule_id}", json={"amount": 20000}, headers=auth_headers)
         # assert response.status_code == 200
 
     def test_pause_recurring_payment_endpoint(
-        self, client: TestClient, test_recurring_rule_data,
+        self,
+        client: TestClient,
+        test_recurring_rule_data,
     ):
         """Test POST /api/recurring-payments/{id}/pause"""
         # response = client.post(f"/api/recurring-payments/{rule_id}/pause", headers=auth_headers)
         # assert response.status_code == 200
 
     def test_resume_recurring_payment_endpoint(
-        self, client: TestClient, test_recurring_rule_data,
+        self,
+        client: TestClient,
+        test_recurring_rule_data,
     ):
         """Test POST /api/recurring-payments/{id}/resume"""
         # response = client.post(f"/api/recurring-payments/{rule_id}/resume", headers=auth_headers)
         # assert response.status_code == 200
 
     def test_delete_recurring_payment_endpoint(
-        self, client: TestClient, test_recurring_rule_data,
+        self,
+        client: TestClient,
+        test_recurring_rule_data,
     ):
         """Test DELETE /api/recurring-payments/{id}"""
         # response = client.delete(f"/api/recurring-payments/{rule_id}", headers=auth_headers)

@@ -3,7 +3,8 @@ from pydantic import BaseModel, Field
 
 class TelegramLinkRequest(BaseModel):
     telegram_user_id: str = Field(
-        ..., description="Telegram user id in format tg_<numeric_id>",
+        ...,
+        description="Telegram user id in format tg_<numeric_id>",
     )
 
 

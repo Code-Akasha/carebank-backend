@@ -14,7 +14,10 @@ class ServicePlan(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     business_user_id = Column(
-        String, ForeignKey("users.user_id"), index=True, nullable=False,
+        String,
+        ForeignKey("users.user_id"),
+        index=True,
+        nullable=False,
     )
 
     plan_name = Column(String, nullable=False)

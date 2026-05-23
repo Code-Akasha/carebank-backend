@@ -140,7 +140,9 @@ def test_pay_single_bill_yes_shortcut(mock_dependencies):
 def test_balance_check(mock_dependencies):
     user_id = "test_user_004"
     res = run_scenario(
-        message="what's my balance?", user_id=user_id, mock_intent="balance",
+        message="what's my balance?",
+        user_id=user_id,
+        mock_intent="balance",
     )
     assert res.intent == "balance"
     assert "₹" in res.response
@@ -162,7 +164,9 @@ def test_health_score(mock_dependencies):
 def test_missing_parameters_followup(mock_dependencies):
     user_id = "test_user_006"
     res = run_scenario(
-        message="schedule my rent payment", user_id=user_id, mock_intent="planning",
+        message="schedule my rent payment",
+        user_id=user_id,
+        mock_intent="planning",
     )
     assert res.intent == "planning"
     # CommunicationAgent handles schedule query missing amount/day
@@ -172,7 +176,9 @@ def test_missing_parameters_followup(mock_dependencies):
 def test_unsupported_query(mock_dependencies):
     user_id = "test_user_007"
     res = run_scenario(
-        message="how to bake a cake", user_id=user_id, mock_intent="unknown",
+        message="how to bake a cake",
+        user_id=user_id,
+        mock_intent="unknown",
     )
     assert res.intent == "unknown" or "fallback" in res.response.lower()
 
@@ -225,7 +231,9 @@ def test_nudge_block_fatigue(mock_dependencies):
     # For now, let's test a simple advice retry.
     user_id = "test_user_010"
     res = run_scenario(
-        message="any tips to save?", user_id=user_id, mock_intent="advice",
+        message="any tips to save?",
+        user_id=user_id,
+        mock_intent="advice",
     )
     assert res.intent == "advice"
     assert "save" in res.response.lower() or "spend" in res.response.lower()

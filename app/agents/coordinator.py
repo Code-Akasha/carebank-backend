@@ -242,7 +242,9 @@ def _get_prompt_from_db(agent_name: str, prompt_key: str, fallback: str) -> str:
         db = SessionLocal()
         try:
             prompt_config = AgentPromptService.get_active_prompt(
-                db, agent_name, settings.environment,
+                db,
+                agent_name,
+                settings.environment,
             )
             if prompt_config:
                 logger.debug(
@@ -766,7 +768,9 @@ def _classify_action_request_with_llm(
 
         # Fetch prompt from DB with fallback to hardcoded default
         action_intent_prompt_text = _get_prompt_from_db(
-            "coordinator", "action_intent", ACTION_INTENT_PROMPT,
+            "coordinator",
+            "action_intent",
+            ACTION_INTENT_PROMPT,
         )
         prompt = PromptTemplate.from_template(action_intent_prompt_text)
         chain = prompt | structured_llm
@@ -838,7 +842,8 @@ def _classify_action_request_fallback(message: str) -> ActionIntentResult | None
 
 
 def _detect_action_request(
-    message: str, history: list[dict],
+    message: str,
+    history: list[dict],
 ) -> ActionIntentResult | None:
     llm_result = _classify_action_request_with_llm(message, history)
     if llm_result and llm_result.is_action_request and llm_result.confidence >= 0.65:
@@ -867,7 +872,8 @@ def _get_agent_descriptions() -> str:
 
 
 def _classify_intent_with_llm(
-    message: str, history: list[dict],
+    message: str,
+    history: list[dict],
 ) -> ClassificationResult:
     """Use LLM with structured output to classify intent and extract entities."""
     llm, provider = get_llm_provider(temperature=0.1)
@@ -891,7 +897,9 @@ def _classify_intent_with_llm(
 
         # Fetch prompt from DB with fallback to hardcoded default
         intent_classification_prompt_text = _get_prompt_from_db(
-            "coordinator", "intent_classification", INTENT_CLASSIFICATION_PROMPT,
+            "coordinator",
+            "intent_classification",
+            INTENT_CLASSIFICATION_PROMPT,
         )
         prompt = PromptTemplate.from_template(intent_classification_prompt_text)
         chain = prompt | structured_llm
@@ -939,7 +947,8 @@ def _classify_intent_with_llm(
 
     except Exception as e:
         logger.warning(
-            "❌ Structured LLM classification failed: %s, falling back to keywords", e,
+            "❌ Structured LLM classification failed: %s, falling back to keywords",
+            e,
         )
         return _classify_intent_keywords(message)
 
@@ -1350,7 +1359,8 @@ def synthesize_response(state: CoordinatorState) -> CoordinatorState:
     planned_metadata = _extract_planned_action_metadata(agent_results)
     if planned_metadata:
         if not isinstance(response_metadata.get("action"), dict) and isinstance(
-            planned_metadata.get("action"), dict,
+            planned_metadata.get("action"),
+            dict,
         ):
             response_metadata = {
                 **response_metadata,

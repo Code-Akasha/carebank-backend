@@ -28,7 +28,9 @@ PAYMENT_LIMITS = {
 
 
 def validate_payment_method_available(
-    db: Session, user_id: str, payment_method: str,
+    db: Session,
+    user_id: str,
+    payment_method: str,
 ) -> tuple[bool, str | None]:
     """Check if payment method is available for user.
 
@@ -169,7 +171,9 @@ def execute_generic_payment(
 
     # Step 1: Validate payment method available
     is_available, method_error = validate_payment_method_available(
-        db, user_id, payload.payment_method,
+        db,
+        user_id,
+        payload.payment_method,
     )
     if not is_available:
         raise HTTPException(status_code=400, detail=method_error)
@@ -212,7 +216,8 @@ def execute_generic_payment(
     if requires_mpin:
         if not payload.mpin:
             raise HTTPException(
-                status_code=400, detail="MPIN required for this payment",
+                status_code=400,
+                detail="MPIN required for this payment",
             )
 
         try:

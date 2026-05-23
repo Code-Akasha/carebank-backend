@@ -59,7 +59,8 @@ async def list_transactions(
         )
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}",
+            status_code=503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     _persist_transactions(db, records)
@@ -119,6 +120,7 @@ async def trigger_transaction_proxy(
         response = await client.trigger_transaction(payload_dict)
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}",
+            status_code=503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
     return response

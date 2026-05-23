@@ -40,10 +40,16 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("account_id"),
     )
     op.create_index(
-        op.f("ix_accounts_account_id"), "accounts", ["account_id"], unique=False,
+        op.f("ix_accounts_account_id"),
+        "accounts",
+        ["account_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_accounts_provider_id"), "accounts", ["provider_id"], unique=False,
+        op.f("ix_accounts_provider_id"),
+        "accounts",
+        ["provider_id"],
+        unique=False,
     )
     op.create_index(op.f("ix_accounts_user_id"), "accounts", ["user_id"], unique=False)
     op.create_table(
@@ -79,7 +85,10 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_index(
-        op.f("ix_action_executions_id"), "action_executions", ["id"], unique=False,
+        op.f("ix_action_executions_id"),
+        "action_executions",
+        ["id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_action_executions_idempotency_key"),
@@ -130,7 +139,10 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_index(
-        op.f("ix_action_requests_id"), "action_requests", ["id"], unique=False,
+        op.f("ix_action_requests_id"),
+        "action_requests",
+        ["id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_action_requests_idempotency_key"),
@@ -151,10 +163,16 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_index(
-        op.f("ix_action_requests_status"), "action_requests", ["status"], unique=False,
+        op.f("ix_action_requests_status"),
+        "action_requests",
+        ["status"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_action_requests_user_id"), "action_requests", ["user_id"], unique=False,
+        op.f("ix_action_requests_user_id"),
+        "action_requests",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "agent_sessions",
@@ -166,10 +184,16 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_agent_sessions_id"), "agent_sessions", ["id"], unique=False,
+        op.f("ix_agent_sessions_id"),
+        "agent_sessions",
+        ["id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_agent_sessions_user_id"), "agent_sessions", ["user_id"], unique=False,
+        op.f("ix_agent_sessions_user_id"),
+        "agent_sessions",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "audit_logs",
@@ -185,10 +209,16 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_audit_logs_id"), "audit_logs", ["id"], unique=False)
     op.create_index(
-        op.f("ix_audit_logs_session_id"), "audit_logs", ["session_id"], unique=False,
+        op.f("ix_audit_logs_session_id"),
+        "audit_logs",
+        ["session_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_audit_logs_user_id"), "audit_logs", ["user_id"], unique=False,
+        op.f("ix_audit_logs_user_id"),
+        "audit_logs",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "balances",
@@ -223,7 +253,10 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_index(
-        op.f("ix_checklist_items_id"), "checklist_items", ["id"], unique=False,
+        op.f("ix_checklist_items_id"),
+        "checklist_items",
+        ["id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_checklist_items_recurring_rule_id"),
@@ -232,7 +265,10 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_index(
-        op.f("ix_checklist_items_user_id"), "checklist_items", ["user_id"], unique=False,
+        op.f("ix_checklist_items_user_id"),
+        "checklist_items",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "financial_plans",
@@ -249,10 +285,16 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_financial_plans_id"), "financial_plans", ["id"], unique=False,
+        op.f("ix_financial_plans_id"),
+        "financial_plans",
+        ["id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_financial_plans_user_id"), "financial_plans", ["user_id"], unique=False,
+        op.f("ix_financial_plans_user_id"),
+        "financial_plans",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "idempotency_records",
@@ -267,11 +309,17 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
-            "user_id", "scope", "idempotency_key", name="uq_idempotency_scope_key",
+            "user_id",
+            "scope",
+            "idempotency_key",
+            name="uq_idempotency_scope_key",
         ),
     )
     op.create_index(
-        op.f("ix_idempotency_records_id"), "idempotency_records", ["id"], unique=False,
+        op.f("ix_idempotency_records_id"),
+        "idempotency_records",
+        ["id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_idempotency_records_idempotency_key"),
@@ -313,10 +361,16 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_notifications_id"), "notifications", ["id"], unique=False)
     op.create_index(
-        op.f("ix_notifications_kind"), "notifications", ["kind"], unique=False,
+        op.f("ix_notifications_kind"),
+        "notifications",
+        ["kind"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_notifications_user_id"), "notifications", ["user_id"], unique=False,
+        op.f("ix_notifications_user_id"),
+        "notifications",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "products",
@@ -333,7 +387,10 @@ def upgrade() -> None:
     op.create_index(op.f("ix_products_id"), "products", ["id"], unique=False)
     op.create_index(op.f("ix_products_name"), "products", ["name"], unique=False)
     op.create_index(
-        op.f("ix_products_provider_id"), "products", ["provider_id"], unique=False,
+        op.f("ix_products_provider_id"),
+        "products",
+        ["provider_id"],
+        unique=False,
     )
     op.create_index(op.f("ix_products_type"), "products", ["type"], unique=False)
     op.create_table(
@@ -371,7 +428,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_recurring_rules_id"), "recurring_rules", ["id"], unique=False,
+        op.f("ix_recurring_rules_id"),
+        "recurring_rules",
+        ["id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_recurring_rules_next_run_date"),
@@ -380,10 +440,16 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_index(
-        op.f("ix_recurring_rules_plan_id"), "recurring_rules", ["plan_id"], unique=False,
+        op.f("ix_recurring_rules_plan_id"),
+        "recurring_rules",
+        ["plan_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_recurring_rules_user_id"), "recurring_rules", ["user_id"], unique=False,
+        op.f("ix_recurring_rules_user_id"),
+        "recurring_rules",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "transactions",
@@ -397,14 +463,23 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_transactions_category"), "transactions", ["category"], unique=False,
+        op.f("ix_transactions_category"),
+        "transactions",
+        ["category"],
+        unique=False,
     )
     op.create_index(op.f("ix_transactions_id"), "transactions", ["id"], unique=False)
     op.create_index(
-        op.f("ix_transactions_merchant"), "transactions", ["merchant"], unique=False,
+        op.f("ix_transactions_merchant"),
+        "transactions",
+        ["merchant"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_transactions_user_id"), "transactions", ["user_id"], unique=False,
+        op.f("ix_transactions_user_id"),
+        "transactions",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "user_profiles",
@@ -423,7 +498,10 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_user_profiles_id"), "user_profiles", ["id"], unique=False)
     op.create_index(
-        op.f("ix_user_profiles_user_id"), "user_profiles", ["user_id"], unique=True,
+        op.f("ix_user_profiles_user_id"),
+        "user_profiles",
+        ["user_id"],
+        unique=True,
     )
     op.create_table(
         "users",
@@ -462,7 +540,8 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_recurring_rules_user_id"), table_name="recurring_rules")
     op.drop_index(op.f("ix_recurring_rules_plan_id"), table_name="recurring_rules")
     op.drop_index(
-        op.f("ix_recurring_rules_next_run_date"), table_name="recurring_rules",
+        op.f("ix_recurring_rules_next_run_date"),
+        table_name="recurring_rules",
     )
     op.drop_index(op.f("ix_recurring_rules_id"), table_name="recurring_rules")
     op.drop_table("recurring_rules")
@@ -478,16 +557,20 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_notifications_id"), table_name="notifications")
     op.drop_table("notifications")
     op.drop_index(
-        op.f("ix_idempotency_records_user_id"), table_name="idempotency_records",
+        op.f("ix_idempotency_records_user_id"),
+        table_name="idempotency_records",
     )
     op.drop_index(
-        op.f("ix_idempotency_records_status"), table_name="idempotency_records",
+        op.f("ix_idempotency_records_status"),
+        table_name="idempotency_records",
     )
     op.drop_index(
-        op.f("ix_idempotency_records_scope"), table_name="idempotency_records",
+        op.f("ix_idempotency_records_scope"),
+        table_name="idempotency_records",
     )
     op.drop_index(
-        op.f("ix_idempotency_records_idempotency_key"), table_name="idempotency_records",
+        op.f("ix_idempotency_records_idempotency_key"),
+        table_name="idempotency_records",
     )
     op.drop_index(op.f("ix_idempotency_records_id"), table_name="idempotency_records")
     op.drop_table("idempotency_records")
@@ -496,7 +579,8 @@ def downgrade() -> None:
     op.drop_table("financial_plans")
     op.drop_index(op.f("ix_checklist_items_user_id"), table_name="checklist_items")
     op.drop_index(
-        op.f("ix_checklist_items_recurring_rule_id"), table_name="checklist_items",
+        op.f("ix_checklist_items_recurring_rule_id"),
+        table_name="checklist_items",
     )
     op.drop_index(op.f("ix_checklist_items_id"), table_name="checklist_items")
     op.drop_index(op.f("ix_checklist_items_due_date"), table_name="checklist_items")
@@ -515,10 +599,12 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_action_requests_status"), table_name="action_requests")
     op.drop_index(op.f("ix_action_requests_request_hash"), table_name="action_requests")
     op.drop_index(
-        op.f("ix_action_requests_linked_execution_id"), table_name="action_requests",
+        op.f("ix_action_requests_linked_execution_id"),
+        table_name="action_requests",
     )
     op.drop_index(
-        op.f("ix_action_requests_idempotency_key"), table_name="action_requests",
+        op.f("ix_action_requests_idempotency_key"),
+        table_name="action_requests",
     )
     op.drop_index(op.f("ix_action_requests_id"), table_name="action_requests")
     op.drop_index(op.f("ix_action_requests_action_type"), table_name="action_requests")
@@ -526,17 +612,21 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_action_executions_user_id"), table_name="action_executions")
     op.drop_index(op.f("ix_action_executions_status"), table_name="action_executions")
     op.drop_index(
-        op.f("ix_action_executions_request_hash"), table_name="action_executions",
+        op.f("ix_action_executions_request_hash"),
+        table_name="action_executions",
     )
     op.drop_index(
-        op.f("ix_action_executions_idempotency_key"), table_name="action_executions",
+        op.f("ix_action_executions_idempotency_key"),
+        table_name="action_executions",
     )
     op.drop_index(op.f("ix_action_executions_id"), table_name="action_executions")
     op.drop_index(
-        op.f("ix_action_executions_approval_request_id"), table_name="action_executions",
+        op.f("ix_action_executions_approval_request_id"),
+        table_name="action_executions",
     )
     op.drop_index(
-        op.f("ix_action_executions_action_type"), table_name="action_executions",
+        op.f("ix_action_executions_action_type"),
+        table_name="action_executions",
     )
     op.drop_table("action_executions")
     op.drop_index(op.f("ix_accounts_user_id"), table_name="accounts")

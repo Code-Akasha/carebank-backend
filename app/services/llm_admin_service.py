@@ -30,10 +30,11 @@ class LLMAdminService:
 
     @staticmethod
     async def get_or_create_tunnel_config(
-        db: Session, environment: str, user_id: str,
+        db: Session,
+        environment: str,
+        user_id: str,
     ) -> LLMTunnelConfig:
-        """Get existing tunnel config for environment, or create a default (inactive) one.
-        """
+        """Get existing tunnel config for environment, or create a default (inactive) one."""
         config = (
             db.query(LLMTunnelConfig)
             .filter(LLMTunnelConfig.environment == environment)
@@ -76,7 +77,9 @@ class LLMAdminService:
         Encrypts sensitive auth token and logs the action.
         """
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, user_id,
+            db,
+            environment,
+            user_id,
         )
 
         normalized_provider = LLMAdminService.normalize_provider_type(provider_type)
@@ -134,12 +137,15 @@ class LLMAdminService:
 
     @staticmethod
     async def activate_tunnel_config(
-        db: Session, environment: str, user_id: str,
+        db: Session,
+        environment: str,
+        user_id: str,
     ) -> LLMTunnelConfig:
-        """Activate tunnel configuration for an environment.
-        """
+        """Activate tunnel configuration for an environment."""
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, user_id,
+            db,
+            environment,
+            user_id,
         )
 
         if not config.is_active:
@@ -166,12 +172,15 @@ class LLMAdminService:
 
     @staticmethod
     async def deactivate_tunnel_config(
-        db: Session, environment: str, user_id: str,
+        db: Session,
+        environment: str,
+        user_id: str,
     ) -> LLMTunnelConfig:
-        """Deactivate tunnel configuration for an environment.
-        """
+        """Deactivate tunnel configuration for an environment."""
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, user_id,
+            db,
+            environment,
+            user_id,
         )
 
         if config.is_active:
@@ -198,10 +207,10 @@ class LLMAdminService:
 
     @staticmethod
     def get_tunnel_config_by_environment(
-        db: Session, environment: str,
+        db: Session,
+        environment: str,
     ) -> LLMTunnelConfig | None:
-        """Retrieve active tunnel config for environment, or None if not configured.
-        """
+        """Retrieve active tunnel config for environment, or None if not configured."""
         return (
             db.query(LLMTunnelConfig)
             .filter(
@@ -217,8 +226,7 @@ class LLMAdminService:
 
     @staticmethod
     def get_decrypted_token(config: LLMTunnelConfig) -> str | None:
-        """Decrypt and return the tunnel auth token for this config.
-        """
+        """Decrypt and return the tunnel auth token for this config."""
         if not config.tunnel_auth_token_encrypted:
             return None
         try:
@@ -235,8 +243,7 @@ class LLMAdminService:
         is_success: bool,
         error_message: str | None = None,
     ) -> None:
-        """Record the result of a connectivity test.
-        """
+        """Record the result of a connectivity test."""
         config.last_connectivity_check = datetime.now(timezone.utc)
         if is_success:
             config.last_error = None

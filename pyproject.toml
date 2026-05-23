@@ -1,5 +1,6 @@
 [tool.ruff]
 # Use project defaults; ruff binary in .venv will read this config
+exclude = [".agent/**", "scripts/**"]
 
 [tool.ruff.lint]
 # Many test files intentionally use pytest fixtures, bare `assert`, and have

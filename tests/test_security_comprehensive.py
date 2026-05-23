@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -22,10 +23,10 @@ class _MockBankingClient:
         self._transactions.setdefault(user_id, [])
         return {"user_id": user_id, "current_balance": balance}
 
-    async def get_transactions(self, user_id: str, **kwargs) -> list[dict]:
+    async def get_transactions(self, user_id: str, **_kwargs: Any) -> list[dict]:
         return list(self._transactions.get(user_id, []))
 
-    async def get_balance(self, user_id: str) -> dict:
+    async def get_balance(self, _user_id: str) -> dict:
         return {"current_balance": 50000.0, "available_balance": 50000.0}
 
     async def trigger_transaction(self, payload: dict) -> dict:
@@ -72,7 +73,8 @@ def test_users(client):
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
         users[name] = SimpleNamespace(
-            user_id=data["user_id"], token=data["access_token"],
+            user_id=data["user_id"],
+            token=data["access_token"],
         )
     return users
 
@@ -119,7 +121,8 @@ class TestSecurityBoundaries:
 
         # User 2 should not be able to see user 1's transactions
         response = client.get(
-            "/api/transactions/", headers={"Authorization": f"Bearer {token2}"},
+            "/api/transactions/",
+            headers={"Authorization": f"Bearer {token2}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -157,7 +160,8 @@ class TestSecurityBoundaries:
         ]
 
         response = client.delete(
-            "/bot/telegram/webhook", headers={"Authorization": f"Bearer {user_token}"},
+            "/bot/telegram/webhook",
+            headers={"Authorization": f"Bearer {user_token}"},
         )
         assert response.status_code in [
             status.HTTP_403_FORBIDDEN,
@@ -351,6 +355,7 @@ class TestMPINSecurity:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_mpin_set_success(self, client, test_users: dict) -> None:
+        """Test successful MPIN set flow."""
         user = test_users["john"]
         token = user.token
         response = client.post(
@@ -370,7 +375,8 @@ class TestWebhookSecurity:
         """Test Telegram webhook signature verification."""
         # Test webhook without secret header
         response = client.post(
-            "/bot/telegram/webhook", json={"message": {"text": "test"}},
+            "/bot/telegram/webhook",
+            json={"message": {"text": "test"}},
         )
         # Should either require secret or accept it (depending on configuration)
         assert response.status_code in [200, 400, 401, 403, 503]
@@ -408,7 +414,8 @@ class TestRateLimiting:
         responses = []
         for _ in range(50):  # Make many requests quickly
             response = client.get(
-                "/api/transactions/", headers={"Authorization": f"Bearer {token}"},
+                "/api/transactions/",
+                headers={"Authorization": f"Bearer {token}"},
             )
             responses.append(response.status_code)
 
@@ -453,7 +460,8 @@ class TestErrorHandling:
 
         # Test accessing non-existent transaction
         response = client.get(
-            "/api/transactions/999999", headers={"Authorization": f"Bearer {token}"},
+            "/api/transactions/999999",
+            headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 404
 
@@ -494,7 +502,8 @@ class TestSecurityIntegration:
 
         # 3. Verify transaction ownership
         response = client.get(
-            "/api/transactions/", headers={"Authorization": f"Bearer {token}"},
+            "/api/transactions/",
+            headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -524,12 +533,14 @@ class TestSecurityIntegration:
         for endpoint in endpoints_to_test:
             # User 1 should only see their own data
             response1 = client.get(
-                endpoint, headers={"Authorization": f"Bearer {token1}"},
+                endpoint,
+                headers={"Authorization": f"Bearer {token1}"},
             )
 
             # User 2 should only see their own data
             response2 = client.get(
-                endpoint, headers={"Authorization": f"Bearer {token2}"},
+                endpoint,
+                headers={"Authorization": f"Bearer {token2}"},
             )
 
             # Both should either succeed with their own data or require additional auth

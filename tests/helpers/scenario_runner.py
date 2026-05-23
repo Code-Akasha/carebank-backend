@@ -54,7 +54,8 @@ def run_scenario(
     )
 
     with patch(
-        "app.agents.coordinator._classify_intent_with_llm", return_value=mock_result,
+        "app.agents.coordinator._classify_intent_with_llm",
+        return_value=mock_result,
     ):
         # Run the graph
         result = coordinator_graph.invoke(

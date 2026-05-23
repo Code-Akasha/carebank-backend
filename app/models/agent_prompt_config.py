@@ -25,22 +25,31 @@ class AgentPromptConfig(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     agent_name = Column(
-        String, nullable=False, index=True,
+        String,
+        nullable=False,
+        index=True,
     )  # e.g., "coordinator", "payment_agent"
     environment = Column(String, nullable=False, index=True)  # "dev" | "stage" | "prod"
     system_prompt = Column(Text, nullable=False)  # Full prompt template
     version = Column(
-        Integer, default=1, nullable=False,
+        Integer,
+        default=1,
+        nullable=False,
     )  # Auto-increment version per agent/env
     is_active = Column(
-        Boolean, default=True, nullable=False, index=True,
+        Boolean,
+        default=True,
+        nullable=False,
+        index=True,
     )  # Only one per (agent, env) can be active
 
     # Audit fields
     created_by = Column(String, nullable=False, index=True)  # user_id who created
     updated_by = Column(String, nullable=False)  # user_id who last updated
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False,
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
     updated_at = Column(
         DateTime,

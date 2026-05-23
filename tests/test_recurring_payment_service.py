@@ -1,11 +1,11 @@
-"""Unit tests for recurring_payment_service.py
-"""
+"""Unit tests for recurring_payment_service.py."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timezone, timedelta
 
 import pytest
 
 from app.schemas.payments import RecurringPaymentCreate
+from app.models.user import User
 from app.services.recurring_payment_service import (
     calculate_next_run_date,
     create_recurring_payment_rule,
@@ -20,10 +20,13 @@ from app.services.recurring_payment_service import (
 
 @pytest.mark.unit
 class TestRecurringPaymentCreation:
-    """Tests for creating recurring payments"""
+    """Tests for creating recurring payments."""
 
     def test_create_daily_recurring_payment(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test creating a daily recurring payment"""
         user_id = test_user_data["user_id"]
@@ -34,7 +37,7 @@ class TestRecurringPaymentCreation:
             amount=5000,
             frequency="daily",
             day_config={},
-            start_date=date.today(),
+            start_date=datetime.now(timezone.utc).date(),
             end_date=None,
             requires_approval=False,
         )
@@ -53,7 +56,10 @@ class TestRecurringPaymentCreation:
         assert rule.status == "active"
 
     def test_create_weekly_recurring_payment(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test creating a weekly recurring payment"""
         user_id = test_user_data["user_id"]
@@ -64,7 +70,7 @@ class TestRecurringPaymentCreation:
             amount=10000,
             frequency="weekly",
             day_config={"day_of_week": "monday"},
-            start_date=date.today(),
+            start_date=datetime.now(timezone.utc).date(),
             end_date=None,
             requires_approval=False,
         )
@@ -79,7 +85,10 @@ class TestRecurringPaymentCreation:
         assert rule.frequency == "weekly"
 
     def test_create_monthly_recurring_payment(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test creating a monthly recurring payment"""
         user_id = test_user_data["user_id"]
@@ -90,7 +99,7 @@ class TestRecurringPaymentCreation:
             amount=15000,
             frequency="monthly",
             day_config={"day_of_month": 15},
-            start_date=date.today(),
+            start_date=datetime.now(timezone.utc).date(),
             end_date=None,
             requires_approval=False,
         )
@@ -105,7 +114,10 @@ class TestRecurringPaymentCreation:
         assert rule.frequency == "monthly"
 
     def test_create_quarterly_recurring_payment(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test creating a quarterly recurring payment"""
         user_id = test_user_data["user_id"]
@@ -116,7 +128,7 @@ class TestRecurringPaymentCreation:
             amount=50000,
             frequency="quarterly",
             day_config={"day_of_month": 1},
-            start_date=date.today(),
+            start_date=datetime.now(timezone.utc).date(),
             end_date=None,
             requires_approval=False,
         )
@@ -131,7 +143,10 @@ class TestRecurringPaymentCreation:
         assert rule.frequency == "quarterly"
 
     def test_create_with_approval_required(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
         """Test creating recurring payment with approval requirement"""
         user_id = test_user_data["user_id"]
@@ -142,7 +157,7 @@ class TestRecurringPaymentCreation:
             amount=20000,
             frequency="daily",
             day_config={},
-            start_date=date.today(),
+            start_date=datetime.now(timezone.utc).date(),
             end_date=None,
             requires_approval=True,
         )
@@ -159,14 +174,14 @@ class TestRecurringPaymentCreation:
         """Test creating recurring payment with end date"""
         user_id = test_user_data["user_id"]
         benef = test_beneficiary_data["benef1"]
-        end_date = date.today() + timedelta(days=90)
+        end_date = datetime.now(timezone.utc).date() + timedelta(days=90)
 
         payload = RecurringPaymentCreate(
             beneficiary_id=benef.id,
             amount=5000,
             frequency="daily",
             day_config={},
-            start_date=date.today(),
+            start_date=datetime.now(timezone.utc).date(),
             end_date=end_date,
             requires_approval=False,
         )
@@ -182,7 +197,7 @@ class TestRecurringPaymentCreation:
 
 @pytest.mark.unit
 class TestRecurringPaymentRetrieval:
-    """Tests for retrieving recurring payments"""
+    """Tests for retrieving recurring payments."""
 
     def test_get_recurring_payment(self, test_db, test_recurring_rule_data):
         """Test retrieving a specific recurring rule"""
@@ -194,7 +209,10 @@ class TestRecurringPaymentRetrieval:
         assert rule.id == rule_id
 
     def test_list_recurring_payments_for_user(
-        self, test_db, test_user_data, test_recurring_rule_data,
+        self,
+        test_db,
+        test_user_data,
+        test_recurring_rule_data,
     ):
         """Test listing recurring payments for a user"""
         user_id = test_user_data["user_id"]
@@ -205,10 +223,12 @@ class TestRecurringPaymentRetrieval:
         assert all(r.user_id == user_id for r in rules)
 
     def test_list_recurring_payments_isolation(
-        self, test_db, test_user_data, test_recurring_rule_data,
+        self,
+        test_db,
+        test_user_data,
+        test_recurring_rule_data,
     ):
-        """Test that recurring payments are isolated per user"""
-        from app.models.user import User
+        """Test that recurring payments are isolated per user."""
 
         # Create another user
         user2 = User(
@@ -216,15 +236,16 @@ class TestRecurringPaymentRetrieval:
             email="other2@example.com",
             phone="9876543213",
             name="Other User 2",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         test_db.add(user2)
         test_db.commit()
 
         # List for user1
         rules1 = list_recurring_payment_rules(
-            db=test_db, user_id=test_user_data["user_id"],
+            db=test_db,
+            user_id=test_user_data["user_id"],
         )
         # List for user2
         rules2 = list_recurring_payment_rules(db=test_db, user_id=user2.user_id)
@@ -235,10 +256,10 @@ class TestRecurringPaymentRetrieval:
 
 @pytest.mark.unit
 class TestRecurringPaymentUpdate:
-    """Tests for updating recurring payments"""
+    """Tests for updating recurring payments."""
 
     def test_update_recurring_payment_amount(self, test_db, test_recurring_rule_data):
-        """Test updating recurring payment amount"""
+        """Test updating recurring payment amount."""
         rule = test_recurring_rule_data
         new_amount = 20000
 
@@ -251,9 +272,11 @@ class TestRecurringPaymentUpdate:
         assert updated_rule.amount == new_amount
 
     def test_update_recurring_payment_frequency(
-        self, test_db, test_recurring_rule_data,
+        self,
+        test_db,
+        test_recurring_rule_data,
     ):
-        """Test updating frequency"""
+        """Test updating frequency."""
         rule = test_recurring_rule_data
 
         updated_rule = update_recurring_payment_rule(
@@ -268,7 +291,7 @@ class TestRecurringPaymentUpdate:
         assert updated_rule.frequency == "weekly"
 
     def test_pause_recurring_payment(self, test_db, test_recurring_rule_data):
-        """Test pausing a recurring payment"""
+        """Test pausing a recurring payment."""
         rule = test_recurring_rule_data
 
         paused_rule = pause_recurring_payment_rule(db=test_db, rule_id=rule.id)
@@ -276,7 +299,7 @@ class TestRecurringPaymentUpdate:
         assert paused_rule.status == "paused"
 
     def test_resume_recurring_payment(self, test_db, test_recurring_rule_data):
-        """Test resuming a paused recurring payment"""
+        """Test resuming a paused recurring payment."""
         rule = test_recurring_rule_data
 
         # First pause
@@ -288,7 +311,7 @@ class TestRecurringPaymentUpdate:
         assert resumed_rule.status == "active"
 
     def test_delete_recurring_payment(self, test_db, test_recurring_rule_data):
-        """Test soft deleting a recurring payment"""
+        """Test soft deleting a recurring payment."""
         rule = test_recurring_rule_data
         rule_id = rule.id
 
@@ -303,10 +326,10 @@ class TestRecurringPaymentUpdate:
 
 @pytest.mark.unit
 class TestNextRunDateCalculation:
-    """Tests for calculating next run dates"""
+    """Tests for calculating next run dates."""
 
     def test_calculate_next_run_daily(self):
-        """Test calculating next run date for daily frequency"""
+        """Test calculating next run date for daily frequency."""
         current_date = date(2025, 1, 15)
 
         next_date = calculate_next_run_date(
@@ -318,7 +341,7 @@ class TestNextRunDateCalculation:
         assert next_date == date(2025, 1, 16)
 
     def test_calculate_next_run_weekly(self):
-        """Test calculating next run date for weekly frequency"""
+        """Test calculating next run date for weekly frequency."""
         # Start on Monday 2025-01-13
         current_date = date(2025, 1, 13)
 
@@ -332,7 +355,7 @@ class TestNextRunDateCalculation:
         assert next_date == date(2025, 1, 20)
 
     def test_calculate_next_run_monthly(self):
-        """Test calculating next run date for monthly frequency"""
+        """Test calculating next run date for monthly frequency."""
         current_date = date(2025, 1, 15)
 
         next_date = calculate_next_run_date(
@@ -345,7 +368,7 @@ class TestNextRunDateCalculation:
         assert next_date == date(2025, 2, 15)
 
     def test_calculate_next_run_quarterly(self):
-        """Test calculating next run date for quarterly frequency"""
+        """Test calculating next run date for quarterly frequency."""
         current_date = date(2025, 1, 15)
 
         next_date = calculate_next_run_date(
@@ -358,7 +381,7 @@ class TestNextRunDateCalculation:
         assert next_date == date(2025, 4, 15)
 
     def test_calculate_next_run_month_end_edge_case(self):
-        """Test next run calculation for month-end edge cases"""
+        """Test next run calculation for month-end edge cases."""
         # If set to day 31 but month has only 28 days
         current_date = date(2025, 1, 31)
 
@@ -375,17 +398,23 @@ class TestNextRunDateCalculation:
 
 @pytest.mark.unit
 class TestRecurringPaymentLimits:
-    """Tests for recurring payment limits"""
+    """Tests for recurring payment limits."""
 
     def test_recurring_limit_max_amount(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
-        """Test that recurring payment is limited to ₹1L per cycle"""
+        """Test that recurring payment is limited to ₹1L per cycle."""
         # Recurring limit: ₹1L per cycle
         # This should be enforced during creation
 
     def test_max_active_rules_per_user(
-        self, test_db, test_user_data, test_beneficiary_data,
+        self,
+        test_db,
+        test_user_data,
+        test_beneficiary_data,
     ):
-        """Test that user can have max 10 active recurring rules"""
+        """Test that user can have max 10 active recurring rules."""
         # Might have a limit like 10 max active rules

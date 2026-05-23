@@ -33,7 +33,8 @@ def _recent_history(user_id: str, limit: int = 50) -> list[float]:
 
 
 async def handle_transaction_event(
-    transaction: dict[str, Any], redis_client: redis.Redis | None = None,
+    transaction: dict[str, Any],
+    redis_client: redis.Redis | None = None,
 ) -> None:
     user_id = transaction.get("user_id")
     if not user_id:
@@ -64,7 +65,9 @@ async def handle_transaction_event(
 
 
 async def _cache_health_score(
-    redis_client: redis.Redis | None, user_id: str, score_result: dict,
+    redis_client: redis.Redis | None,
+    user_id: str,
+    score_result: dict,
 ) -> None:
     if not redis_client:
         return
@@ -77,7 +80,8 @@ async def _cache_health_score(
 
 
 async def _get_cached_score(
-    redis_client: redis.Redis | None, user_id: str,
+    redis_client: redis.Redis | None,
+    user_id: str,
 ) -> float | None:
     if not redis_client:
         return None
@@ -93,7 +97,10 @@ async def _get_cached_score(
 
 
 async def _send_nudge(
-    user_id: str, transaction: dict[str, Any], anomaly: dict, score_result: dict,
+    user_id: str,
+    transaction: dict[str, Any],
+    anomaly: dict,
+    score_result: dict,
 ) -> None:
     agent = CommunicationAgent()
     context = {

@@ -22,7 +22,8 @@ def _persist_providers(db: Session, records: list[dict]) -> None:
             provider.latency_ms = record.get("latency_ms", provider.latency_ms)
             provider.logo_url = record.get("logo_url", provider.logo_url)
             provider.support_contact = record.get(
-                "support_contact", provider.support_contact,
+                "support_contact",
+                provider.support_contact,
             )
         else:
             db.add(
@@ -47,7 +48,8 @@ async def list_providers(db: Session = Depends(get_db)):
         records = await client.get_providers()
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}",
+            status_code=503,
+            detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     _persist_providers(db, records)

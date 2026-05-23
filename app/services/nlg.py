@@ -87,7 +87,9 @@ def generate_response(
 
 
 def _template_fallback(
-    persona: str, data_context: str, task_description: str,
+    persona: str,
+    data_context: str,
+    task_description: str,
 ) -> dict[str, Any]:
     """Fallback generator when LLMs fail or are misconfigured. Avoids hallucinating data."""
     structured = _structured_fallback_text(data_context)
@@ -250,7 +252,8 @@ def _serialize_data_context(data_context: Any) -> str:
 
 
 def _extract_generation_metadata(
-    provider: str, response: Any,
+    provider: str,
+    response: Any,
 ) -> tuple[str | None, int | None]:
     """Extract model name and total tokens from the LLM response metadata."""
     metadata = getattr(response, "response_metadata", None)

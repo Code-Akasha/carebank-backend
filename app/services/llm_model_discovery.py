@@ -155,7 +155,8 @@ class LLMModelDiscoveryService:
         """
         try:
             models = await LLMModelDiscoveryService.discover_models(
-                tunnel_url, timeout_sec=timeout_sec,
+                tunnel_url,
+                timeout_sec=timeout_sec,
             )
             model_names = {m.name for m in models}
             is_available = model_name in model_names
@@ -183,7 +184,9 @@ class LLMModelDiscoveryService:
         try:
             start = datetime.utcnow()
             models = await LLMModelDiscoveryService.discover_models(
-                tunnel_url, timeout_sec=timeout_sec, force_refresh=True,
+                tunnel_url,
+                timeout_sec=timeout_sec,
+                force_refresh=True,
             )
             elapsed_ms = (datetime.utcnow() - start).total_seconds() * 1000
 

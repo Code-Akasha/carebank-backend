@@ -36,7 +36,10 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_user_mpins_id"), "user_mpins", ["id"], unique=False)
     op.create_index(
-        op.f("ix_user_mpins_user_id"), "user_mpins", ["user_id"], unique=False,
+        op.f("ix_user_mpins_user_id"),
+        "user_mpins",
+        ["user_id"],
+        unique=False,
     )
 
 

@@ -44,7 +44,9 @@ class TestNLGService:
             lambda *args, **kwargs: (None, "template_fallback"),
         )
         result = generate_response(
-            "Cautious Saver", "Low savings", "Increase emergency fund",
+            "Cautious Saver",
+            "Low savings",
+            "Increase emergency fund",
         )
         assert result["provider"] == "template_fallback"
         assert "prioritize stability" in result["text"].lower()
@@ -55,7 +57,9 @@ class TestNLGService:
             lambda *args, **kwargs: (None, "template_fallback"),
         )
         result = generate_response(
-            "Social Spender", "High dining", "Cut back eating out",
+            "Social Spender",
+            "High dining",
+            "Cut back eating out",
         )
         assert result["provider"] == "template_fallback"
         assert "fits your budget" in result["text"].lower()

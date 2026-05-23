@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from app.agents.base import AgentInput, AgentOutput, AgentStatus, BaseAgent
 from app.core.database import SessionLocal
+from sqlalchemy.orm import Session
 from app.models.beneficiary import Beneficiary
 from app.models.payment_settings import PaymentSettings
 from app.models.user import User
@@ -79,12 +80,15 @@ class PaymentAgent:
 
     """
 
-    def __init__(self, db: SessionLocal | None = None):
+    def __init__(self, db: Session | None = None):
         """Initialize agent with optional DB session."""
         self.db = db or SessionLocal()
 
     def process_message(
-        self, user_id: str, message: str, context: PaymentContext,
+        self,
+        user_id: str,
+        message: str,
+        context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Process user message and return agent response."""
         try:
@@ -133,7 +137,10 @@ class PaymentAgent:
             )
 
     def _handle_start(
-        self, user_id: str, message: str, context: PaymentContext,
+        self,
+        user_id: str,
+        message: str,
+        context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle initial state - ask which beneficiary."""
         # Get saved beneficiaries
@@ -170,7 +177,10 @@ class PaymentAgent:
         )
 
     def _handle_beneficiary_selection(
-        self, user_id: str, message: str, context: PaymentContext,
+        self,
+        user_id: str,
+        message: str,
+        context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle beneficiary selection."""
         selection = message.strip().lower()
@@ -223,7 +233,10 @@ class PaymentAgent:
         )
 
     def _handle_amount_entry(
-        self, user_id: str, message: str, context: PaymentContext,
+        self,
+        user_id: str,
+        message: str,
+        context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle amount input."""
         try:
@@ -286,7 +299,10 @@ class PaymentAgent:
             )
 
     def _handle_method_selection(
-        self, user_id: str, message: str, context: PaymentContext,
+        self,
+        user_id: str,
+        message: str,
+        context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle payment method selection."""
         if message.lower() not in ["upi", "account_transfer"]:
@@ -352,7 +368,10 @@ class PaymentAgent:
         )
 
     def _handle_confirmation(
-        self, user_id: str, message: str, context: PaymentContext,
+        self,
+        user_id: str,
+        message: str,
+        context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle confirmation."""
         if message.lower() == "no":
@@ -379,7 +398,10 @@ class PaymentAgent:
         return self._execute_payment(user_id, context, mpin=None)
 
     def _handle_mpin_entry(
-        self, user_id: str, message: str, context: PaymentContext,
+        self,
+        user_id: str,
+        message: str,
+        context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle MPIN entry."""
         if not message or len(message) < 4 or len(message) > 6:
@@ -391,7 +413,10 @@ class PaymentAgent:
         return self._execute_payment(user_id, context, mpin=message)
 
     def _execute_payment(
-        self, user_id: str, context: PaymentContext, mpin: str | None,
+        self,
+        user_id: str,
+        context: PaymentContext,
+        mpin: str | None,
     ) -> PaymentAgentResponse:
         """Execute the payment."""
         try:
