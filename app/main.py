@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 try:
     from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 except Exception:  # pragma: no cover - older starlette in tests may not provide this
@@ -23,6 +24,7 @@ except Exception:  # pragma: no cover - older starlette in tests may not provide
                     # take the first value if multiple
                     scope["scheme"] = proto.split(",")[0].strip()
             await self.app(scope, receive, send)
+
 
 from app.core.config import get_settings
 from app.core.database import init_db
