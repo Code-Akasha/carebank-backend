@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""
-i18n Checker - Detects hardcoded strings and missing translations.
+"""i18n Checker - Detects hardcoded strings and missing translations.
 Scans for untranslated text in React, Vue, and Python files.
 """
 
-import sys
-import re
 import json
+import re
+import sys
 from pathlib import Path
 
 # Fix Windows console encoding for Unicode output
@@ -198,7 +197,7 @@ def check_hardcoded_strings(project_path: Path) -> dict:
                     hardcoded_found = True
                     if len(hardcoded_examples) < 5:
                         hardcoded_examples.append(
-                            f"{file_path.name}: {str(matches[0])[:40]}..."
+                            f"{file_path.name}: {str(matches[0])[:40]}...",
                         )
 
             if hardcoded_found:

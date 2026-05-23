@@ -4,10 +4,10 @@ import sys
 # Ensure root is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from app.agents.base import AgentInput
+from app.agents.intelligence import IntelligenceAgent
 from app.core.database import SessionLocal, init_db
 from app.models.user import User
-from app.agents.intelligence import IntelligenceAgent
-from app.agents.base import AgentInput
 from app.schemas.payments import ExecutePaymentPayload
 from app.services.payment_execution_service import execute_generic_payment
 

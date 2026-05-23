@@ -107,7 +107,7 @@ def test_health_score_legacy_endpoint_requires_admin(client, normal_user_auth):
 
 
 def test_telegram_webhook_management_requires_admin(
-    client, normal_user_auth, monkeypatch
+    client, normal_user_auth, monkeypatch,
 ):
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "telegram-test-token")
     get_settings.cache_clear()

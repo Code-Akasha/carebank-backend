@@ -47,7 +47,7 @@ def generate_mock_transactions(
                     "amount": -amount,
                     "category": cat,
                     "merchant": random.choice(merchants[cat]),
-                }
+                },
             )
 
         # Periodic income (every 30 days)
@@ -59,7 +59,7 @@ def generate_mock_transactions(
                     "amount": 50000.0,
                     "category": "income",
                     "merchant": "Salary",
-                }
+                },
             )
 
     return transactions

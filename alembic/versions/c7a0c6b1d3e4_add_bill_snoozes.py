@@ -6,22 +6,21 @@ Create Date: 2026-03-20 00:00:00.000000
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "c7a0c6b1d3e4"
-down_revision: Union[str, Sequence[str], None] = "ba1fd9312fe9"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "ba1fd9312fe9"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Upgrade schema."""
-
     op.create_table(
         "bill_snoozes",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -68,7 +67,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-
     op.drop_index(op.f("ix_bill_snoozes_user_id"), table_name="bill_snoozes")
     op.drop_index(op.f("ix_bill_snoozes_snoozed_until"), table_name="bill_snoozes")
     op.drop_index(op.f("ix_bill_snoozes_source_type"), table_name="bill_snoozes")

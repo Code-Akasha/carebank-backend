@@ -1,12 +1,12 @@
-"""
-One-shot script to create the carebank PostgreSQL user and database,
+"""One-shot script to create the carebank PostgreSQL user and database,
 then initialise all SQLAlchemy tables via init_db().
 Run from the project root:
     python scripts/setup_postgres.py
 """
 
-import sys
 import os
+import sys
+
 from dotenv import load_dotenv
 
 # Make sure the project root is on sys.path so `app.*` imports work
@@ -25,7 +25,7 @@ SUPERUSER_DSN = {
     "port": int(os.environ.get("PG_SUPERUSER_PORT", "5432")),
     "user": os.environ.get("PG_SUPERUSER_USER", "postgres"),
     "password": os.environ.get(
-        "PG_SUPERUSER_PASSWORD", os.environ.get("DB_PASSWORD", "")
+        "PG_SUPERUSER_PASSWORD", os.environ.get("DB_PASSWORD", ""),
     ),
     "dbname": os.environ.get("PG_SUPERUSER_DB", "postgres"),
 }
@@ -74,7 +74,7 @@ conn2.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 cur2 = conn2.cursor()
 cur2.execute(f"GRANT ALL ON SCHEMA public TO {CAREBANK_USER}")
 cur2.execute(
-    f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {CAREBANK_USER}"
+    f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {CAREBANK_USER}",
 )
 print("  Schema public privileges granted.")
 cur2.close()
@@ -108,5 +108,5 @@ print("  Tables created / verified ✓")
 
 print("\nPostgreSQL setup complete!")
 print(
-    f"  DATABASE_URL = postgresql://{CAREBANK_USER}:***@{SUPERUSER_DSN['host']}:{SUPERUSER_DSN['port']}/{CAREBANK_DB}"
+    f"  DATABASE_URL = postgresql://{CAREBANK_USER}:***@{SUPERUSER_DSN['host']}:{SUPERUSER_DSN['port']}/{CAREBANK_DB}",
 )

@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, Index
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, String, Text
 
 from app.core.database import Base
 
@@ -20,7 +20,7 @@ class BankingConnectorConfig(Base):
     created_by = Column(String, nullable=False, index=True)
     updated_by = Column(String, nullable=False)
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False,
     )
     updated_at = Column(
         DateTime,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from types import SimpleNamespace, ModuleType
 import sys
+from types import ModuleType, SimpleNamespace
 
 from app.core.security import get_current_user, require_admin
 
@@ -13,7 +13,7 @@ class _FakeChatModel:
 
 def _override_admin_dependencies(app):
     app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(
-        user_id="admin-user-001"
+        user_id="admin-user-001",
     )
     app.dependency_overrides[require_admin] = lambda: None
 

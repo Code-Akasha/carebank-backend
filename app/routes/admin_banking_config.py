@@ -14,8 +14,8 @@ from app.schemas.banking_connector import (
     BankingConnectorConfigResponse,
     BankingConnectorTestResponse,
 )
-from app.services.banking_connector_service import BankingConnectorService
 from app.services.banking_client import get_banking_client
+from app.services.banking_connector_service import BankingConnectorService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/admin/banking", tags=["admin-banking-config"])
@@ -33,7 +33,7 @@ def _serialize(config: BankingConnectorConfig) -> BankingConnectorConfigResponse
     token_masked = None
     if config.secret_encrypted:
         token_masked = get_encryption_manager().mask_sensitive_value(
-            config.secret_encrypted
+            config.secret_encrypted,
         )
     return BankingConnectorConfigResponse(
         id=config.id,
@@ -59,7 +59,7 @@ async def get_connector_config(
     db: Session = Depends(get_db),
 ):
     config = BankingConnectorService.get_or_create_config(
-        db, environment, current_user.user_id
+        db, environment, current_user.user_id,
     )
     return _serialize(config)
 
@@ -84,7 +84,7 @@ async def update_connector_config(
 
 
 @router.post(
-    "/connector/{environment}/test", response_model=BankingConnectorTestResponse
+    "/connector/{environment}/test", response_model=BankingConnectorTestResponse,
 )
 async def test_connector(
     environment: str,
@@ -95,7 +95,7 @@ async def test_connector(
     config = BankingConnectorService.get_active_config(db, environment)
     if not config or not config.base_url:
         return BankingConnectorTestResponse(
-            status="error", error="Connector not configured"
+            status="error", error="Connector not configured",
         )
 
     client = get_banking_client()

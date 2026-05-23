@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-CareBank Demo Seed Script
+"""CareBank Demo Seed Script
 ==========================
 Creates demo users with 3 months of transaction history, service accounts,
 and pre-configured recurring payments. Runs against a LIVE backend + banking proxy.
@@ -36,8 +35,8 @@ import random
 import sys
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 import httpx
 import jwt
@@ -270,7 +269,7 @@ def _generate_transactions(
                     "category": "income",
                     "date": _format_iso(salary_date),
                     "description": "Monthly salary — NEFT credit",
-                }
+                },
             )
 
     # Recurring bills on 5th, 10th, 15th
@@ -298,7 +297,7 @@ def _generate_transactions(
                     "category": cat,
                     "date": _format_iso(bill_date),
                     "description": desc,
-                }
+                },
             )
 
     # Daily variable spending
@@ -318,7 +317,7 @@ def _generate_transactions(
 
             if cat == "utilities":
                 continue  # bills cover utilities
-            elif cat in ("dining", "entertainment") and is_weekend:
+            if cat in ("dining", "entertainment") and is_weekend:
                 amount = round(rng.uniform(300, 1500), 2)
             elif cat == "shopping":
                 amount = round(rng.uniform(500, 4000), 2)
@@ -346,7 +345,7 @@ def _generate_transactions(
                     "category": cat,
                     "date": _format_iso(txn_dt),
                     "description": f"{cat.title()} — {merchant}",
-                }
+                },
             )
 
     return transactions
@@ -356,7 +355,7 @@ def _generate_transactions(
 
 
 def register_user(
-    client: httpx.Client, email: str, password: str, full_name: str
+    client: httpx.Client, email: str, password: str, full_name: str,
 ) -> dict | None:
     """Register a user via the backend API. Returns token info or None."""
     resp = client.post(
@@ -368,7 +367,7 @@ def register_user(
         headers = {"Authorization": f"Bearer {token_info.get('access_token')}"}
         client.get(f"{BACKEND_URL}/api/payment-settings/", headers=headers)
         return token_info
-    elif resp.status_code == 409:
+    if resp.status_code == 409:
         # Already exists — login instead
         resp = client.post(
             f"{BACKEND_URL}/api/auth/login",
@@ -381,9 +380,8 @@ def register_user(
             return token_info
         print(f"  ⚠️  Login failed for {email}: {resp.text}")
         return None
-    else:
-        print(f"  ❌ Register failed for {email}: {resp.status_code} {resp.text}")
-        return None
+    print(f"  ❌ Register failed for {email}: {resp.status_code} {resp.text}")
+    return None
 
 
 def promote_user_role(email: str, role: str) -> bool:
@@ -436,7 +434,7 @@ def inject_provider_profile(
     if resp.status_code in (200, 201):
         return True
     print(
-        f"  ⚠️  Banking proxy profile injection failed for {user_id}: {resp.status_code} {resp.text}"
+        f"  ⚠️  Banking proxy profile injection failed for {user_id}: {resp.status_code} {resp.text}",
     )
     return False
 
@@ -523,7 +521,7 @@ def setup_recurring_payment(
     if rule_resp.status_code == 409:
         return True
     print(
-        f"  ⚠️  Recurring rule creation failed: {rule_resp.status_code} {rule_resp.text}"
+        f"  ⚠️  Recurring rule creation failed: {rule_resp.status_code} {rule_resp.text}",
     )
     return False
 
@@ -560,7 +558,7 @@ def main():
     # ── 1. Register Admin ──────────────────────────────────────────────
     print("\n── 1. Registering Admin ──")
     result = register_user(
-        client, ADMIN["email"], ADMIN["password"], ADMIN["full_name"]
+        client, ADMIN["email"], ADMIN["password"], ADMIN["full_name"],
     )
     if result:
         promote_user_role(ADMIN["email"], "admin")
@@ -592,7 +590,7 @@ def main():
     demo_tokens: dict[str, dict] = {}
     for user in DEMO_USERS:
         result = register_user(
-            client, user["email"], user["password"], user["full_name"]
+            client, user["email"], user["password"], user["full_name"],
         )
         if not result:
             continue
@@ -609,7 +607,7 @@ def main():
         if not args.skip_transactions:
             # Generate rich transaction history
             txns = _generate_transactions(
-                uid, user["persona"], user["salary"], days=DAYS_HISTORY
+                uid, user["persona"], user["salary"], days=DAYS_HISTORY,
             )
             print(f"  📊 Generated {len(txns)} transactions for {user['full_name']}")
 
@@ -624,7 +622,7 @@ def main():
             )
             if ok:
                 print(
-                    f"  ✅ {user['full_name']}: {user['email']} (ID: {uid}, {len(txns)} txns)"
+                    f"  ✅ {user['full_name']}: {user['email']} (ID: {uid}, {len(txns)} txns)",
                 )
             else:
                 print(f"  ⚠️  {user['full_name']}: registered but txns injection failed")

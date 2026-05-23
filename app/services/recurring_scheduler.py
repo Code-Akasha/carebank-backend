@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy.orm import Session
@@ -15,7 +14,7 @@ from app.services.payment_execution_service import execute_generic_payment
 logger = logging.getLogger(__name__)
 
 # Global scheduler instance
-_scheduler: Optional[BackgroundScheduler] = None
+_scheduler: BackgroundScheduler | None = None
 
 
 def get_scheduler() -> BackgroundScheduler:
@@ -114,6 +113,7 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
     Args:
         db: Database session
         rule: RecurringPaymentRule to execute
+
     """
     from app.services.recurring_payment_service import calculate_next_run_date
 
@@ -130,11 +130,12 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
         # Check if requires_approval
         if rule.requires_approval:
             logger.info(
-                f"Recurring rule {rule.id} requires approval, creating action request"
+                f"Recurring rule {rule.id} requires approval, creating action request",
             )
+            from datetime import timedelta
+
             from app.models.action_request import ActionRequest
             from app.services.idempotency import hash_payload
-            from datetime import timedelta
 
             action_type = "pay_bill"
             if rule.category == "rent":
@@ -203,7 +204,7 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
 
         # Execute payment
         result = execute_generic_payment(
-            db, rule.user_id, payload, recurring_rule_id=str(rule.id)
+            db, rule.user_id, payload, recurring_rule_id=str(rule.id),
         )
 
         # Update recurring rule execution stats
@@ -222,12 +223,12 @@ def execute_recurring_payment(db: Session, rule: RecurringPaymentRule) -> None:
         db.commit()
 
         logger.info(
-            f"Recurring payment rule {rule.id} executed successfully. Next run: {rule.next_run_date}"
+            f"Recurring payment rule {rule.id} executed successfully. Next run: {rule.next_run_date}",
         )
 
     except Exception as exc:
         logger.error(
-            f"Failed to execute recurring payment rule {rule.id}: {exc}", exc_info=True
+            f"Failed to execute recurring payment rule {rule.id}: {exc}", exc_info=True,
         )
         rule.last_execution_status = "failed"
         rule.updated_at = datetime.now(timezone.utc)
@@ -243,6 +244,7 @@ def schedule_manual_recurring_execution(rule_id: str, delay_seconds: int = 10) -
     Args:
         rule_id: ID of recurring payment rule to execute
         delay_seconds: Seconds to delay before execution (default 10)
+
     """
     scheduler = get_scheduler()
 
@@ -273,7 +275,7 @@ def _execute_rule_by_id(rule_id: str) -> None:
             logger.warning(f"Recurring payment rule {rule_id} not found")
     except Exception as exc:
         logger.error(
-            f"Failed to execute recurring rule {rule_id}: {exc}", exc_info=True
+            f"Failed to execute recurring rule {rule_id}: {exc}", exc_info=True,
         )
     finally:
         db.close()
@@ -306,7 +308,7 @@ def resume_recurring_execution(rule_id: str) -> None:
             logger.info(f"Recurring payment {rule_id} marked for resume")
         else:
             logger.warning(
-                f"Cannot resume recurring rule {rule_id}: not paused or not found"
+                f"Cannot resume recurring rule {rule_id}: not paused or not found",
             )
     finally:
         db.close()

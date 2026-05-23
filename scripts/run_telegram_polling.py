@@ -23,7 +23,7 @@ async def _main() -> None:
         raise RuntimeError("TELEGRAM_BOT_TOKEN is required")
 
     forward_url = _read_env(
-        "TELEGRAM_POLL_FORWARD_URL", "http://127.0.0.1:8000/bot/telegram/webhook"
+        "TELEGRAM_POLL_FORWARD_URL", "http://127.0.0.1:8000/bot/telegram/webhook",
     )
     webhook_secret = _read_env("TELEGRAM_WEBHOOK_SECRET")
 
@@ -45,6 +45,6 @@ if __name__ == "__main__":
         asyncio.run(_main())
     except KeyboardInterrupt:
         print("Polling stopped")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Fatal: {exc}", file=sys.stderr)
         raise

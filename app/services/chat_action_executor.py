@@ -10,6 +10,8 @@ from app.models.action_execution import ActionExecution
 from app.models.action_request import ActionRequest
 from app.models.bill_snooze import BillSnooze
 from app.models.user import User
+from app.schemas.action_engine import ActionDecisionRequest, ActionRequestCreate
+from app.schemas.planning import ScheduleFromTextRequest
 from app.services.action_request_service import (
     approve_action_request_for_user,
     create_action_request_for_user,
@@ -17,8 +19,6 @@ from app.services.action_request_service import (
 )
 from app.services.bill_discovery import discover_bill_candidates
 from app.services.planning_service import create_schedule_from_text_for_user
-from app.schemas.action_engine import ActionDecisionRequest, ActionRequestCreate
-from app.schemas.planning import ScheduleFromTextRequest
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,6 @@ def apply_planned_chat_action(
 
     If no executable action is present, returns inputs unchanged.
     """
-
     metadata: dict[str, Any] = (
         response_metadata if isinstance(response_metadata, dict) else {}
     )
@@ -78,7 +77,7 @@ def apply_planned_chat_action(
 
         object_label = object_map.get(requested_action_type, "bill")
         action_label = label_map.get(
-            requested_action_type, requested_action_type.replace("_", " ")
+            requested_action_type, requested_action_type.replace("_", " "),
         )
 
         def _format_amount(value: Any) -> str:
@@ -223,7 +222,7 @@ def apply_planned_chat_action(
                     source_type=source_type,
                     source_id=source_id,
                     snoozed_until=snoozed_until,
-                )
+                ),
             )
         db.commit()
 
@@ -654,7 +653,7 @@ def apply_planned_chat_action(
             "transfer_savings": "transfer to savings",
         }
         action_label = label_map.get(
-            tool_action_type, tool_action_type.replace("_", " ")
+            tool_action_type, tool_action_type.replace("_", " "),
         )
         amount_str = f"₹{amount:,.2f}" if amount > 0 else ""
 
@@ -735,13 +734,13 @@ def apply_planned_chat_action(
                 db,
                 request_id=request.id,
                 body=ActionDecisionRequest(
-                    reason="Auto-approved via chat (within limit)"
+                    reason="Auto-approved via chat (within limit)",
                 ),
                 current_user=current_user,
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning(
-                "execute_direct_payment failed for %s: %s", current_user.user_id, exc
+                "execute_direct_payment failed for %s: %s", current_user.user_id, exc,
             )
             return (
                 f"I tried to process your payment, but it failed. Reason: {exc}",

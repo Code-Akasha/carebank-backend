@@ -1,11 +1,11 @@
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.services.banking_client import get_banking_client, BankingClientError
+from app.services.banking_client import BankingClientError, get_banking_client
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -42,7 +42,7 @@ def _persist_products(db: Session, products: list[dict]) -> None:
                     min_balance_required = excluded.min_balance_required,
                     interest_rate = excluded.interest_rate,
                     eligibility_rules = excluded.eligibility_rules
-                """
+                """,
             ),
             {
                 "id": normalized.get("id"),
@@ -66,7 +66,7 @@ async def get_bank_policies() -> dict:
         return await client.get_banking_policies()
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
 
 
@@ -78,7 +78,7 @@ async def get_bank_plans() -> dict:
         return await client.get_bank_plans()
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
 
 
@@ -90,7 +90,7 @@ async def list_products(db: Session = Depends(get_db)) -> list:
         products = await client.get_products()
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     normalized_products = [_normalize_product(record) for record in products]

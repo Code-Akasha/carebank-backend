@@ -87,7 +87,7 @@ def test_bank_schedule_proxy_flow(client, monkeypatch):
                 "transaction": {
                     "id": 999001,
                     "settlement_status": "cleared",
-                }
+                },
             },
         }
 
@@ -99,7 +99,7 @@ def test_bank_schedule_proxy_flow(client, monkeypatch):
         return {"status": "cancelled", "schedule": schedule}
 
     monkeypatch.setattr(
-        BankingClient, "get_settlement_windows", fake_get_settlement_windows
+        BankingClient, "get_settlement_windows", fake_get_settlement_windows,
     )
     monkeypatch.setattr(BankingClient, "create_schedule", fake_create_schedule)
     monkeypatch.setattr(BankingClient, "get_schedules", fake_get_schedules)

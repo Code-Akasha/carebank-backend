@@ -1,32 +1,30 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
-from alembic import context
-
-from app.core.config import get_settings
-from app.core.database import Base
+import app.models.account
+import app.models.action_execution
+import app.models.action_request
+import app.models.audit_log
 
 # Import all models so Alembic autogenerate sees every table.
-import app.models.balance  # noqa: F401
-import app.models.transaction  # noqa: F401
-import app.models.product  # noqa: F401
-import app.models.account  # noqa: F401
-import app.models.provider  # noqa: F401
-import app.models.session  # noqa: F401
-import app.models.audit_log  # noqa: F401
-import app.models.user  # noqa: F401
+import app.models.balance
+import app.models.bill_snooze
+import app.models.checklist_item
+import app.models.financial_plan
+import app.models.idempotency_record
+import app.models.notification
+import app.models.product
+import app.models.provider
+import app.models.recurring_rule
+import app.models.session
+import app.models.transaction
+import app.models.user
+import app.models.user_mpin
 import app.models.user_profile  # noqa: F401
-import app.models.user_mpin  # noqa: F401
-import app.models.financial_plan  # noqa: F401
-import app.models.recurring_rule  # noqa: F401
-import app.models.checklist_item  # noqa: F401
-import app.models.notification  # noqa: F401
-import app.models.bill_snooze  # noqa: F401
-import app.models.action_request  # noqa: F401
-import app.models.action_execution  # noqa: F401
-import app.models.idempotency_record  # noqa: F401
+from alembic import context
+from app.core.config import get_settings
+from app.core.database import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

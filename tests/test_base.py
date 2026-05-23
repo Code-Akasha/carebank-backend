@@ -1,8 +1,8 @@
 from app.agents.base import (
-    AgentStatus,
     AgentContext,
     AgentInput,
     AgentOutput,
+    AgentStatus,
     BaseAgent,
 )
 

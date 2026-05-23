@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""
-Type Coverage Checker - Measures TypeScript/Python type coverage.
+"""Type Coverage Checker - Measures TypeScript/Python type coverage.
 Identifies untyped functions, any usage, and type safety issues.
 """
 
-import sys
 import re
+import sys
 from pathlib import Path
 
 # Fix Windows console encoding for Unicode output
@@ -143,7 +142,7 @@ def check_python_coverage(project_path: Path) -> dict:
             issues.append(f"[!] Type hints coverage: {typed_ratio:.0f}%")
         else:
             issues.append(
-                f"[X] Type hints coverage: {typed_ratio:.0f}% (add type hints)"
+                f"[X] Type hints coverage: {typed_ratio:.0f}% (add type hints)",
             )
 
     if stats["any_count"] == 0:

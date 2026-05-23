@@ -6,13 +6,12 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
+from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.services.banking_client import BankingClientError, get_banking_client
-
-from sqlalchemy.orm import Session
-from app.core.database import get_db
 
 router = APIRouter(prefix="/api/beneficiaries", tags=["beneficiaries"])
 
@@ -48,9 +47,9 @@ async def create_beneficiary_endpoint(
     identifier_type = "upi_id" if rail == "UPI" else "account_number"
     identifier_value = payload.upi_handle if rail == "UPI" else payload.account_number
 
+    from app.models.beneficiary import Beneficiary
     from app.schemas.payments import BeneficiaryCreate
     from app.services.beneficiary_service import create_beneficiary
-    from app.models.beneficiary import Beneficiary
 
     # Check if already exists in local DB
     db_beneficiary = (

@@ -39,7 +39,7 @@ def test_beneficiary_proxy_crud(client, monkeypatch):
             "created_at": "2026-03-14T00:00:00Z",
             "verified_at": None,
             "cooldown_expires_at": None,
-        }
+        },
     }
 
     async def fake_get_beneficiaries(self, uid):

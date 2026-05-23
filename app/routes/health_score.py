@@ -5,8 +5,8 @@ from pydantic import BaseModel
 
 from app.core.security import get_current_user, require_admin
 from app.models.user import User
+from app.services.banking_client import BankingClientError, get_banking_client
 from app.services.health_score import compute_health_score
-from app.services.banking_client import get_banking_client, BankingClientError
 
 router = APIRouter(prefix="/api/health-score", tags=["health-score"])
 
@@ -23,14 +23,13 @@ class HealthScoreResponse(BaseModel):
 def _score_to_message(score: float) -> str:
     if score >= 80:
         return "Excellent! Your finances are in great shape."
-    elif score >= 65:
+    if score >= 65:
         return "Good financial health. Keep up the momentum!"
-    elif score >= 50:
+    if score >= 50:
         return "Fair. There are a few areas to improve."
-    elif score >= 35:
+    if score >= 35:
         return "Your finances need attention. Let's work on a plan."
-    else:
-        return "Your financial health is at risk. Consider acting now."
+    return "Your financial health is at risk. Consider acting now."
 
 
 @router.get("/", response_model=HealthScoreResponse)
@@ -43,7 +42,7 @@ async def get_my_health_score(
         balance = await client.get_balance(current_user.user_id)
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     result = compute_health_score(
@@ -67,7 +66,7 @@ async def get_health_score(
         balance = await client.get_balance(user_id)
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     result = compute_health_score(

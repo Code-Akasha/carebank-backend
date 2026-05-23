@@ -54,7 +54,7 @@ class ScheduleFromTextRequest(BaseModel):
 
 
 class ScheduleFromTextResponse(BaseModel):
-    rule: "RecurringRuleResponse"
+    rule: RecurringRuleResponse
     extracted: dict
 
 

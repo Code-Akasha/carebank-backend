@@ -1,23 +1,22 @@
-from app.agents.base import AgentInput, AgentOutput
-from app.agents.intelligence import IntelligenceAgent
-from app.agents.communication import CommunicationAgent
-from app.agents.opportunity import OpportunityAgent
 from app.agents.auto_savings import AutoSavingsAgent
+from app.agents.base import AgentInput, AgentOutput
+from app.agents.communication import CommunicationAgent
 from app.agents.coordinator import (
+    _AGENT_INSTANCES,
+    _INTENT_TO_AGENT,
     ActionIntentResult,
     ClassificationResult,
-    build_coordinator_graph,
-    classify_intent,
-    plan_tasks,
-    execute_task,
     CoordinatorState,
     _classify_intent_keywords,
     _extract_amount_from_text,
     _get_agent,
-    _AGENT_INSTANCES,
-    _INTENT_TO_AGENT,
+    build_coordinator_graph,
+    classify_intent,
+    execute_task,
+    plan_tasks,
 )
-
+from app.agents.intelligence import IntelligenceAgent
+from app.agents.opportunity import OpportunityAgent
 
 # ── Base agent tests ──────────────────────────────────────────────────
 
@@ -28,7 +27,7 @@ class TestBaseAgentInterface:
         assert agent.name == "IntelligenceAgent"
 
         output = agent.invoke(
-            AgentInput(user_id="u1", message="score", intent="health_score")
+            AgentInput(user_id="u1", message="score", intent="health_score"),
         )
         assert isinstance(output, AgentOutput)
         assert output.agent_name == "IntelligenceAgent"
@@ -120,13 +119,13 @@ class TestKeywordClassification:
 
     def test_schedule_query_detected_as_planning(self):
         result = _classify_intent_keywords(
-            "create a shedule to pay rent on next moth 5th"
+            "create a shedule to pay rent on next moth 5th",
         )
         assert result.intent == "planning"
 
     def test_balance_plus_savings_sets_secondary_intent(self):
         result = _classify_intent_keywords(
-            "what is my balance and how can i improve my savings"
+            "what is my balance and how can i improve my savings",
         )
         assert result.intent == "balance"
         assert result.secondary_intent == "auto_savings"
@@ -559,7 +558,7 @@ class TestExecuteTask:
                     "intent": "health_score",
                     "agent_name": "IntelligenceAgent",
                     "parameters": {},
-                }
+                },
             ],
             "current_task_index": 0,
             "agent_results": [],
@@ -581,7 +580,7 @@ class TestExecuteTask:
                     "intent": "auto_savings",
                     "agent_name": "AutoSavingsAgent",
                     "parameters": {},
-                }
+                },
             ],
             "current_task_index": 0,
             "agent_results": [],
@@ -600,7 +599,7 @@ class TestExecuteTask:
                     "intent": "general",
                     "agent_name": "NonExistentAgent",
                     "parameters": {},
-                }
+                },
             ],
             "current_task_index": 0,
             "agent_results": [],
@@ -627,7 +626,7 @@ class TestCoordinatorGraph:
                 "message": "What is my health score?",
                 "audit_log": [],
                 "conversation_history": [],
-            }
+            },
         )
         assert result["intent"] == "health_score"
         assert "IntelligenceAgent" in result.get("agent_used", "")
@@ -642,7 +641,7 @@ class TestCoordinatorGraph:
                 "message": "Tell me something random",
                 "audit_log": [],
                 "conversation_history": [],
-            }
+            },
         )
         assert result["intent"] == "general"
         assert len(result.get("agent_response", "")) > 0
@@ -655,7 +654,7 @@ class TestCoordinatorGraph:
                 "message": "What if I spend 5000 on a flight?",
                 "audit_log": [],
                 "conversation_history": [],
-            }
+            },
         )
         assert result["intent"] == "what_if"
         # Should have agent results with data
@@ -669,7 +668,7 @@ class TestCoordinatorGraph:
                 "message": "What if I buy something?",
                 "audit_log": [],
                 "conversation_history": [],
-            }
+            },
         )
         assert result["intent"] in {"what_if", "affordability"}
         response = result.get("agent_response", "")
@@ -690,7 +689,7 @@ class TestCoordinatorGraph:
                 "message": "What is my score?",
                 "audit_log": [],
                 "conversation_history": [],
-            }
+            },
         )
         assert len(result["audit_log"]) >= 1
         assert result["audit_log"][0]["agent_used"] == "IntelligenceAgent"
@@ -705,7 +704,7 @@ class TestCoordinatorGraph:
                 "message": "create a shedule to pay rent on next moth 5th",
                 "audit_log": [],
                 "conversation_history": [],
-            }
+            },
         )
 
         second = graph.invoke(
@@ -714,7 +713,7 @@ class TestCoordinatorGraph:
                 "message": "5000",
                 "audit_log": [],
                 "conversation_history": first.get("conversation_history", []),
-            }
+            },
         )
 
         response = second.get("agent_response", "").lower()

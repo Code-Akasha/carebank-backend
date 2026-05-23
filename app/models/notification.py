@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text, UniqueConstraint
 
 from app.core.database import Base
 

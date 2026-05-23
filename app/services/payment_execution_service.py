@@ -3,21 +3,20 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy.orm import Session
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
 from app.models.beneficiary import Beneficiary
 from app.models.payment_history import PaymentHistory
 from app.models.user import User
 from app.schemas.payments import ExecutePaymentPayload, PaymentExecutionResult
+from app.services.banking_client import BankingClientError, trigger_transaction_sync
 from app.services.beneficiary_service import record_payment_to_beneficiary
 from app.services.payment_settings_service import (
     check_daily_limit,
     get_or_create_payment_settings,
     verify_mpin,
 )
-from app.services.banking_client import trigger_transaction_sync, BankingClientError
-
 
 # Payment limits by verification status
 PAYMENT_LIMITS = {
@@ -29,7 +28,7 @@ PAYMENT_LIMITS = {
 
 
 def validate_payment_method_available(
-    db: Session, user_id: str, payment_method: str
+    db: Session, user_id: str, payment_method: str,
 ) -> tuple[bool, str | None]:
     """Check if payment method is available for user.
 
@@ -46,29 +45,27 @@ def validate_payment_method_available(
                 "UPI payment requires phone number. Please add phone number in onboarding settings.",
             )
         return True, None
-    elif payment_method == "account_transfer":
+    if payment_method == "account_transfer":
         if not user.account_number or not user.account_ifsc:
             return (
                 False,
                 "Account transfer requires account number and IFSC. Please add account details in onboarding settings.",
             )
         return True, None
-    else:
-        return False, f"Unsupported payment method: {payment_method}"
+    return False, f"Unsupported payment method: {payment_method}"
 
 
 def get_per_transaction_limit(payment_method: str, is_verified: bool) -> float:
     """Get per-transaction limit based on method and verification status."""
     if payment_method == "upi":
         return PAYMENT_LIMITS["upi_verified" if is_verified else "upi_unverified"]
-    elif payment_method == "account_transfer":
+    if payment_method == "account_transfer":
         return PAYMENT_LIMITS[
             "account_transfer_verified"
             if is_verified
             else "account_transfer_unverified"
         ]
-    else:
-        raise ValueError(f"Unknown payment method: {payment_method}")
+    raise ValueError(f"Unknown payment method: {payment_method}")
 
 
 def validate_payment_amount(
@@ -172,7 +169,7 @@ def execute_generic_payment(
 
     # Step 1: Validate payment method available
     is_available, method_error = validate_payment_method_available(
-        db, user_id, payload.payment_method
+        db, user_id, payload.payment_method,
     )
     if not is_available:
         raise HTTPException(status_code=400, detail=method_error)
@@ -215,7 +212,7 @@ def execute_generic_payment(
     if requires_mpin:
         if not payload.mpin:
             raise HTTPException(
-                status_code=400, detail="MPIN required for this payment"
+                status_code=400, detail="MPIN required for this payment",
             )
 
         try:
@@ -254,7 +251,7 @@ def execute_generic_payment(
         # Extract the mockbank transaction ID from the proxy response
         transaction_data = response.get("transaction") or {}
         mockbank_transaction_id = str(
-            transaction_data.get("id") or f"MB-{uuid4().hex[:16].upper()}"
+            transaction_data.get("id") or f"MB-{uuid4().hex[:16].upper()}",
         )
         transaction_status = "success"
     except BankingClientError as e:
@@ -298,13 +295,12 @@ def execute_generic_payment(
             execution_id=payment_record.id,
             transaction_id=mockbank_transaction_id,
         )
-    else:
-        return PaymentExecutionResult(
-            status="failed",
-            message=f"Payment failed: {error_reason}",
-            execution_id=payment_record.id,
-            error_reason=error_reason,
-        )
+    return PaymentExecutionResult(
+        status="failed",
+        message=f"Payment failed: {error_reason}",
+        execution_id=payment_record.id,
+        error_reason=error_reason,
+    )
 
 
 def get_limit_name(is_verified: bool) -> str:

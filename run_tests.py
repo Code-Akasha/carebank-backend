@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""
-Test runner script for the payment system test suite.
+"""Test runner script for the payment system test suite.
 Runs tests by category and generates reports.
 """
 

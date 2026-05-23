@@ -13,8 +13,8 @@ from app.schemas.payments import (
 )
 from app.services.payment_settings_service import (
     get_payment_settings,
-    update_payment_settings,
     set_mpin,
+    update_payment_settings,
 )
 
 router = APIRouter(prefix="/api/payment-settings", tags=["payment-settings"])

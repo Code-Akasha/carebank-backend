@@ -87,7 +87,7 @@ class RedisConversationStore:
     def set_state(self, user_id: str, state: dict[str, Any]) -> None:
         try:
             self._client.set(
-                self._state_key(user_id), json.dumps(state), ex=_TTL_SECONDS
+                self._state_key(user_id), json.dumps(state), ex=_TTL_SECONDS,
             )
         except Exception as exc:
             logger.warning("Redis state set failed: %s", exc)

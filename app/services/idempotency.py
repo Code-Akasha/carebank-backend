@@ -42,7 +42,7 @@ def reserve_or_replay(
     if existing:
         if existing.request_hash != request_hash:
             raise IdempotencyConflictError(
-                "Idempotency key already used for a different request payload"
+                "Idempotency key already used for a different request payload",
             )
         return existing, True
 

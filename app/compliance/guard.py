@@ -4,8 +4,8 @@ import logging
 import re
 from typing import Any
 
-from app.models.audit_log import AuditLog
 from app.core.database import SessionLocal
+from app.models.audit_log import AuditLog
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,14 @@ def validate_and_refine(
     intent: str,
     original_data: dict[str, Any] | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    """
-    Compliance Guard validation pipeline.
+    """Compliance Guard validation pipeline.
     1. Blacklist check
     2. Number verification (if original data provided)
     3. Disclaimer injection
 
     Returns:
         tuple of (refined_response, compliance_metadata)
+
     """
     metadata: dict[str, Any] = {
         "blacklist_flagged": False,

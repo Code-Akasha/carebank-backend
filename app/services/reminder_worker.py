@@ -12,9 +12,9 @@ from app.models.checklist_item import ChecklistItem
 from app.models.notification import Notification
 from app.models.recurring_rule import RecurringRule
 from app.models.user import User
+from app.schemas.action_engine import ActionRequestCreate
 from app.services.action_request_service import create_action_request_for_user
 from app.services.planning_service import advance_month, create_checklist_item
-from app.schemas.action_engine import ActionRequestCreate
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ def _create_notification_if_missing(
             title=title,
             body=body,
             payload_json=payload,
-        )
+        ),
     )
     return True
 
@@ -99,7 +99,6 @@ def run_reminder_worker(
     - notification dedupe keys
     - action request idempotency keys
     """
-
     today = as_of or date.today()
     now = datetime.now(timezone.utc)
     horizon = today + timedelta(days=max(0, int(horizon_days)))

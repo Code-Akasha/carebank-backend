@@ -9,7 +9,6 @@ from app.models.bill_snooze import BillSnooze
 from app.models.checklist_item import ChecklistItem
 from app.models.recurring_rule import RecurringRule
 
-
 _ACTION_MATCHERS: dict[str, dict[str, Any]] = {
     "pay_rent": {
         "categories": {"rent"},
@@ -84,7 +83,6 @@ def discover_bill_candidates(
 
     Output is intentionally JSON-serializable so it can be stored in conversation_state.
     """
-
     normalized_type = (action_type or "").strip().lower()
     if normalized_type not in _ACTION_MATCHERS:
         return []
@@ -156,7 +154,7 @@ def discover_bill_candidates(
                 "amount": float(amount) if amount is not None else None,
                 "due_date": item.due_date.isoformat(),
                 "action_type": normalized_type,
-            }
+            },
         )
         if item.recurring_rule_id is not None:
             checklist_rule_ids_included.add(int(item.recurring_rule_id))
@@ -185,7 +183,7 @@ def discover_bill_candidates(
         if rule.id in checklist_rule_ids_included:
             continue
         if not _matches_action_type(
-            normalized_type, category=rule.category, title=rule.title
+            normalized_type, category=rule.category, title=rule.title,
         ):
             continue
 
@@ -199,7 +197,7 @@ def discover_bill_candidates(
                 "amount": float(rule.amount) if rule.amount is not None else None,
                 "due_date": rule.next_run_date.isoformat(),
                 "action_type": normalized_type,
-            }
+            },
         )
 
     return candidates

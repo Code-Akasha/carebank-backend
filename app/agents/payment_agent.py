@@ -2,17 +2,16 @@
 
 import logging
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
+from app.agents.base import AgentInput, AgentOutput, AgentStatus, BaseAgent
 from app.core.database import SessionLocal
 from app.models.beneficiary import Beneficiary
-from app.models.user import User
 from app.models.payment_settings import PaymentSettings
+from app.models.user import User
 from app.schemas.payments import ExecutePaymentPayload
 from app.services.payment_execution_service import execute_generic_payment
-from app.agents.base import BaseAgent, AgentInput, AgentOutput, AgentStatus
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +34,13 @@ class PaymentContext(BaseModel):
 
     user_id: str
     state: PaymentState = PaymentState.START
-    beneficiary_id: Optional[int] = None
-    amount: Optional[float] = None
-    payment_method: Optional[str] = None  # "upi" or "account_transfer"
-    description: Optional[str] = None
+    beneficiary_id: int | None = None
+    amount: float | None = None
+    payment_method: str | None = None  # "upi" or "account_transfer"
+    description: str | None = None
     requires_mpin: bool = False
-    error_message: Optional[str] = None
-    execution_id: Optional[str] = None
+    error_message: str | None = None
+    execution_id: str | None = None
 
     class Config:
         use_enum_values = False
@@ -52,13 +51,12 @@ class PaymentAgentResponse(BaseModel):
 
     message: str
     context: PaymentContext
-    options: Optional[list[dict]] = None  # For UI buttons/choices
-    error: Optional[str] = None
+    options: list[dict] | None = None  # For UI buttons/choices
+    error: str | None = None
 
 
 class PaymentAgent:
-    """
-    Conversational agent for one-time payments.
+    """Conversational agent for one-time payments.
 
     Flow:
     1. Ask which beneficiary (show saved contacts)
@@ -78,68 +76,66 @@ class PaymentAgent:
         Agent: "Enter MPIN"
         User: "1234"
         Agent: "✅ Payment successful! Transaction ID: MB-xxx"
+
     """
 
-    def __init__(self, db: Optional[SessionLocal] = None):
+    def __init__(self, db: SessionLocal | None = None):
         """Initialize agent with optional DB session."""
         self.db = db or SessionLocal()
 
     def process_message(
-        self, user_id: str, message: str, context: PaymentContext
+        self, user_id: str, message: str, context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Process user message and return agent response."""
-
         try:
             # State machine routing
             if context.state == PaymentState.START:
                 return self._handle_start(user_id, message, context)
 
-            elif context.state == PaymentState.SELECTING_BENEFICIARY:
+            if context.state == PaymentState.SELECTING_BENEFICIARY:
                 return self._handle_beneficiary_selection(user_id, message, context)
 
-            elif context.state == PaymentState.ENTERING_AMOUNT:
+            if context.state == PaymentState.ENTERING_AMOUNT:
                 return self._handle_amount_entry(user_id, message, context)
 
-            elif context.state == PaymentState.SELECTING_METHOD:
+            if context.state == PaymentState.SELECTING_METHOD:
                 return self._handle_method_selection(user_id, message, context)
 
-            elif context.state == PaymentState.CONFIRMING:
+            if context.state == PaymentState.CONFIRMING:
                 return self._handle_confirmation(user_id, message, context)
 
-            elif context.state == PaymentState.ENTERING_MPIN:
+            if context.state == PaymentState.ENTERING_MPIN:
                 return self._handle_mpin_entry(user_id, message, context)
 
-            elif context.state == PaymentState.COMPLETE:
+            if context.state == PaymentState.COMPLETE:
                 return PaymentAgentResponse(
                     message="Payment complete! Start a new payment?",
                     context=PaymentContext(user_id=user_id, state=PaymentState.START),
                     options=[{"label": "New payment", "value": "yes"}],
                 )
 
-            else:
-                context.error_message = "Unknown state"
-                context.state = PaymentState.FAILED
-                return PaymentAgentResponse(
-                    message="❌ Conversation error. Restarting...",
-                    context=context,
-                    error="Unknown state",
-                )
+            context.error_message = "Unknown state"
+            context.state = PaymentState.FAILED
+            return PaymentAgentResponse(
+                message="❌ Conversation error. Restarting...",
+                context=context,
+                error="Unknown state",
+            )
 
         except Exception as exc:
             logger.error(f"Payment agent error: {exc}", exc_info=True)
             context.error_message = str(exc)
             context.state = PaymentState.FAILED
             return PaymentAgentResponse(
-                message=f"❌ Error: {str(exc)}",
+                message=f"❌ Error: {exc!s}",
                 context=context,
                 error=str(exc),
             )
 
     def _handle_start(
-        self, user_id: str, message: str, context: PaymentContext
+        self, user_id: str, message: str, context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle initial state - ask which beneficiary."""
-
         # Get saved beneficiaries
         beneficiaries = (
             self.db.query(Beneficiary).filter(Beneficiary.user_id == user_id).all()
@@ -174,10 +170,9 @@ class PaymentAgent:
         )
 
     def _handle_beneficiary_selection(
-        self, user_id: str, message: str, context: PaymentContext
+        self, user_id: str, message: str, context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle beneficiary selection."""
-
         selection = message.strip().lower()
 
         if selection == "new":
@@ -228,10 +223,9 @@ class PaymentAgent:
         )
 
     def _handle_amount_entry(
-        self, user_id: str, message: str, context: PaymentContext
+        self, user_id: str, message: str, context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle amount input."""
-
         try:
             amount = float(message)
 
@@ -259,7 +253,7 @@ class PaymentAgent:
                 available_methods.append({"label": "UPI", "value": "upi"})
             if user.account_number:
                 available_methods.append(
-                    {"label": "Account Transfer", "value": "account_transfer"}
+                    {"label": "Account Transfer", "value": "account_transfer"},
                 )
 
             if not available_methods:
@@ -292,10 +286,9 @@ class PaymentAgent:
             )
 
     def _handle_method_selection(
-        self, user_id: str, message: str, context: PaymentContext
+        self, user_id: str, message: str, context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle payment method selection."""
-
         if message.lower() not in ["upi", "account_transfer"]:
             return PaymentAgentResponse(
                 message="❌ Invalid method. Please select 'UPI' or 'Account Transfer'.",
@@ -309,7 +302,6 @@ class PaymentAgent:
 
     def _generate_confirmation(self, context: PaymentContext) -> PaymentAgentResponse:
         """Generate confirmation message."""
-
         # Get beneficiary info
         if context.beneficiary_id:
             beneficiary = (
@@ -360,10 +352,9 @@ class PaymentAgent:
         )
 
     def _handle_confirmation(
-        self, user_id: str, message: str, context: PaymentContext
+        self, user_id: str, message: str, context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle confirmation."""
-
         if message.lower() == "no":
             context.state = PaymentState.FAILED
             return PaymentAgentResponse(
@@ -384,15 +375,13 @@ class PaymentAgent:
                 message="Enter your MPIN (4-6 digits):",
                 context=context,
             )
-        else:
-            # Execute without MPIN
-            return self._execute_payment(user_id, context, mpin=None)
+        # Execute without MPIN
+        return self._execute_payment(user_id, context, mpin=None)
 
     def _handle_mpin_entry(
-        self, user_id: str, message: str, context: PaymentContext
+        self, user_id: str, message: str, context: PaymentContext,
     ) -> PaymentAgentResponse:
         """Handle MPIN entry."""
-
         if not message or len(message) < 4 or len(message) > 6:
             return PaymentAgentResponse(
                 message="❌ MPIN must be 4-6 digits. Please try again:",
@@ -402,10 +391,9 @@ class PaymentAgent:
         return self._execute_payment(user_id, context, mpin=message)
 
     def _execute_payment(
-        self, user_id: str, context: PaymentContext, mpin: Optional[str]
+        self, user_id: str, context: PaymentContext, mpin: str | None,
     ) -> PaymentAgentResponse:
         """Execute the payment."""
-
         try:
             # Build payment payload
             payload = ExecutePaymentPayload(
@@ -437,21 +425,20 @@ class PaymentAgent:
                     f"Transaction ID: {result.transaction_id}",
                     context=context,
                 )
-            else:
-                context.error_message = result.error_reason or "Payment failed"
-                context.state = PaymentState.FAILED
-                return PaymentAgentResponse(
-                    message=f"❌ {result.message}",
-                    context=context,
-                    error=result.error_reason,
-                )
+            context.error_message = result.error_reason or "Payment failed"
+            context.state = PaymentState.FAILED
+            return PaymentAgentResponse(
+                message=f"❌ {result.message}",
+                context=context,
+                error=result.error_reason,
+            )
 
         except Exception as exc:
             logger.error(f"Payment execution failed: {exc}", exc_info=True)
             context.error_message = str(exc)
             context.state = PaymentState.FAILED
             return PaymentAgentResponse(
-                message=f"❌ Payment failed: {str(exc)}",
+                message=f"❌ Payment failed: {exc!s}",
                 context=context,
                 error=str(exc),
             )

@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""
-Conversion Script: React Best Practices → .agent Format
+"""Conversion Script: React Best Practices → .agent Format
 Merges 59 individual rules into 8 grouped section files
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Section metadata from _sections.md
 SECTIONS = {
@@ -60,7 +58,7 @@ SECTIONS = {
 }
 
 
-def parse_frontmatter(content: str) -> Tuple[Dict, str]:
+def parse_frontmatter(content: str) -> tuple[dict, str]:
     """Parse markdown frontmatter and body"""
     if not content.startswith("---"):
         return {}, content
@@ -80,9 +78,9 @@ def parse_frontmatter(content: str) -> Tuple[Dict, str]:
     return frontmatter, body
 
 
-def parse_rule_file(filepath: Path) -> Dict:
+def parse_rule_file(filepath: Path) -> dict:
     """Parse a single rule file"""
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     frontmatter, body = parse_frontmatter(content)
@@ -103,9 +101,9 @@ def parse_rule_file(filepath: Path) -> Dict:
     }
 
 
-def group_rules_by_section(rules_dir: Path) -> Dict[str, List[Dict]]:
+def group_rules_by_section(rules_dir: Path) -> dict[str, list[dict]]:
     """Group all rules by their section prefix"""
-    grouped = {prefix: [] for prefix in SECTIONS.keys()}
+    grouped = {prefix: [] for prefix in SECTIONS}
 
     for rule_file in sorted(rules_dir.glob("*.md")):
         # Skip special files
@@ -123,7 +121,7 @@ def group_rules_by_section(rules_dir: Path) -> Dict[str, List[Dict]]:
     return grouped
 
 
-def generate_section_file(section_prefix: str, rules: List[Dict], output_dir: Path):
+def generate_section_file(section_prefix: str, rules: list[dict], output_dir: Path):
     """Generate a merged section file"""
     if not rules:
         print(f"[WARNING] No rules found for section: {section_prefix}")
@@ -210,7 +208,7 @@ def main():
 
     # Generate section files
     print("[*] Generating section files...")
-    for section_prefix in SECTIONS.keys():
+    for section_prefix in SECTIONS:
         rules = grouped_rules[section_prefix]
         generate_section_file(section_prefix, rules, output_dir)
 

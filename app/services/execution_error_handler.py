@@ -1,5 +1,4 @@
-"""
-Error handling utilities for execution errors.
+"""Error handling utilities for execution errors.
 
 Converts internal exception types into user-friendly messages
 while preserving technical details in logs.
@@ -36,10 +35,9 @@ class ExecutionErrorMessage:
 
 
 def format_execution_error(
-    exc: Exception, action_type: str | None = None
+    exc: Exception, action_type: str | None = None,
 ) -> ExecutionErrorMessage:
-    """
-    Convert an exception into a user-friendly error message.
+    """Convert an exception into a user-friendly error message.
 
     **Parameters:**
     - exc: The exception that occurred
@@ -69,7 +67,7 @@ def format_execution_error(
     # Amount validation
     if isinstance(exc, ValueError) and "amount" in str(exc).lower():
         return ExecutionErrorMessage(
-            message=f"Invalid amount: {str(exc)}",
+            message=f"Invalid amount: {exc!s}",
             error_type="amount_error",
             suggestion="Amount must be positive and within policy limits.",
             is_retryable=False,
@@ -114,8 +112,7 @@ def get_friendly_action_error_response(
     exc: Exception,
     action_type: str | None = None,
 ) -> dict:
-    """
-    Get a normalized error response dict for action execution failures.
+    """Get a normalized error response dict for action execution failures.
 
     **Returns:**
     ```python

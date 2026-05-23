@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
-
 
 # ============================================================================
 # BUSINESS ONBOARDING
@@ -20,8 +18,8 @@ class BusinessProfileResponse(BaseModel):
     user_id: str
     business_name: str
     category: str
-    description: Optional[str] = None
-    gst_number: Optional[str] = None
+    description: str | None = None
+    gst_number: str | None = None
     is_verified_business: bool
     created_at: datetime
 
@@ -46,10 +44,10 @@ class ServicePlanCreate(BaseModel):
 class ServicePlanUpdate(BaseModel):
     """Update an existing service plan."""
 
-    plan_name: Optional[str] = Field(None, min_length=1, max_length=200)
-    unit_label: Optional[str] = Field(None, min_length=1, max_length=50)
-    unit_price: Optional[float] = Field(None, gt=0, le=10000000)
-    is_active: Optional[bool] = None
+    plan_name: str | None = Field(None, min_length=1, max_length=200)
+    unit_label: str | None = Field(None, min_length=1, max_length=50)
+    unit_price: float | None = Field(None, gt=0, le=10000000)
+    is_active: bool | None = None
 
 
 class ServicePlanResponse(BaseModel):
@@ -77,21 +75,21 @@ class BillCreate(BaseModel):
     """Business issues a bill to a user."""
 
     target_user_id: str = Field(..., min_length=1)
-    service_plan_id: Optional[int] = Field(
-        None, description="Link to a service plan for auto-pricing"
+    service_plan_id: int | None = Field(
+        None, description="Link to a service plan for auto-pricing",
     )
-    plan_name: Optional[str] = Field(
-        None, max_length=200, description="Manual plan name if no plan_id"
+    plan_name: str | None = Field(
+        None, max_length=200, description="Manual plan name if no plan_id",
     )
     quantity: float = Field(default=1.0, gt=0, le=100000)
-    amount: Optional[float] = Field(
+    amount: float | None = Field(
         None,
         gt=0,
         le=50000000,
         description="Override amount (auto-calculated from plan if omitted)",
     )
-    description: Optional[str] = Field(None, max_length=500)
-    due_date: Optional[date] = None
+    description: str | None = Field(None, max_length=500)
+    due_date: date | None = None
 
 
 class BillPayRequest(BaseModel):
@@ -104,7 +102,7 @@ class BillPayRequest(BaseModel):
 class BillCancelRequest(BaseModel):
     """Business cancels a bill."""
 
-    reason: Optional[str] = Field(None, max_length=200)
+    reason: str | None = Field(None, max_length=200)
 
 
 class BillResponse(BaseModel):
@@ -112,18 +110,18 @@ class BillResponse(BaseModel):
 
     id: int
     business_user_id: str
-    business_name: Optional[str] = None
+    business_name: str | None = None
     target_user_id: str
-    service_plan_id: Optional[int] = None
+    service_plan_id: int | None = None
     plan_name: str
     quantity: float
     amount: float
     currency: str
-    description: Optional[str] = None
+    description: str | None = None
     status: str
-    due_date: Optional[date] = None
-    paid_at: Optional[datetime] = None
-    payment_transaction_id: Optional[str] = None
+    due_date: date | None = None
+    paid_at: datetime | None = None
+    payment_transaction_id: str | None = None
     created_at: datetime
 
     class Config:

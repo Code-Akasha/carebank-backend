@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Reminder Worker Daemon
+"""Reminder Worker Daemon
 
 A production-ready reminder worker that can run continuously or as a scheduled job.
 Includes monitoring, error handling, and escalation capabilities.
@@ -62,7 +61,7 @@ class ReminderDaemon:
         """Handle shutdown signals gracefully."""
         signal_name = signal.Signals(signum).name
         self.logger.info(
-            "Received %s signal, initiating graceful shutdown...", signal_name
+            "Received %s signal, initiating graceful shutdown...", signal_name,
         )
         self.stop()
 
@@ -105,9 +104,10 @@ class ReminderDaemon:
     def _escalate_overdue_items(self, db: Session) -> None:
         """Escalate severely overdue items (e.g., send high-priority notifications)."""
         try:
+            from datetime import date, timedelta
+
             from app.models.checklist_item import ChecklistItem
             from app.models.user import User
-            from datetime import date, timedelta
 
             # Find items overdue by more than 7 days
             cutoff = date.today() - timedelta(days=7)
@@ -173,7 +173,7 @@ class ReminderDaemon:
     def start(self) -> None:
         """Start the daemon (run continuously)."""
         self.logger.info(
-            "Starting reminder worker daemon (interval=%ds)", self.interval
+            "Starting reminder worker daemon (interval=%ds)", self.interval,
         )
         self.running = True
 
@@ -215,7 +215,6 @@ class ReminderDaemon:
 
 def main() -> None:
     """Main entry point."""
-
     parser = argparse.ArgumentParser(description="Reminder Worker Daemon")
     parser.add_argument(
         "--mode",

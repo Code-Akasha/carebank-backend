@@ -36,7 +36,7 @@ def test_reconcile_updates_execution_to_rollback(client, monkeypatch):
                 "transaction": {
                     "id": transaction_id,
                     "status": "success",
-                }
+                },
             },
         }
 
@@ -120,7 +120,7 @@ def test_reconcile_skips_missing_transaction_id(client, monkeypatch):
             "upstream_response": {
                 "transaction": {
                     "status": "success",
-                }
+                },
             },
         }
 

@@ -174,7 +174,7 @@ class BankTransactionTool:
         defaults = self._action_defaults.get(action_type, {})
 
         payment_rail = str(
-            payload.get("payment_rail") or defaults.get("payment_rail", "UPI")
+            payload.get("payment_rail") or defaults.get("payment_rail", "UPI"),
         ).upper()
 
         transaction_payload = {
@@ -259,7 +259,7 @@ class ActionToolRegistry:
         return None
 
     def validate_payload(
-        self, action_type: str, payload: dict
+        self, action_type: str, payload: dict,
     ) -> tuple[bool, str | None]:
         """Validate payload against tool schema.
 
@@ -280,7 +280,7 @@ class ActionToolRegistry:
             schema.model_validate(payload)
             return True, None
         except Exception as exc:
-            return False, f"Payload validation failed: {str(exc)}"
+            return False, f"Payload validation failed: {exc!s}"
 
 
 class GenericPaymentTool:
@@ -350,7 +350,7 @@ class GenericPaymentTool:
                     "error_reason": result.error_reason,
                 }
 
-            elif action_type == "setup_recurring_payment":
+            if action_type == "setup_recurring_payment":
                 # Create recurring payment rule
                 payload_obj = RecurringPaymentCreate.model_validate(payload)
                 rule = create_recurring_payment_rule(db, user_id, payload_obj)
@@ -365,18 +365,17 @@ class GenericPaymentTool:
                     "amount": rule.amount,
                 }
 
-            else:
-                return {
-                    "status": "error",
-                    "action_type": action_type,
-                    "message": f"Unknown action type: {action_type}",
-                }
+            return {
+                "status": "error",
+                "action_type": action_type,
+                "message": f"Unknown action type: {action_type}",
+            }
 
         except Exception as exc:
             return {
                 "status": "error",
                 "action_type": action_type,
-                "message": f"Payment execution failed: {str(exc)}",
+                "message": f"Payment execution failed: {exc!s}",
                 "error_reason": str(exc),
             }
         finally:

@@ -37,7 +37,7 @@ class TelegramPollingService:
     async def run_forever(self) -> None:
         await self.delete_webhook()
         logger.info(
-            "Telegram polling started. Forwarding updates to %s", self.forward_url
+            "Telegram polling started. Forwarding updates to %s", self.forward_url,
         )
 
         async with httpx.AsyncClient(timeout=self.request_timeout_seconds) as client:

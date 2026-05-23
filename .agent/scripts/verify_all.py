@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Full Verification Suite - Antigravity Kit
+"""Full Verification Suite - Antigravity Kit
 ==========================================
 
 Runs COMPLETE validation including all checks + performance + E2E.
@@ -22,12 +21,11 @@ Includes ALL checks:
     ✅ Mobile Audit (if applicable)
 """
 
-import sys
-import subprocess
 import argparse
-from pathlib import Path
-from typing import List, Optional
+import subprocess
+import sys
 from datetime import datetime
+from pathlib import Path
 
 
 # ANSI colors
@@ -203,7 +201,7 @@ VERIFICATION_SUITE = [
 
 
 def run_script(
-    name: str, script_path: Path, project_path: str, url: Optional[str] = None
+    name: str, script_path: Path, project_path: str, url: str | None = None,
 ) -> dict:
     """Run validation script"""
     if not script_path.exists():
@@ -262,7 +260,7 @@ def run_script(
 
     except Exception as e:
         duration = (datetime.now() - start_time).total_seconds()
-        print_error(f"{name}: ERROR - {str(e)}")
+        print_error(f"{name}: ERROR - {e!s}")
         return {
             "name": name,
             "passed": False,
@@ -272,7 +270,7 @@ def run_script(
         }
 
 
-def print_final_report(results: List[dict], start_time: datetime):
+def print_final_report(results: list[dict], start_time: datetime):
     """Print comprehensive final report"""
     total_duration = (datetime.now() - start_time).total_seconds()
 
@@ -328,12 +326,11 @@ def print_final_report(results: List[dict], start_time: datetime):
     if failed > 0:
         print_error(f"VERIFICATION FAILED - {failed} check(s) need attention")
         print(
-            f"\n{Colors.YELLOW}💡 Tip: Fix critical (security, lint) issues first{Colors.ENDC}"
+            f"\n{Colors.YELLOW}💡 Tip: Fix critical (security, lint) issues first{Colors.ENDC}",
         )
         return False
-    else:
-        print_success("✨ ALL CHECKS PASSED - Ready for deployment! ✨")
-        return True
+    print_success("✨ ALL CHECKS PASSED - Ready for deployment! ✨")
+    return True
 
 
 def main():
@@ -350,7 +347,7 @@ Examples:
     parser.add_argument("--url", required=True, help="URL for performance & E2E checks")
     parser.add_argument("--no-e2e", action="store_true", help="Skip E2E tests")
     parser.add_argument(
-        "--stop-on-fail", action="store_true", help="Stop on first failure"
+        "--stop-on-fail", action="store_true", help="Stop on first failure",
     )
 
     args = parser.parse_args()

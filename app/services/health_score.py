@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from app.core.finance import calculate_health_score
+from app.services.clustering import cluster_persona
 from app.services.data import (
-    calculate_monthly_stats,
     aggregate_spending_profile,
+    calculate_monthly_stats,
     generate_mock_transactions,
 )
 from app.services.forecast import forecast_balance
-from app.services.clustering import cluster_persona
 
 
 def compute_health_score(
@@ -15,8 +15,7 @@ def compute_health_score(
     transactions: list[dict] | None = None,
     current_balance: float | None = None,
 ) -> dict:
-    """
-    Full Health Score computation pipeline.
+    """Full Health Score computation pipeline.
 
     1. Get transactions (or generate mock data)
     2. Calculate savings_ratio & expense_variance from monthly stats

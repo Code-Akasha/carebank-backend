@@ -1,6 +1,7 @@
 """Quick verification: list all tables in carebank_db."""
 
 import sys
+
 import psycopg2
 
 conn = psycopg2.connect(
@@ -12,7 +13,7 @@ conn = psycopg2.connect(
 )
 cur = conn.cursor()
 cur.execute(
-    "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename"
+    "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename",
 )
 tables = [r[0] for r in cur.fetchall()]
 print("Tables in carebank_db:", tables)

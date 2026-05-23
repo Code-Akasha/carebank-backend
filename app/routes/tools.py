@@ -1,5 +1,4 @@
-"""
-Tool discovery and metadata endpoints.
+"""Tool discovery and metadata endpoints.
 
 Allows frontend and other clients to:
 1. List available tools
@@ -20,8 +19,7 @@ router = APIRouter(prefix="/api/tools", tags=["tools"])
 
 @router.get("/available", response_model=ToolDiscoveryResponse)
 def get_available_tools():
-    """
-    Discover all available tools and their supported action types.
+    """Discover all available tools and their supported action types.
 
     Returns schema information for each action type to enable frontend
     validation and dynamic UI rendering.
@@ -72,7 +70,7 @@ def get_available_tools():
                 description=f"Execute {action_type} action",
                 payload_schema=schema_dict,
                 requires_approval=metadata.get("requires_approval", {}).get(
-                    action_type, False
+                    action_type, False,
                 ),
                 max_amount=metadata.get("max_amount_per_action", {}).get(action_type),
                 default_merchant=defaults.get("merchant"),
@@ -89,8 +87,7 @@ def get_available_tools():
 
 @router.get("/{action_type}/schema")
 def get_action_schema(action_type: str):
-    """
-    Get the detailed schema for a specific action type.
+    """Get the detailed schema for a specific action type.
 
     **Parameters:**
     - action_type: The action identifier (e.g., 'pay_rent', 'transfer_savings')
@@ -133,8 +130,7 @@ def get_action_schema(action_type: str):
 
 @router.post("/{action_type}/validate")
 def validate_action_payload(action_type: str, payload: dict):
-    """
-    Dry-run validation of an action payload without executing it.
+    """Dry-run validation of an action payload without executing it.
 
     Useful for frontend to validate user input before submitting approval request.
 
@@ -174,13 +170,13 @@ def validate_action_payload(action_type: str, payload: dict):
                         "is_valid": False,
                         "action_type": action_type,
                         "errors": [
-                            f"Amount {amount_float} exceeds policy maximum of {policy.max_amount}"
+                            f"Amount {amount_float} exceeds policy maximum of {policy.max_amount}",
                         ],
                         "warnings": [],
                     }
-                elif amount_float > policy.max_amount * 0.9:  # 90% threshold
+                if amount_float > policy.max_amount * 0.9:  # 90% threshold
                     warnings.append(
-                        f"Amount {amount_float} is near the policy limit of {policy.max_amount}"
+                        f"Amount {amount_float} is near the policy limit of {policy.max_amount}",
                     )
             except (ValueError, TypeError):
                 pass
@@ -196,8 +192,7 @@ def validate_action_payload(action_type: str, payload: dict):
 
 @router.get("/action-types/list")
 def list_action_types():
-    """
-    Get a simple list of all supported action types.
+    """Get a simple list of all supported action types.
 
     Useful for frontend navigation/menu rendering.
 

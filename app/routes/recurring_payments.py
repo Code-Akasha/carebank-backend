@@ -13,13 +13,13 @@ from app.schemas.payments import (
 )
 from app.services.recurring_payment_service import (
     create_recurring_payment_rule,
+    delete_recurring_payment_rule,
     get_recurring_payment_rule,
+    get_upcoming_payments,
     list_recurring_payment_rules,
-    update_recurring_payment_rule,
     pause_recurring_payment_rule,
     resume_recurring_payment_rule,
-    delete_recurring_payment_rule,
-    get_upcoming_payments,
+    update_recurring_payment_rule,
 )
 
 router = APIRouter(prefix="/api/recurring-payments", tags=["recurring-payments"])
@@ -41,6 +41,7 @@ async def create_recurring_payment(
 
     Returns:
     - Full recurring payment rule with calculated next_run_date
+
     """
     rule = create_recurring_payment_rule(db, current_user.user_id, payload)
     return RecurringPaymentResponse.model_validate(rule)

@@ -9,7 +9,7 @@ from app.core.security import get_current_user
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.models import TransactionResponse, TransactionTriggerCreate
-from app.services.banking_client import get_banking_client, BankingClientError
+from app.services.banking_client import BankingClientError, get_banking_client
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
 
@@ -35,7 +35,7 @@ def _persist_transactions(db: Session, records: list[dict]) -> None:
                     merchant=record.get("merchant"),
                     category=record.get("category"),
                     description=record.get("description"),
-                )
+                ),
             )
     db.commit()
 
@@ -59,7 +59,7 @@ async def list_transactions(
         )
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     _persist_transactions(db, records)
@@ -119,6 +119,6 @@ async def trigger_transaction_proxy(
         response = await client.trigger_transaction(payload_dict)
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
     return response

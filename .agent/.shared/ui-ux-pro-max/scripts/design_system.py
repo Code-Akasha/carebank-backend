@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Design System Generator - Aggregates search results and applies reasoning
+"""Design System Generator - Aggregates search results and applies reasoning
 to generate comprehensive design system recommendations.
 
 Usage:
@@ -17,8 +15,8 @@ import csv
 import json
 from datetime import datetime
 from pathlib import Path
-from core import search, DATA_DIR
 
+from core import DATA_DIR, search
 
 # ============ CONFIGURATION ============
 REASONING_FILE = "ui-reasoning.csv"
@@ -44,7 +42,7 @@ class DesignSystemGenerator:
         filepath = DATA_DIR / REASONING_FILE
         if not filepath.exists():
             return []
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             return list(csv.DictReader(f))
 
     def _multi_domain_search(self, query: str, style_priority: list = None) -> dict:
@@ -187,7 +185,7 @@ class DesignSystemGenerator:
         landing_results = self._extract_results(search_results.get("landing", {}))
 
         best_style = self._select_best_match(
-            style_results, reasoning.get("style_priority", [])
+            style_results, reasoning.get("style_priority", []),
         )
         best_color = color_results[0] if color_results else {}
         best_typography = typography_results[0] if typography_results else {}
@@ -197,18 +195,18 @@ class DesignSystemGenerator:
         # Combine effects from both reasoning and style search
         style_effects = best_style.get("Effects & Animation", "")
         reasoning_effects = reasoning.get("key_effects", "")
-        combined_effects = style_effects if style_effects else reasoning_effects
+        combined_effects = style_effects or reasoning_effects
 
         return {
             "project_name": project_name or query.upper(),
             "category": category,
             "pattern": {
                 "name": best_landing.get(
-                    "Pattern Name", reasoning.get("pattern", "Hero + Features + CTA")
+                    "Pattern Name", reasoning.get("pattern", "Hero + Features + CTA"),
                 ),
                 "sections": best_landing.get("Section Order", "Hero > Features > CTA"),
                 "cta_placement": best_landing.get(
-                    "Primary CTA Placement", "Above fold"
+                    "Primary CTA Placement", "Above fold",
                 ),
                 "color_strategy": best_landing.get("Color Strategy", ""),
                 "conversion": best_landing.get("Conversion Optimization", ""),
@@ -234,7 +232,7 @@ class DesignSystemGenerator:
                 "heading": best_typography.get("Heading Font", "Inter"),
                 "body": best_typography.get("Body Font", "Inter"),
                 "mood": best_typography.get(
-                    "Mood/Style Keywords", reasoning.get("typography_mood", "")
+                    "Mood/Style Keywords", reasoning.get("typography_mood", ""),
                 ),
                 "best_for": best_typography.get("Best For", ""),
                 "google_fonts_url": best_typography.get("Google Fonts URL", ""),
@@ -289,7 +287,7 @@ def format_ascii_box(design_system: dict) -> str:
 
     lines.append("+" + "-" * w + "+")
     lines.append(
-        f"|  TARGET: {project} - RECOMMENDED DESIGN SYSTEM".ljust(BOX_WIDTH) + "|"
+        f"|  TARGET: {project} - RECOMMENDED DESIGN SYSTEM".ljust(BOX_WIDTH) + "|",
     )
     lines.append("+" + "-" * w + "+")
     lines.append("|" + " " * BOX_WIDTH + "|")
@@ -298,11 +296,11 @@ def format_ascii_box(design_system: dict) -> str:
     lines.append(f"|  PATTERN: {pattern.get('name', '')}".ljust(BOX_WIDTH) + "|")
     if pattern.get("conversion"):
         lines.append(
-            f"|     Conversion: {pattern.get('conversion', '')}".ljust(BOX_WIDTH) + "|"
+            f"|     Conversion: {pattern.get('conversion', '')}".ljust(BOX_WIDTH) + "|",
         )
     if pattern.get("cta_placement"):
         lines.append(
-            f"|     CTA: {pattern.get('cta_placement', '')}".ljust(BOX_WIDTH) + "|"
+            f"|     CTA: {pattern.get('cta_placement', '')}".ljust(BOX_WIDTH) + "|",
         )
     lines.append("|     Sections:".ljust(BOX_WIDTH) + "|")
     for i, section in enumerate(sections, 1):
@@ -313,12 +311,12 @@ def format_ascii_box(design_system: dict) -> str:
     lines.append(f"|  STYLE: {style.get('name', '')}".ljust(BOX_WIDTH) + "|")
     if style.get("keywords"):
         for line in wrap_text(
-            f"Keywords: {style.get('keywords', '')}", "|     ", BOX_WIDTH
+            f"Keywords: {style.get('keywords', '')}", "|     ", BOX_WIDTH,
         ):
             lines.append(line.ljust(BOX_WIDTH) + "|")
     if style.get("best_for"):
         for line in wrap_text(
-            f"Best For: {style.get('best_for', '')}", "|     ", BOX_WIDTH
+            f"Best For: {style.get('best_for', '')}", "|     ", BOX_WIDTH,
         ):
             lines.append(line.ljust(BOX_WIDTH) + "|")
     if style.get("performance") or style.get("accessibility"):
@@ -329,14 +327,14 @@ def format_ascii_box(design_system: dict) -> str:
     # Colors section
     lines.append("|  COLORS:".ljust(BOX_WIDTH) + "|")
     lines.append(
-        f"|     Primary:    {colors.get('primary', '')}".ljust(BOX_WIDTH) + "|"
+        f"|     Primary:    {colors.get('primary', '')}".ljust(BOX_WIDTH) + "|",
     )
     lines.append(
-        f"|     Secondary:  {colors.get('secondary', '')}".ljust(BOX_WIDTH) + "|"
+        f"|     Secondary:  {colors.get('secondary', '')}".ljust(BOX_WIDTH) + "|",
     )
     lines.append(f"|     CTA:        {colors.get('cta', '')}".ljust(BOX_WIDTH) + "|")
     lines.append(
-        f"|     Background: {colors.get('background', '')}".ljust(BOX_WIDTH) + "|"
+        f"|     Background: {colors.get('background', '')}".ljust(BOX_WIDTH) + "|",
     )
     lines.append(f"|     Text:       {colors.get('text', '')}".ljust(BOX_WIDTH) + "|")
     if colors.get("notes"):
@@ -347,33 +345,33 @@ def format_ascii_box(design_system: dict) -> str:
     # Typography section
     lines.append(
         f"|  TYPOGRAPHY: {typography.get('heading', '')} / {typography.get('body', '')}".ljust(
-            BOX_WIDTH
+            BOX_WIDTH,
         )
-        + "|"
+        + "|",
     )
     if typography.get("mood"):
         for line in wrap_text(
-            f"Mood: {typography.get('mood', '')}", "|     ", BOX_WIDTH
+            f"Mood: {typography.get('mood', '')}", "|     ", BOX_WIDTH,
         ):
             lines.append(line.ljust(BOX_WIDTH) + "|")
     if typography.get("best_for"):
         for line in wrap_text(
-            f"Best For: {typography.get('best_for', '')}", "|     ", BOX_WIDTH
+            f"Best For: {typography.get('best_for', '')}", "|     ", BOX_WIDTH,
         ):
             lines.append(line.ljust(BOX_WIDTH) + "|")
     if typography.get("google_fonts_url"):
         lines.append(
             f"|     Google Fonts: {typography.get('google_fonts_url', '')}".ljust(
-                BOX_WIDTH
+                BOX_WIDTH,
             )
-            + "|"
+            + "|",
         )
     if typography.get("css_import"):
         lines.append(
             f"|     CSS Import: {typography.get('css_import', '')[:70]}...".ljust(
-                BOX_WIDTH
+                BOX_WIDTH,
             )
-            + "|"
+            + "|",
         )
     lines.append("|" + " " * BOX_WIDTH + "|")
 
@@ -446,7 +444,7 @@ def format_markdown(design_system: dict) -> str:
         lines.append(f"- **Best For:** {style.get('best_for', '')}")
     if style.get("performance") or style.get("accessibility"):
         lines.append(
-            f"- **Performance:** {style.get('performance', '')} | **Accessibility:** {style.get('accessibility', '')}"
+            f"- **Performance:** {style.get('performance', '')} | **Accessibility:** {style.get('accessibility', '')}",
         )
     lines.append("")
 
@@ -516,8 +514,7 @@ def generate_design_system(
     page: str = None,
     output_dir: str = None,
 ) -> str:
-    """
-    Main entry point for design system generation.
+    """Main entry point for design system generation.
 
     Args:
         query: Search query (e.g., "SaaS dashboard", "e-commerce luxury")
@@ -529,6 +526,7 @@ def generate_design_system(
 
     Returns:
         Formatted design system string
+
     """
     generator = DesignSystemGenerator()
     design_system = generator.generate(query, project_name)
@@ -549,8 +547,7 @@ def persist_design_system(
     output_dir: str = None,
     page_query: str = None,
 ) -> dict:
-    """
-    Persist design system to design-system/<project>/ folder using Master + Overrides pattern.
+    """Persist design system to design-system/<project>/ folder using Master + Overrides pattern.
 
     Args:
         design_system: The generated design system dictionary
@@ -560,6 +557,7 @@ def persist_design_system(
 
     Returns:
         dict with created file paths and status
+
     """
     base_dir = Path(output_dir) if output_dir else Path.cwd()
 
@@ -617,7 +615,7 @@ def format_master_md(design_system: dict) -> str:
     lines.append("# Design System Master File")
     lines.append("")
     lines.append(
-        "> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`."
+        "> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.",
     )
     lines.append("> If that file exists, its rules **override** this Master file.")
     lines.append("> If not, strictly follow the rules below.")
@@ -641,14 +639,14 @@ def format_master_md(design_system: dict) -> str:
     lines.append("| Role | Hex | CSS Variable |")
     lines.append("|------|-----|--------------|")
     lines.append(
-        f"| Primary | `{colors.get('primary', '#2563EB')}` | `--color-primary` |"
+        f"| Primary | `{colors.get('primary', '#2563EB')}` | `--color-primary` |",
     )
     lines.append(
-        f"| Secondary | `{colors.get('secondary', '#3B82F6')}` | `--color-secondary` |"
+        f"| Secondary | `{colors.get('secondary', '#3B82F6')}` | `--color-secondary` |",
     )
     lines.append(f"| CTA/Accent | `{colors.get('cta', '#F97316')}` | `--color-cta` |")
     lines.append(
-        f"| Background | `{colors.get('background', '#F8FAFC')}` | `--color-background` |"
+        f"| Background | `{colors.get('background', '#F8FAFC')}` | `--color-background` |",
     )
     lines.append(f"| Text | `{colors.get('text', '#1E293B')}` | `--color-text` |")
     lines.append("")
@@ -665,7 +663,7 @@ def format_master_md(design_system: dict) -> str:
         lines.append(f"- **Mood:** {typography.get('mood', '')}")
     if typography.get("google_fonts_url"):
         lines.append(
-            f"- **Google Fonts:** [{typography.get('heading', '')} + {typography.get('body', '')}]({typography.get('google_fonts_url', '')})"
+            f"- **Google Fonts:** [{typography.get('heading', '')} + {typography.get('body', '')}]({typography.get('google_fonts_url', '')})",
         )
     lines.append("")
     if typography.get("css_import"):
@@ -697,10 +695,10 @@ def format_master_md(design_system: dict) -> str:
     lines.append("| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |")
     lines.append("| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |")
     lines.append(
-        "| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |"
+        "| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |",
     )
     lines.append(
-        "| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |"
+        "| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |",
     )
     lines.append("")
 
@@ -847,18 +845,18 @@ def format_master_md(design_system: dict) -> str:
     lines.append("### Additional Forbidden Patterns")
     lines.append("")
     lines.append(
-        "- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)"
+        "- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)",
     )
     lines.append(
-        "- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer"
+        "- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer",
     )
     lines.append(
-        "- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout"
+        "- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout",
     )
     lines.append("- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio")
     lines.append("- ❌ **Instant state changes** — Always use transitions (150-300ms)")
     lines.append(
-        "- ❌ **Invisible focus states** — Focus states must be visible for a11y"
+        "- ❌ **Invisible focus states** — Focus states must be visible for a11y",
     )
     lines.append("")
 
@@ -885,7 +883,7 @@ def format_master_md(design_system: dict) -> str:
 
 
 def format_page_override_md(
-    design_system: dict, page_name: str, page_query: str = None
+    design_system: dict, page_name: str, page_query: str = None,
 ) -> str:
     """Format a page-specific override file with intelligent AI-generated content."""
     project = design_system.get("project_name", "PROJECT")
@@ -894,7 +892,7 @@ def format_page_override_md(
 
     # Detect page type and generate intelligent overrides
     page_overrides = _generate_intelligent_overrides(
-        page_name, page_query, design_system
+        page_name, page_query, design_system,
     )
 
     lines = []
@@ -906,10 +904,10 @@ def format_page_override_md(
     lines.append(f"> **Page Type:** {page_overrides.get('page_type', 'General')}")
     lines.append("")
     lines.append(
-        "> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`)."
+        "> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`).",
     )
     lines.append(
-        "> Only deviations from the Master are documented here. For all other rules, refer to the Master."
+        "> Only deviations from the Master are documented here. For all other rules, refer to the Master.",
     )
     lines.append("")
     lines.append("---")
@@ -1002,10 +1000,9 @@ def format_page_override_md(
 
 
 def _generate_intelligent_overrides(
-    page_name: str, page_query: str, design_system: dict
+    page_name: str, page_query: str, design_system: dict,
 ) -> dict:
-    """
-    Generate intelligent overrides based on page type using layered search.
+    """Generate intelligent overrides based on page type using layered search.
 
     Uses the existing search infrastructure to find relevant style, UX, and layout
     data instead of hardcoded page types.
@@ -1167,7 +1164,7 @@ def _detect_page_type(context: str, style_results: list) -> str:
 
         if "dashboard" in best_for or "data" in best_for:
             return "Dashboard / Data View"
-        elif "landing" in best_for or "marketing" in best_for:
+        if "landing" in best_for or "marketing" in best_for:
             return "Landing / Marketing"
 
     return "General"
@@ -1180,7 +1177,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate Design System")
     parser.add_argument("query", help="Search query (e.g., 'SaaS dashboard')")
     parser.add_argument(
-        "--project-name", "-p", type=str, default=None, help="Project name"
+        "--project-name", "-p", type=str, default=None, help="Project name",
     )
     parser.add_argument(
         "--format",

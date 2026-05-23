@@ -1,5 +1,6 @@
-from app.core.database import init_db, engine
 from sqlalchemy import inspect
+
+from app.core.database import engine, init_db
 
 init_db()
 tables = inspect(engine).get_table_names()

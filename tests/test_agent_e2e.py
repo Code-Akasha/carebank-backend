@@ -1,5 +1,4 @@
-"""
-End-to-end tests for agent workflows
+"""End-to-end tests for agent workflows
 """
 
 import pytest
@@ -37,7 +36,7 @@ class TestPaymentAgentE2E:
         assert len(response.options) > 0
 
     def test_payment_agent_full_flow(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test complete payment flow through agent"""
         agent = PaymentAgent()
@@ -79,7 +78,7 @@ class TestPaymentAgentE2E:
         )
 
     def test_payment_agent_error_recovery(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test agent error recovery"""
         agent = PaymentAgent()
@@ -106,7 +105,7 @@ class TestPaymentAgentE2E:
         assert resp is not None
 
     def test_payment_agent_amount_validation(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test agent validates payment amounts"""
         agent = PaymentAgent()
@@ -130,7 +129,6 @@ class TestPaymentAgentE2E:
     def test_payment_agent_timeout_handling(self, test_db, test_user_data):
         """Test agent clears context after timeout (if implemented)"""
         # Implementation dependent
-        pass
 
 
 @pytest.mark.e2e
@@ -149,7 +147,7 @@ class TestRecurringPaymentAgentE2E:
         context = RecurringSetupContext(user_id=user_id)
 
         response = agent.process_message(
-            user_id, "I want to set up a recurring payment", context
+            user_id, "I want to set up a recurring payment", context,
         )
 
         assert response is not None
@@ -157,7 +155,7 @@ class TestRecurringPaymentAgentE2E:
         assert len(response.options) > 0
 
     def test_recurring_agent_daily_setup_flow(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test daily recurring setup flow"""
         agent = RecurringPaymentAgent()
@@ -190,7 +188,7 @@ class TestRecurringPaymentAgentE2E:
         # Or ask to confirm
 
     def test_recurring_agent_weekly_setup_flow(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test weekly recurring setup with day selection"""
         agent = RecurringPaymentAgent()
@@ -215,11 +213,11 @@ class TestRecurringPaymentAgentE2E:
         # Select day
         resp5 = agent.process_message(user_id, "Monday", context)
         assert resp5.context.day_of_week is not None or "day_of_week" in str(
-            resp5.context.day_config
+            resp5.context.day_config,
         )
 
     def test_recurring_agent_monthly_setup_flow(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test monthly recurring setup with date selection"""
         agent = RecurringPaymentAgent()
@@ -249,14 +247,14 @@ class TestRecurringPaymentAgentE2E:
         )
 
     def test_recurring_agent_dates_setup(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test setting start and end dates"""
         # Placeholder until date-specific flow assertions are implemented.
         assert True
 
     def test_recurring_agent_quarterly_setup(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test quarterly recurring setup"""
         agent = RecurringPaymentAgent()
@@ -276,7 +274,7 @@ class TestRecurringPaymentAgentE2E:
         assert resp4.context.frequency == "quarterly"
 
     def test_recurring_agent_zero_amount_validation(
-        self, test_db, test_user_data, test_beneficiary_data
+        self, test_db, test_user_data, test_beneficiary_data,
     ):
         """Test agent rejects zero amount"""
         agent = RecurringPaymentAgent()
@@ -329,7 +327,7 @@ class TestAgentUserIsolation:
     """Tests for user isolation in agents"""
 
     def test_payment_agent_user_isolation(
-        self, test_db, test_user_data, test_user_2, test_beneficiary_data
+        self, test_db, test_user_data, test_user_2, test_beneficiary_data,
     ):
         """Test that PaymentAgent enforces user isolation"""
         agent = PaymentAgent()

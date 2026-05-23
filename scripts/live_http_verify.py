@@ -65,7 +65,7 @@ def main() -> int:
         )
         print(
             f"list_accounts: {list_accounts.status_code} | "
-            f"count={list_count} excerpt={excerpt(list_accounts_body)}"
+            f"count={list_count} excerpt={excerpt(list_accounts_body)}",
         )
 
         trigger_tx = client.post(

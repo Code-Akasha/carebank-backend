@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""
-API Validator - Checks API endpoints for best practices.
+"""API Validator - Checks API endpoints for best practices.
 Validates OpenAPI specs, response formats, and common issues.
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # Fix Windows console encoding for Unicode output
@@ -107,11 +106,11 @@ def check_openapi_spec(file_path: Path) -> dict:
                     if method in ["get", "post", "put", "patch", "delete"]:
                         if "responses" not in details:
                             issues.append(
-                                f"[X] {method.upper()} {path}: No responses defined"
+                                f"[X] {method.upper()} {path}: No responses defined",
                             )
                         if "summary" not in details and "description" not in details:
                             issues.append(
-                                f"[!] {method.upper()} {path}: No description"
+                                f"[!] {method.upper()} {path}: No description",
                             )
 
     except Exception as e:
@@ -173,7 +172,7 @@ def check_api_code(file_path: Path) -> dict:
             r"@Body\(",
             r"@Query\(",
         ]
-        has_validation = any(re.search(p, content, re.I) for p in validation_patterns)
+        has_validation = any(re.search(p, content, re.IGNORECASE) for p in validation_patterns)
         if has_validation:
             passed.append("[OK] Input validation present")
         else:
@@ -189,13 +188,13 @@ def check_api_code(file_path: Path) -> dict:
             r"guard",
             r"@Authenticated",
         ]
-        has_auth = any(re.search(p, content, re.I) for p in auth_patterns)
+        has_auth = any(re.search(p, content, re.IGNORECASE) for p in auth_patterns)
         if has_auth:
             passed.append("[OK] Authentication/authorization detected")
 
         # Check for rate limiting
         rate_patterns = [r"rateLimit", r"throttle", r"rate.?limit"]
-        has_rate = any(re.search(p, content, re.I) for p in rate_patterns)
+        has_rate = any(re.search(p, content, re.IGNORECASE) for p in rate_patterns)
         if has_rate:
             passed.append("[OK] Rate limiting present")
 

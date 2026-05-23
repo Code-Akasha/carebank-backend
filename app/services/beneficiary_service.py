@@ -3,8 +3,8 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy.orm import Session
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
 from app.models.beneficiary import Beneficiary
 from app.schemas.payments import BeneficiaryCreate, BeneficiaryUpdate

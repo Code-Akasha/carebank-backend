@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.core.security import require_admin
 from app.models.audit_log import AuditLog
 from app.models.user import User
-from app.services.banking_client import get_banking_client, BankingClientError
+from app.services.banking_client import BankingClientError, get_banking_client
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -40,7 +40,7 @@ async def admin_list_users(
         query = query.filter(
             (User.full_name.ilike(f"%{search}%"))
             | (User.email.ilike(f"%{search}%"))
-            | (User.user_id.ilike(f"%{search}%"))
+            | (User.user_id.ilike(f"%{search}%")),
         )
 
     total = query.count()
@@ -69,10 +69,10 @@ async def admin_list_users(
         }
         if u.user_id in bulk_balances:
             entry["current_balance"] = bulk_balances[u.user_id].get(
-                "current_balance", 0.0
+                "current_balance", 0.0,
             )
             entry["available_balance"] = bulk_balances[u.user_id].get(
-                "available_balance", 0.0
+                "available_balance", 0.0,
             )
             return entry
         try:
@@ -98,7 +98,7 @@ async def admin_get_user(
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found",
         )
 
     client = get_banking_client()
@@ -236,7 +236,7 @@ async def admin_webhook_dead_letters(
                 "attempts": record.get("attempt_count") or len(attempts),
                 "last_error": last_error,
                 "status": record.get("status"),
-            }
+            },
         )
 
     return {

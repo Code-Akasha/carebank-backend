@@ -3,21 +3,21 @@ def calculate_surplus(income: float, expenses: float) -> float:
 
 
 def forecast_impact(
-    current_balance: float, scheduled_expenses: float, simulated_expense: float
+    current_balance: float, scheduled_expenses: float, simulated_expense: float,
 ) -> float:
-    """
-    Calculates the end of month balance if a simulated expense is incurred.
+    """Calculates the end of month balance if a simulated expense is incurred.
     This guarantees accuracy for the What-If Simulator feature.
     """
     return current_balance - scheduled_expenses - simulated_expense
 
 
 def check_eligibility(user_profile: dict, product_rules: dict) -> bool:
-    """
-    Checks if a user is eligible for a product based on deterministic rules.
+    """Checks if a user is eligible for a product based on deterministic rules.
+
     Example:
     user_profile = {"credit_score": 750, "balance": 5000}
     product_rules = {"min_credit_score": 700, "min_balance": 1000}
+
     """
     for rule_key, required_value in product_rules.items():
         # Map product rule keys to user profile keys if necessary, or assume direct match
@@ -45,8 +45,7 @@ def calculate_health_score(
     liquidity_days: float,
     forecast_error: float,
 ) -> dict:
-    """
-    Composite Financial Health Score (0-100) from 4 equally-weighted factors.
+    """Composite Financial Health Score (0-100) from 4 equally-weighted factors.
     All financial calculations happen here — NO LLM involvement.
 
     Args:
@@ -57,6 +56,7 @@ def calculate_health_score(
 
     Returns:
         dict with total score + per-factor breakdown
+
     """
     factors = {
         "savings": {

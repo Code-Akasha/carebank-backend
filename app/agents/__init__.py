@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from app.agents.base import BaseAgent, AgentInput, AgentOutput
-from app.agents.intelligence import IntelligenceAgent
-from app.agents.communication import CommunicationAgent
-from app.agents.opportunity import OpportunityAgent
 from app.agents.auto_savings import AutoSavingsAgent
+from app.agents.base import AgentInput, AgentOutput, BaseAgent
+from app.agents.communication import CommunicationAgent
+from app.agents.intelligence import IntelligenceAgent
+from app.agents.opportunity import OpportunityAgent
 
 __all__ = [
-    "BaseAgent",
     "AgentInput",
     "AgentOutput",
-    "IntelligenceAgent",
-    "CommunicationAgent",
-    "OpportunityAgent",
     "AutoSavingsAgent",
+    "BaseAgent",
+    "CommunicationAgent",
+    "IntelligenceAgent",
+    "OpportunityAgent",
     "build_coordinator_graph",
     "coordinator_graph",
 ]

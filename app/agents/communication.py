@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import logging
 import hashlib
+import logging
 import re
 from typing import Any
 
-from app.agents.base import BaseAgent, AgentInput, AgentOutput, AgentStatus
+from app.agents.base import AgentInput, AgentOutput, AgentStatus, BaseAgent
+from app.services.health_score import compute_health_score
 from app.services.nlg import generate_response
 from app.services.nudge import can_send_nudge, record_nudge
-from app.services.health_score import compute_health_score
 
 logger = logging.getLogger(__name__)
 
@@ -322,7 +322,7 @@ class CommunicationAgent(BaseAgent):
             purchase_amount = self._coerce_float(metadata.get("purchase_amount"))
             available_balance = self._coerce_float(metadata.get("available_balance"))
             post_purchase_balance = self._coerce_float(
-                metadata.get("post_purchase_balance")
+                metadata.get("post_purchase_balance"),
             )
             verdict = str(metadata.get("verdict") or "").strip().lower()
 
@@ -369,7 +369,7 @@ class CommunicationAgent(BaseAgent):
 
             top_spikes = metadata.get("top_spikes", [])
             total_savings = self._coerce_float(
-                metadata.get("total_savings_opportunity")
+                metadata.get("total_savings_opportunity"),
             )
 
             if not top_spikes:
@@ -385,7 +385,7 @@ class CommunicationAgent(BaseAgent):
             if total_savings and total_savings > 0:
                 savings_str = self._format_currency(total_savings, "₹")
                 lines.append(
-                    f"\nIf you can reduce these spikes by just 30%, you could save an extra {savings_str} this month."
+                    f"\nIf you can reduce these spikes by just 30%, you could save an extra {savings_str} this month.",
                 )
 
             top_cat = str(top_spikes[0].get("category", "other")).capitalize()
@@ -790,22 +790,21 @@ class CommunicationAgent(BaseAgent):
                         },
                         "ui_actions": [],
                     }
-                else:
-                    return {
-                        "response": f"This payment of ₹{amount_value:,.2f} exceeds the instant-payment limit (₹{settings.auto_approve_limit:,.0f}). Creating an action request for approval...",
-                        "confidence": 0.95,
-                        "pending_state": {
-                            "pending_intent": "actions",
-                            "actions": {
-                                "flow": "action_request",
-                                "action_type": candidate_action_type,
-                                "action_payload": action_payload,
-                            },
+                return {
+                    "response": f"This payment of ₹{amount_value:,.2f} exceeds the instant-payment limit (₹{settings.auto_approve_limit:,.0f}). Creating an action request for approval...",
+                    "confidence": 0.95,
+                    "pending_state": {
+                        "pending_intent": "actions",
+                        "actions": {
+                            "flow": "action_request",
+                            "action_type": candidate_action_type,
+                            "action_payload": action_payload,
                         },
-                        "clear_pending": False,
-                        "action": None,
-                        "ui_actions": [],
-                    }
+                    },
+                    "clear_pending": False,
+                    "action": None,
+                    "ui_actions": [],
+                }
 
             if normalized in {"later", "not now", "snooze", "remind later"}:
                 source_type = str(candidate.get("source_type") or "").strip().lower()
@@ -1173,7 +1172,7 @@ class CommunicationAgent(BaseAgent):
             source_text_candidate
             or pending.get("source_text")
             or self._find_recent_schedule_request_text(history)
-            or user_message
+            or user_message,
         ).strip()
 
         if amount is None:
@@ -1290,7 +1289,7 @@ class CommunicationAgent(BaseAgent):
                 source_type,
                 source_id,
                 re.sub(r"\s+", " ", user_message.lower()).strip(),
-            ]
+            ],
         )
         digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
         return f"chat:{action_type}:{digest}"

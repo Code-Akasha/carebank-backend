@@ -1,12 +1,10 @@
-"""
-Pydantic schemas for Admin LLM Configuration API contracts.
+"""Pydantic schemas for Admin LLM Configuration API contracts.
 """
 
-from typing import Literal, Optional, List
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-
 
 # ============================================================================
 # Tunnel Configuration Schemas
@@ -21,11 +19,11 @@ class LLMTunnelConfigCreate(BaseModel):
         description="Configured provider type",
     )
 
-    tunnel_url: Optional[str] = Field(
+    tunnel_url: str | None = Field(
         None,
         description="Base URL for Ollama or OpenAI-compatible endpoints",
     )
-    tunnel_auth_token: Optional[str] = Field(
+    tunnel_auth_token: str | None = Field(
         None,
         description="API key or auth token for the selected provider (encrypted at rest)",
     )
@@ -34,7 +32,7 @@ class LLMTunnelConfigCreate(BaseModel):
         description="Default model to use for the selected provider",
     )
     request_timeout_sec: int = Field(
-        default=30, ge=5, le=300, description="HTTP request timeout in seconds"
+        default=30, ge=5, le=300, description="HTTP request timeout in seconds",
     )
 
     @model_validator(mode="after")
@@ -78,14 +76,14 @@ class LLMTunnelConfigResponse(BaseModel):
     environment: str
     provider_type: str
     tunnel_url: str
-    tunnel_auth_token_masked: Optional[str] = Field(
-        None, description="Masked token (e.g., '****...****') for display purposes"
+    tunnel_auth_token_masked: str | None = Field(
+        None, description="Masked token (e.g., '****...****') for display purposes",
     )
     ollama_model_default: str
     request_timeout_sec: int
     is_active: bool
-    last_connectivity_check: Optional[datetime] = None
-    last_error: Optional[str] = None
+    last_connectivity_check: datetime | None = None
+    last_error: str | None = None
     created_by: str
     created_at: datetime
     updated_at: datetime
@@ -99,7 +97,7 @@ class LLMProviderConfigResponse(BaseModel):
 
     provider_type: str
     provider_label: str
-    tunnel_url: Optional[str] = None
+    tunnel_url: str | None = None
     ollama_model_default: str
 
     model_config = {"from_attributes": True}
@@ -122,7 +120,7 @@ class OllamaModelInfo(BaseModel):
 class ModelListResponse(BaseModel):
     """Response schema for model discovery."""
 
-    models: List[OllamaModelInfo]
+    models: list[OllamaModelInfo]
     model_count: int
 
 
@@ -130,13 +128,13 @@ class ConnectivityTestResult(BaseModel):
     """Result of a connectivity test to Ollama instance."""
 
     status: str = Field(
-        ..., description="'ok' if connection successful, 'error' if failed"
+        ..., description="'ok' if connection successful, 'error' if failed",
     )
-    models_count: Optional[int] = Field(None, description="Number of models discovered")
-    response_time_ms: Optional[float] = Field(
-        None, description="Response time in milliseconds"
+    models_count: int | None = Field(None, description="Number of models discovered")
+    response_time_ms: float | None = Field(
+        None, description="Response time in milliseconds",
     )
-    error: Optional[str] = Field(None, description="Error message if status is 'error'")
+    error: str | None = Field(None, description="Error message if status is 'error'")
 
 
 # ============================================================================
@@ -148,10 +146,10 @@ class AgentPromptConfigCreate(BaseModel):
     """Request schema for creating/updating an agent prompt."""
 
     system_prompt: str = Field(
-        ..., description="System prompt template for the agent", max_length=50000
+        ..., description="System prompt template for the agent", max_length=50000,
     )
-    notes: Optional[str] = Field(
-        None, description="Admin notes about this prompt version", max_length=1000
+    notes: str | None = Field(
+        None, description="Admin notes about this prompt version", max_length=1000,
     )
 
     @field_validator("system_prompt")
@@ -175,7 +173,7 @@ class AgentPromptConfigResponse(BaseModel):
     created_by: str
     created_at: datetime
     updated_at: datetime
-    notes: Optional[str] = None
+    notes: str | None = None
 
     class Config:
         from_attributes = True
@@ -192,7 +190,7 @@ class AgentPromptHistoryResponse(BaseModel):
     created_by: str
     created_at: datetime
     updated_at: datetime
-    notes: Optional[str] = None
+    notes: str | None = None
 
     class Config:
         from_attributes = True
@@ -201,7 +199,7 @@ class AgentPromptHistoryResponse(BaseModel):
 class PromptListResponse(BaseModel):
     """Response schema for listing all prompts or prompts by agent."""
 
-    prompts: List[AgentPromptConfigResponse]
+    prompts: list[AgentPromptConfigResponse]
     total_count: int
 
 
@@ -216,8 +214,8 @@ class ErrorResponse(BaseModel):
     status: str = "error"
     code: str = Field(..., description="Error code (e.g., 'llm_tunnel_unavailable')")
     message: str = Field(..., description="User-friendly error message")
-    remediation: Optional[str] = Field(
-        None, description="Admin-actionable remediation steps"
+    remediation: str | None = Field(
+        None, description="Admin-actionable remediation steps",
     )
 
 
@@ -227,7 +225,7 @@ class ValidationErrorResponse(BaseModel):
     status: str = "error"
     code: str = "validation_error"
     message: str
-    details: Optional[dict] = Field(None, description="Field-level validation errors")
+    details: dict | None = Field(None, description="Field-level validation errors")
 
 
 # ============================================================================
@@ -242,12 +240,12 @@ class AdminActionLogResponse(BaseModel):
     admin_user_id: str
     action_type: str
     resource_type: str
-    resource_id: Optional[str] = None
-    environment: Optional[str] = None
-    before_value: Optional[str] = None
-    after_value: Optional[str] = None
+    resource_id: str | None = None
+    environment: str | None = None
+    before_value: str | None = None
+    after_value: str | None = None
     status: str
-    error_message: Optional[str] = None
+    error_message: str | None = None
     created_at: datetime
 
     class Config:

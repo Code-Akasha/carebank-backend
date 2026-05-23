@@ -1,9 +1,10 @@
-import json
 import hashlib
-from urllib.parse import urlparse
-from pydantic_settings import BaseSettings
-from pydantic import model_validator
+import json
 from functools import lru_cache
+from urllib.parse import urlparse
+
+from pydantic import model_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -69,19 +70,17 @@ class Settings(BaseSettings):
         if not self.jwt_secret:
             if self.banking_api_secret:
                 self.jwt_secret = hashlib.sha256(
-                    self.banking_api_secret.encode("utf-8")
+                    self.banking_api_secret.encode("utf-8"),
                 ).hexdigest()
             else:
                 raise ValueError(
-                    "JWT_SECRET is required (or provide BANKING_API_SECRET to derive one)"
+                    "JWT_SECRET is required (or provide BANKING_API_SECRET to derive one)",
                 )
 
         if self.environment.lower() in {"production", "prod"}:
             backend_public_url = self.backend_public_url.strip()
             if not backend_public_url.startswith("https://"):
-                raise ValueError(
-                    "BACKEND_PUBLIC_URL must use https:// in production"
-                )
+                raise ValueError("BACKEND_PUBLIC_URL must use https:// in production")
 
             if not (self.cors_origins or "").strip():
                 raise ValueError("CORS_ORIGINS is required in production")
@@ -125,7 +124,7 @@ class Settings(BaseSettings):
                     "http://localhost:5173",
                     "http://localhost:3000",
                     "http://localhost:4173",
-                ]
+                ],
             )
 
         value = self.cors_origins
@@ -190,10 +189,8 @@ class Settings(BaseSettings):
             item = part.strip().lower()
             if not item:
                 continue
-            if item.startswith("telegram:"):
-                item = item[len("telegram:") :]
-            if item.startswith("tg:"):
-                item = item[len("tg:") :]
+            item = item.removeprefix("telegram:")
+            item = item.removeprefix("tg:")
             if item.startswith("tg_"):
                 allow.add(item)
             else:

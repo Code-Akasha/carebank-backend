@@ -81,7 +81,7 @@ def chat(
             "conversation_state": conversation_state,
             "db": db,
             "current_user": current_user,
-        }
+        },
     )
 
     if result.get("pending_intent_ignored"):

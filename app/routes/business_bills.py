@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -36,7 +36,7 @@ def issue_bill(
 @router.get("/issued", response_model=list[BillResponse])
 def get_issued_bills(
     current_user: Annotated[User, Depends(get_current_user)],
-    status_filter: Optional[str] = Query(None, alias="status"),
+    status_filter: str | None = Query(None, alias="status"),
     db: Session = Depends(get_db),
 ):
     """Business views bills they have issued."""
@@ -46,7 +46,7 @@ def get_issued_bills(
 @router.get("/received", response_model=list[BillResponse])
 def get_received_bills(
     current_user: Annotated[User, Depends(get_current_user)],
-    status_filter: Optional[str] = Query(None, alias="status"),
+    status_filter: str | None = Query(None, alias="status"),
     db: Session = Depends(get_db),
 ):
     """User views bills issued to them."""

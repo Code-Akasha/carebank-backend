@@ -1,19 +1,18 @@
 import respx
 from httpx import Response
 
+from app.agents.base import AgentInput
+from app.agents.intelligence import IntelligenceAgent
+from app.core.config import get_settings
+from app.services.anomaly import detect_anomaly
+from app.services.clustering import PERSONAS, cluster_persona
 from app.services.data import (
-    generate_mock_transactions,
     aggregate_spending_profile,
     calculate_monthly_stats,
+    generate_mock_transactions,
 )
 from app.services.forecast import forecast_balance
-from app.services.clustering import cluster_persona, PERSONAS
-from app.services.anomaly import detect_anomaly
 from app.services.health_score import compute_health_score
-from app.agents.intelligence import IntelligenceAgent
-from app.agents.base import AgentInput
-from app.core.config import get_settings
-
 
 # ── Data helpers ──────────────────────────────────────────────────────
 
@@ -221,7 +220,7 @@ class TestIntelligenceAgent:
     def test_health_score_returns_data_only(self):
         agent = IntelligenceAgent()
         output = agent.invoke(
-            AgentInput(user_id="u1", message="score", intent="health_score")
+            AgentInput(user_id="u1", message="score", intent="health_score"),
         )
         assert output.agent_name == "IntelligenceAgent"
         assert output.status == "success"
@@ -234,7 +233,7 @@ class TestIntelligenceAgent:
     def test_forecast_returns_data_only(self):
         agent = IntelligenceAgent()
         output = agent.invoke(
-            AgentInput(user_id="u1", message="forecast", intent="forecast")
+            AgentInput(user_id="u1", message="forecast", intent="forecast"),
         )
         assert output.status == "success"
         assert output.metadata.get("predicted_balance") is not None
@@ -248,7 +247,7 @@ class TestIntelligenceAgent:
                 message="what if",
                 intent="what_if",
                 context={"expense_amount": 5000},
-            )
+            ),
         )
         assert output.status == "success"
         assert output.metadata.get("risk_level") in ("low", "medium", "high")
@@ -263,7 +262,7 @@ class TestIntelligenceAgent:
                 message="what if I buy something",
                 intent="what_if",
                 context={},
-            )
+            ),
         )
         assert output.status == "needs_input"
         assert "expense_amount" in output.required_params
@@ -277,7 +276,7 @@ class TestIntelligenceAgent:
                 message="check",
                 intent="anomaly_check",
                 context={"amount": 50000},
-            )
+            ),
         )
         assert output.agent_name == "IntelligenceAgent"
         assert "is_anomaly" in output.metadata
@@ -285,7 +284,7 @@ class TestIntelligenceAgent:
     def test_balance_returns_structured_data(self):
         agent = IntelligenceAgent()
         output = agent.invoke(
-            AgentInput(user_id="u1", message="balance", intent="balance")
+            AgentInput(user_id="u1", message="balance", intent="balance"),
         )
         assert output.agent_name == "IntelligenceAgent"
         assert output.metadata.get("intent_handled") == "balance"
@@ -299,7 +298,7 @@ class TestIntelligenceAgent:
                 message="can i buy",
                 intent="affordability",
                 context={"purchase_amount": 5000},
-            )
+            ),
         )
         assert output.metadata.get("intent_handled") == "affordability"
         assert output.metadata.get("verdict") in (
@@ -317,7 +316,7 @@ class TestIntelligenceAgent:
                 message="can i buy a laptop?",
                 intent="affordability",
                 context={},
-            )
+            ),
         )
         assert output.status == "needs_input"
         assert "purchase_amount" in output.required_params
@@ -330,14 +329,14 @@ class TestIntelligenceAgent:
 
         agent = IntelligenceAgent()
         respx.get("http://localhost:8001/balances").mock(
-            return_value=Response(500, json={"detail": "Bank Offline"})
+            return_value=Response(500, json={"detail": "Bank Offline"}),
         )
         respx.get("http://localhost:8001/transactions").mock(
-            return_value=Response(500, json={"detail": "Bank Offline"})
+            return_value=Response(500, json={"detail": "Bank Offline"}),
         )
 
         output = agent.invoke(
-            AgentInput(user_id="u1", message="balance", intent="balance")
+            AgentInput(user_id="u1", message="balance", intent="balance"),
         )
         assert output.status == "error"
         assert "Bank Offline" in str(output.metadata.get("error", ""))
@@ -350,14 +349,14 @@ class TestIntelligenceAgent:
 
         agent = IntelligenceAgent()
         respx.get("http://localhost:8001/transactions").mock(
-            return_value=Response(500, json={"detail": "Bank Offline"})
+            return_value=Response(500, json={"detail": "Bank Offline"}),
         )
         respx.get("http://localhost:8001/balances").mock(
-            return_value=Response(500, json={"detail": "Bank Offline"})
+            return_value=Response(500, json={"detail": "Bank Offline"}),
         )
 
         output = agent.invoke(
-            AgentInput(user_id="u1", message="analysis", intent="spending_analysis")
+            AgentInput(user_id="u1", message="analysis", intent="spending_analysis"),
         )
         assert output.status == "error"
         assert "Bank Offline" in str(output.metadata.get("error", ""))

@@ -206,7 +206,7 @@ def test_chat_creates_schedule_directly(client):
 
 
 def test_chat_pending_schedule_not_hijacked_by_balance_savings_query(
-    client, monkeypatch
+    client, monkeypatch,
 ):
     token, _ = _register_and_token(client)
     headers = {"Authorization": f"Bearer {token}"}
@@ -219,8 +219,8 @@ def test_chat_pending_schedule_not_hijacked_by_balance_savings_query(
     assert turn1.status_code == 200
     assert "amount" in turn1.json()["response"].lower()
 
-    from app.agents.coordinator import ClassificationResult
     import app.agents.coordinator as coordinator_module
+    from app.agents.coordinator import ClassificationResult
 
     monkeypatch.setattr(
         coordinator_module,

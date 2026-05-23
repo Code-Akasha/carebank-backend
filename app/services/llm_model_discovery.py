@@ -1,13 +1,13 @@
-"""
-LLM Model Discovery Service.
+"""LLM Model Discovery Service.
 
 Discovers available models from Ollama instance via configured tunnel.
 Includes caching with short TTL to reduce repeated tunnel calls.
 """
 
 import logging
-from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
+from typing import Any
+
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ class OllamaModel:
         self.size_gb = size_bytes / (1024**3)
         self.available = available
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "size_gb": round(self.size_gb, 2),
@@ -36,9 +36,9 @@ class ModelDiscoveryCache:
 
     def __init__(self, ttl_seconds: int = 60):
         self.ttl_seconds = ttl_seconds
-        self.cache: Dict[str, tuple[datetime, List[OllamaModel]]] = {}
+        self.cache: dict[str, tuple[datetime, list[OllamaModel]]] = {}
 
-    def get(self, key: str) -> Optional[List[OllamaModel]]:
+    def get(self, key: str) -> list[OllamaModel] | None:
         """Retrieve cached models if still fresh."""
         if key not in self.cache:
             return None
@@ -50,11 +50,11 @@ class ModelDiscoveryCache:
 
         return models
 
-    def set(self, key: str, models: List[OllamaModel]) -> None:
+    def set(self, key: str, models: list[OllamaModel]) -> None:
         """Cache models with current timestamp."""
         self.cache[key] = (datetime.utcnow(), models)
 
-    def clear(self, key: Optional[str] = None) -> None:
+    def clear(self, key: str | None = None) -> None:
         """Clear cache entry or entire cache."""
         if key:
             self.cache.pop(key, None)
@@ -74,9 +74,8 @@ class LLMModelDiscoveryService:
         tunnel_url: str,
         timeout_sec: int = 10,
         force_refresh: bool = False,
-    ) -> List[OllamaModel]:
-        """
-        Fetch available models from Ollama endpoint.
+    ) -> list[OllamaModel]:
+        """Fetch available models from Ollama endpoint.
 
         Args:
             tunnel_url: Base URL of Ollama instance (e.g., "https://abc.ngrok.io")
@@ -89,6 +88,7 @@ class LLMModelDiscoveryService:
         Raises:
             httpx.RequestError: If connection fails
             ValueError: If response format is unexpected
+
         """
         cache_key = tunnel_url
 
@@ -110,7 +110,7 @@ class LLMModelDiscoveryService:
                 data = response.json()
 
             # Parse response and build model list
-            models: List[OllamaModel] = []
+            models: list[OllamaModel] = []
             for model_info in data.get("models", []):
                 model_name = model_info.get("name")
                 size_bytes = model_info.get("size", 0)
@@ -121,7 +121,7 @@ class LLMModelDiscoveryService:
                             name=model_name,
                             size_bytes=size_bytes,
                             available=True,
-                        )
+                        ),
                     )
 
             # Cache and return
@@ -134,7 +134,7 @@ class LLMModelDiscoveryService:
             raise
         except (KeyError, ValueError) as e:
             logger.error(f"Unexpected response format from Ollama at {tunnel_url}: {e}")
-            raise ValueError(f"Invalid Ollama response: {str(e)}")
+            raise ValueError(f"Invalid Ollama response: {e!s}")
 
     @staticmethod
     async def test_model_availability(
@@ -142,8 +142,7 @@ class LLMModelDiscoveryService:
         model_name: str,
         timeout_sec: int = 10,
     ) -> bool:
-        """
-        Test if a specific model is available and can be used.
+        """Test if a specific model is available and can be used.
 
         Args:
             tunnel_url: Base URL of Ollama instance
@@ -152,10 +151,11 @@ class LLMModelDiscoveryService:
 
         Returns:
             True if model is available, False otherwise
+
         """
         try:
             models = await LLMModelDiscoveryService.discover_models(
-                tunnel_url, timeout_sec=timeout_sec
+                tunnel_url, timeout_sec=timeout_sec,
             )
             model_names = {m.name for m in models}
             is_available = model_name in model_names
@@ -169,9 +169,8 @@ class LLMModelDiscoveryService:
     async def test_connectivity(
         tunnel_url: str,
         timeout_sec: int = 5,
-    ) -> Dict[str, Any]:
-        """
-        Test connectivity to Ollama instance.
+    ) -> dict[str, Any]:
+        """Test connectivity to Ollama instance.
 
         Args:
             tunnel_url: Base URL of Ollama instance
@@ -179,11 +178,12 @@ class LLMModelDiscoveryService:
 
         Returns:
             Dict with status, models_count, and error (if any)
+
         """
         try:
             start = datetime.utcnow()
             models = await LLMModelDiscoveryService.discover_models(
-                tunnel_url, timeout_sec=timeout_sec, force_refresh=True
+                tunnel_url, timeout_sec=timeout_sec, force_refresh=True,
             )
             elapsed_ms = (datetime.utcnow() - start).total_seconds() * 1000
 
@@ -200,12 +200,12 @@ class LLMModelDiscoveryService:
             }
 
     @staticmethod
-    def clear_cache(tunnel_url: Optional[str] = None) -> None:
-        """
-        Manually clear discovery cache.
+    def clear_cache(tunnel_url: str | None = None) -> None:
+        """Manually clear discovery cache.
 
         Args:
             tunnel_url: Specific URL to clear, or None for entire cache
+
         """
         _discovery_cache.clear(tunnel_url)
         logger.debug(f"Cleared discovery cache for {tunnel_url or 'all'}")

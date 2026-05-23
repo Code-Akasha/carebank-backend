@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Lint Runner - Unified linting and type checking
+"""Lint Runner - Unified linting and type checking
 Runs appropriate linters based on project type.
 
 Usage:
@@ -11,12 +10,12 @@ Supports:
     - Python: ruff check, mypy
 """
 
-import subprocess
-import sys
 import json
 import platform
-from pathlib import Path
+import subprocess
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Fix Windows console encoding
 try:
@@ -41,17 +40,17 @@ def detect_project_type(project_path: Path) -> dict:
             # Check for lint script
             if "lint" in scripts:
                 result["linters"].append(
-                    {"name": "npm lint", "cmd": ["npm", "run", "lint"]}
+                    {"name": "npm lint", "cmd": ["npm", "run", "lint"]},
                 )
             elif "eslint" in deps:
                 result["linters"].append(
-                    {"name": "eslint", "cmd": ["npx", "eslint", "."]}
+                    {"name": "eslint", "cmd": ["npx", "eslint", "."]},
                 )
 
             # Check for TypeScript
             if "typescript" in deps or (project_path / "tsconfig.json").exists():
                 result["linters"].append(
-                    {"name": "tsc", "cmd": ["npx", "tsc", "--noEmit"]}
+                    {"name": "tsc", "cmd": ["npx", "tsc", "--noEmit"]},
                 )
 
         except:

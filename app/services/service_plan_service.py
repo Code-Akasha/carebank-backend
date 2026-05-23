@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -20,7 +19,7 @@ def require_business_user(db: Session, user_id: str) -> User:
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found",
         )
     if user.account_type != "business":
         raise HTTPException(
@@ -31,7 +30,7 @@ def require_business_user(db: Session, user_id: str) -> User:
 
 
 def create_service_plan(
-    db: Session, user_id: str, payload: ServicePlanCreate
+    db: Session, user_id: str, payload: ServicePlanCreate,
 ) -> ServicePlan:
     """Create a new service plan for a business."""
     require_business_user(db, user_id)
@@ -52,7 +51,7 @@ def create_service_plan(
 
 def list_service_plans(
     db: Session,
-    business_user_id: Optional[str] = None,
+    business_user_id: str | None = None,
     active_only: bool = True,
 ) -> list[ServicePlan]:
     """List service plans, optionally filtered by business user."""
@@ -65,17 +64,17 @@ def list_service_plans(
 
 
 def update_service_plan(
-    db: Session, user_id: str, plan_id: int, payload: ServicePlanUpdate
+    db: Session, user_id: str, plan_id: int, payload: ServicePlanUpdate,
 ) -> ServicePlan:
     """Update an existing service plan owned by the user."""
     plan = db.query(ServicePlan).filter(ServicePlan.id == plan_id).first()
     if not plan:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Service plan not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service plan not found",
         )
     if plan.business_user_id != user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not your plan"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not your plan",
         )
 
     for field, value in payload.model_dump(exclude_unset=True).items():
@@ -91,6 +90,6 @@ def get_service_plan(db: Session, plan_id: int) -> ServicePlan:
     plan = db.query(ServicePlan).filter(ServicePlan.id == plan_id).first()
     if not plan:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Service plan not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service plan not found",
         )
     return plan

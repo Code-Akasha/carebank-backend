@@ -8,20 +8,20 @@ from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
 from app.agents.base import (
+    AgentContext,
     AgentInput,
     AgentOutput,
-    AgentContext,
     AgentStatus,
     BaseAgent,
 )
-from app.compliance.guard import validate_and_refine, log_compliance_decision
-from app.services.llm import get_llm_provider
+from app.compliance.guard import log_compliance_decision, validate_and_refine
 from app.services.conversation_store import InMemoryConversationStore
+from app.services.llm import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
 try:
-    from langgraph.graph import StateGraph, END
+    from langgraph.graph import END, StateGraph
 except ImportError:  # pragma: no cover - fallback path for lightweight dev/test envs
     END = "__end__"
 
@@ -81,7 +81,7 @@ except ImportError:  # pragma: no cover - fallback path for lightweight dev/test
             if not self._entry_point:
                 raise ValueError("Coordinator graph entry point is not set")
             logger.warning(
-                "langgraph is not installed; using a lightweight coordinator graph fallback"
+                "langgraph is not installed; using a lightweight coordinator graph fallback",
             )
             return _CompiledStateGraph(
                 nodes=self._nodes,
@@ -93,6 +93,7 @@ except ImportError:  # pragma: no cover - fallback path for lightweight dev/test
 
 if TYPE_CHECKING:  # pragma: no cover
     from sqlalchemy.orm import Session as DBSession
+
     from app.models.user import User
 else:  # LangGraph introspects type hints at runtime
     DBSession = Any  # type: ignore[assignment]
@@ -137,10 +138,10 @@ _AGENT_INSTANCES: dict[str, BaseAgent] = {}
 
 def _register_agents() -> None:
     """Register agent classes lazily (import at module load, instantiate on demand)."""
-    from app.agents.intelligence import IntelligenceAgent
-    from app.agents.communication import CommunicationAgent
-    from app.agents.opportunity import OpportunityAgent
     from app.agents.auto_savings import AutoSavingsAgent
+    from app.agents.communication import CommunicationAgent
+    from app.agents.intelligence import IntelligenceAgent
+    from app.agents.opportunity import OpportunityAgent
     from app.agents.payment_agent import ConversationalPaymentAgent
 
     _AGENT_CLASSES.update(
@@ -150,7 +151,7 @@ def _register_agents() -> None:
             "OpportunityAgent": OpportunityAgent,
             "AutoSavingsAgent": AutoSavingsAgent,
             "PaymentAgent": ConversationalPaymentAgent,
-        }
+        },
     )
 
 
@@ -198,7 +199,7 @@ class ClassificationResult(BaseModel):
     """Structured output from LLM intent classification."""
 
     intent: str = Field(
-        description="One of: actions, payment, balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, planning, general"
+        description="One of: actions, payment, balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, planning, general",
     )
     confidence: float = Field(description="0.0 to 1.0 confidence in classification")
     parameters: dict = Field(
@@ -215,7 +216,7 @@ class ActionIntentResult(BaseModel):
     """Signal that user is asking the assistant to perform an action, not just answer."""
 
     is_action_request: bool = Field(
-        description="True when user asks assistant to execute or schedule a task"
+        description="True when user asks assistant to execute or schedule a task",
     )
     action_family: str = Field(
         default="none",
@@ -229,24 +230,23 @@ class ActionIntentResult(BaseModel):
 
 # Helper function to fetch prompts from database with fallback to hardcoded defaults
 def _get_prompt_from_db(agent_name: str, prompt_key: str, fallback: str) -> str:
-    """
-    Fetch a prompt template from the database for a given agent and key.
+    """Fetch a prompt template from the database for a given agent and key.
     Falls back to the provided hardcoded default if not configured.
     """
     try:
+        from app.core.config import get_settings
         from app.core.database import SessionLocal
         from app.services.agent_prompt_service import AgentPromptService
-        from app.core.config import get_settings
 
         settings = get_settings()
         db = SessionLocal()
         try:
             prompt_config = AgentPromptService.get_active_prompt(
-                db, agent_name, settings.environment
+                db, agent_name, settings.environment,
             )
             if prompt_config:
                 logger.debug(
-                    f"Using DB-configured prompt for {agent_name} in {settings.environment}"
+                    f"Using DB-configured prompt for {agent_name} in {settings.environment}",
                 )
                 return prompt_config.system_prompt
         finally:
@@ -437,7 +437,7 @@ def _looks_like_schedule_request(message: str) -> bool:
 
 
 _AMOUNT_ONLY_PATTERN = re.compile(
-    r"^\s*(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:k|thousand|lakh|lakhs|lac|lacs|crore|crores|cr)?\s*$"
+    r"^\s*(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:k|thousand|lakh|lakhs|lac|lacs|crore|crores|cr)?\s*$",
 )
 
 
@@ -578,7 +578,6 @@ def _detect_tool_action_request(message: str) -> dict | None:
     This is intentionally conservative: it triggers only for imperative phrasing and
     avoids schedule/recurring language which is handled by the planning flow.
     """
-
     lower = message.lower().strip()
     if not lower:
         return None
@@ -681,7 +680,7 @@ def _detect_tool_action_request(message: str) -> dict | None:
 # ---------------------------------------------------------------------------
 
 _AMOUNT_PATTERN = re.compile(
-    r"(?:\b(?:rs\.?|inr)\b|₹)?\s*(\d+(?:\.\d+)?)\s*(k|thousand|lakh|lakhs|lac|lacs|crore|crores|cr)?\b"
+    r"(?:\b(?:rs\.?|inr)\b|₹)?\s*(\d+(?:\.\d+)?)\s*(k|thousand|lakh|lakhs|lac|lacs|crore|crores|cr)?\b",
 )
 
 _UNIT_MULTIPLIERS = {
@@ -762,12 +761,12 @@ def _classify_action_request_with_llm(
         if history:
             recent = history[-3:]
             conv_summary = " | ".join(
-                [f"{msg['role']}: {msg['content'][:50]}" for msg in recent]
+                [f"{msg['role']}: {msg['content'][:50]}" for msg in recent],
             )
 
         # Fetch prompt from DB with fallback to hardcoded default
         action_intent_prompt_text = _get_prompt_from_db(
-            "coordinator", "action_intent", ACTION_INTENT_PROMPT
+            "coordinator", "action_intent", ACTION_INTENT_PROMPT,
         )
         prompt = PromptTemplate.from_template(action_intent_prompt_text)
         chain = prompt | structured_llm
@@ -775,7 +774,7 @@ def _classify_action_request_with_llm(
             {
                 "user_message": message,
                 "conversation_summary": conv_summary,
-            }
+            },
         )
         logger.info(
             "⚙️ Action-intent classification (%s): is_action=%s family=%s conf=%.2f",
@@ -839,7 +838,7 @@ def _classify_action_request_fallback(message: str) -> ActionIntentResult | None
 
 
 def _detect_action_request(
-    message: str, history: list[dict]
+    message: str, history: list[dict],
 ) -> ActionIntentResult | None:
     llm_result = _classify_action_request_with_llm(message, history)
     if llm_result and llm_result.is_action_request and llm_result.confidence >= 0.65:
@@ -862,13 +861,13 @@ def _get_agent_descriptions() -> str:
     for agent_name, agent in _get_all_agents().items():
         caps = ", ".join(agent.capabilities)
         descriptions.append(
-            f"- {agent_name}: {agent.description}\n  Capabilities: {caps}"
+            f"- {agent_name}: {agent.description}\n  Capabilities: {caps}",
         )
     return "\n".join(descriptions)
 
 
 def _classify_intent_with_llm(
-    message: str, history: list[dict]
+    message: str, history: list[dict],
 ) -> ClassificationResult:
     """Use LLM with structured output to classify intent and extract entities."""
     llm, provider = get_llm_provider(temperature=0.1)
@@ -887,12 +886,12 @@ def _classify_intent_with_llm(
         if history:
             recent = history[-3:]
             conv_summary = " | ".join(
-                [f"{msg['role']}: {msg['content'][:50]}" for msg in recent]
+                [f"{msg['role']}: {msg['content'][:50]}" for msg in recent],
             )
 
         # Fetch prompt from DB with fallback to hardcoded default
         intent_classification_prompt_text = _get_prompt_from_db(
-            "coordinator", "intent_classification", INTENT_CLASSIFICATION_PROMPT
+            "coordinator", "intent_classification", INTENT_CLASSIFICATION_PROMPT,
         )
         prompt = PromptTemplate.from_template(intent_classification_prompt_text)
         chain = prompt | structured_llm
@@ -904,7 +903,7 @@ def _classify_intent_with_llm(
                 "agent_descriptions": _get_agent_descriptions(),
                 "user_message": message,
                 "conversation_summary": conv_summary,
-            }
+            },
         )
 
         logger.info(
@@ -919,7 +918,7 @@ def _classify_intent_with_llm(
         heuristic = _classify_intent_keywords(message)
         if heuristic.intent == "planning" and result.intent == "balance":
             logger.info(
-                "🛟 Heuristic override: schedule-like query rerouted from balance to planning"
+                "🛟 Heuristic override: schedule-like query rerouted from balance to planning",
             )
             return ClassificationResult(
                 intent="planning",
@@ -940,7 +939,7 @@ def _classify_intent_with_llm(
 
     except Exception as e:
         logger.warning(
-            "❌ Structured LLM classification failed: %s, falling back to keywords", e
+            "❌ Structured LLM classification failed: %s, falling back to keywords", e,
         )
         return _classify_intent_keywords(message)
 
@@ -1158,7 +1157,7 @@ def plan_tasks(state: CoordinatorState) -> CoordinatorState:
     secondary_intent = state.get("classification_secondary_intent")
 
     tasks: list[_TaskItem] = [
-        {"intent": intent, "agent_name": agent_name, "parameters": parameters}
+        {"intent": intent, "agent_name": agent_name, "parameters": parameters},
     ]
 
     if secondary_intent and secondary_intent != intent:
@@ -1169,7 +1168,7 @@ def plan_tasks(state: CoordinatorState) -> CoordinatorState:
                     "intent": secondary_intent,
                     "agent_name": secondary_agent,
                     "parameters": parameters,
-                }
+                },
             )
             logger.info(
                 "📋 Multi-intent detected: primary='%s' (%s), secondary='%s' (%s)",
@@ -1178,11 +1177,10 @@ def plan_tasks(state: CoordinatorState) -> CoordinatorState:
                 secondary_intent,
                 secondary_agent,
             )
-    else:
-        if secondary_intent:
-            logger.info(
-                "ℹ️ Secondary intent same as primary, not creating additional task"
-            )
+    elif secondary_intent:
+        logger.info(
+            "ℹ️ Secondary intent same as primary, not creating additional task",
+        )
 
     logger.info("📋 Tasks to execute: %d tasks", len(tasks))
     for idx, task in enumerate(tasks):
@@ -1224,7 +1222,7 @@ def execute_task(state: CoordinatorState) -> CoordinatorState:
                 "status": "error",
                 "error": f"Agent '{agent_name}' not found",
                 "metadata": {},
-            }
+            },
         )
         return {
             **state,
@@ -1258,7 +1256,7 @@ def execute_task(state: CoordinatorState) -> CoordinatorState:
             "confidence": output.confidence,
             "metadata": output.metadata,
             "required_params": output.required_params,
-        }
+        },
     )
 
     audit_entry = {
@@ -1352,7 +1350,7 @@ def synthesize_response(state: CoordinatorState) -> CoordinatorState:
     planned_metadata = _extract_planned_action_metadata(agent_results)
     if planned_metadata:
         if not isinstance(response_metadata.get("action"), dict) and isinstance(
-            planned_metadata.get("action"), dict
+            planned_metadata.get("action"), dict,
         ):
             response_metadata = {
                 **response_metadata,
@@ -1388,7 +1386,6 @@ def synthesize_response(state: CoordinatorState) -> CoordinatorState:
 
 def apply_actions(state: CoordinatorState) -> CoordinatorState:
     """Execute planner-emitted actions within the graph so compliance validates final text."""
-
     current_user = state.get("current_user")
     db = state.get("db")
     if current_user is None or db is None:
@@ -1407,7 +1404,7 @@ def apply_actions(state: CoordinatorState) -> CoordinatorState:
             current_user=current_user,
             db=db,
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("Failed to apply planned chat action")
         return state
 

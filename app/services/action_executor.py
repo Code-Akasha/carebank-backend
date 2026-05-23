@@ -128,7 +128,7 @@ def execute_action(
         execution.attempt_count = attempt
         try:
             result = tool.execute(
-                user_id=user_id, action_type=action_type, payload=tool_payload
+                user_id=user_id, action_type=action_type, payload=tool_payload,
             )
             execution.status = "success"
             execution.result_payload_json = result

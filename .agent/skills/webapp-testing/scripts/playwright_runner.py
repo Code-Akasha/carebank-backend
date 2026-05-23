@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Skill: webapp-testing
+"""Skill: webapp-testing
 Script: playwright_runner.py
 Purpose: Run basic Playwright browser tests
 Usage: python playwright_runner.py <url> [--screenshot]
@@ -9,9 +8,9 @@ Note: Requires playwright (pip install playwright && playwright install chromium
 Screenshots: Saved to system temp directory (auto-cleaned by OS)
 """
 
-import sys
 import json
 import os
+import sys
 import tempfile
 from datetime import datetime
 
@@ -80,10 +79,10 @@ def run_basic_test(url: str, take_screenshot: bool = False) -> dict:
             # Performance metrics
             result["performance"] = {
                 "dom_content_loaded": page.evaluate(
-                    "window.performance.timing.domContentLoadedEventEnd - window.performance.timing.navigationStart"
+                    "window.performance.timing.domContentLoadedEventEnd - window.performance.timing.navigationStart",
                 ),
                 "load_complete": page.evaluate(
-                    "window.performance.timing.loadEventEnd - window.performance.timing.navigationStart"
+                    "window.performance.timing.loadEventEnd - window.performance.timing.navigationStart",
                 ),
             }
 
@@ -91,7 +90,7 @@ def run_basic_test(url: str, take_screenshot: bool = False) -> dict:
             if take_screenshot:
                 # Cross-platform: Windows=%TEMP%, Linux/macOS=/tmp
                 screenshot_dir = os.path.join(
-                    tempfile.gettempdir(), "maestro_screenshots"
+                    tempfile.gettempdir(), "maestro_screenshots",
                 )
                 os.makedirs(screenshot_dir, exist_ok=True)
                 screenshot_path = os.path.join(
@@ -148,7 +147,7 @@ def run_accessibility_check(url: str) -> dict:
                 "images_with_alt": page.locator("img[alt]").count(),
                 "images_without_alt": page.locator("img:not([alt])").count(),
                 "buttons_with_label": page.locator(
-                    "button[aria-label], button:has-text('')"
+                    "button[aria-label], button:has-text('')",
                 ).count(),
                 "links_with_text": page.locator("a:has-text('')").count(),
                 "form_labels": page.locator("label").count(),
@@ -182,7 +181,7 @@ if __name__ == "__main__":
                     ],
                 },
                 indent=2,
-            )
+            ),
         )
         sys.exit(1)
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Accessibility Checker - WCAG compliance audit
+"""Accessibility Checker - WCAG compliance audit
 Checks HTML files for accessibility issues.
 
 Usage:
@@ -14,11 +13,11 @@ Checks:
     - Semantic HTML
 """
 
-import sys
 import json
 import re
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Fix Windows console encoding
 try:
@@ -78,7 +77,7 @@ def check_accessibility(file_path: Path) -> list:
         # Check for click handlers without keyboard support
         onclick_count = content.lower().count("onclick=")
         onkeydown_count = content.lower().count("onkeydown=") + content.lower().count(
-            "onkeyup="
+            "onkeyup=",
         )
         if onclick_count > 0 and onkeydown_count == 0:
             issues.append("onClick without keyboard handler (onKeyDown)")
@@ -90,7 +89,7 @@ def check_accessibility(file_path: Path) -> list:
                 and 'tabindex="0"' not in content.lower()
             ):
                 positive_tabindex = re.findall(
-                    r'tabindex="([1-9]\d*)"', content, re.IGNORECASE
+                    r'tabindex="([1-9]\d*)"', content, re.IGNORECASE,
                 )
                 if positive_tabindex:
                     issues.append("Avoid positive tabIndex values")
@@ -104,7 +103,7 @@ def check_accessibility(file_path: Path) -> list:
         if 'role="button"' in content.lower():
             # Divs with role button should have tabindex
             div_buttons = re.findall(
-                r'<div[^>]*role="button"[^>]*>', content, re.IGNORECASE
+                r'<div[^>]*role="button"[^>]*>', content, re.IGNORECASE,
             )
             for div in div_buttons:
                 if "tabindex" not in div.lower():

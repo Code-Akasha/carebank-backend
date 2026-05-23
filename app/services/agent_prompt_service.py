@@ -1,16 +1,15 @@
-"""
-Agent Prompt Configuration Service.
+"""Agent Prompt Configuration Service.
 
 Manages versioned system prompts for agents with rollback and validation.
 """
 
 import logging
-from typing import Optional, List
 from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 
-from app.models.agent_prompt_config import AgentPromptConfig
 from app.models.admin_action_log import AdminActionLog
+from app.models.agent_prompt_config import AgentPromptConfig
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +18,8 @@ class AgentPromptService:
     """Service for managing agent system prompts with versioning."""
 
     @staticmethod
-    def _validate_prompt_template(prompt: str) -> tuple[bool, Optional[str]]:
-        """
-        Validate that a prompt template has basic valid structure.
+    def _validate_prompt_template(prompt: str) -> tuple[bool, str | None]:
+        """Validate that a prompt template has basic valid structure.
         Returns (is_valid, error_message)
         """
         if not prompt or not prompt.strip():
@@ -35,10 +33,9 @@ class AgentPromptService:
 
     @staticmethod
     async def get_active_prompt(
-        db: Session, agent_name: str, environment: str
-    ) -> Optional[AgentPromptConfig]:
-        """
-        Retrieve the active (published) prompt for an agent in an environment.
+        db: Session, agent_name: str, environment: str,
+    ) -> AgentPromptConfig | None:
+        """Retrieve the active (published) prompt for an agent in an environment.
         Returns None if no active prompt is configured.
         """
         return (
@@ -53,10 +50,9 @@ class AgentPromptService:
 
     @staticmethod
     async def get_prompt_history(
-        db: Session, agent_name: str, environment: str
-    ) -> List[AgentPromptConfig]:
-        """
-        Retrieve all versions (active and inactive) of a prompt for an agent/env.
+        db: Session, agent_name: str, environment: str,
+    ) -> list[AgentPromptConfig]:
+        """Retrieve all versions (active and inactive) of a prompt for an agent/env.
         Ordered by version descending (newest first).
         """
         return (
@@ -76,10 +72,9 @@ class AgentPromptService:
         environment: str,
         system_prompt: str,
         user_id: str,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> AgentPromptConfig:
-        """
-        Publish a new version of a system prompt for an agent.
+        """Publish a new version of a system prompt for an agent.
         - Validates prompt structure
         - Increments version number
         - Deactivates previous version
@@ -89,13 +84,13 @@ class AgentPromptService:
         is_valid, error = AgentPromptService._validate_prompt_template(system_prompt)
         if not is_valid:
             logger.error(
-                f"Prompt validation failed for {agent_name}/{environment}: {error}"
+                f"Prompt validation failed for {agent_name}/{environment}: {error}",
             )
             raise ValueError(f"Invalid prompt: {error}")
 
         # Get current active version to determine next version number
         active_prompt = await AgentPromptService.get_active_prompt(
-            db, agent_name, environment
+            db, agent_name, environment,
         )
         next_version = (active_prompt.version + 1) if active_prompt else 1
 
@@ -134,7 +129,7 @@ class AgentPromptService:
 
         logger.info(
             f"Published new version {next_version} of prompt for "
-            f"agent {agent_name} in environment {environment}"
+            f"agent {agent_name} in environment {environment}",
         )
         return new_prompt
 
@@ -146,8 +141,7 @@ class AgentPromptService:
         target_version: int,
         user_id: str,
     ) -> AgentPromptConfig:
-        """
-        Rollback to a previous version of a prompt.
+        """Rollback to a previous version of a prompt.
         - Finds the target version (must exist)
         - Deactivates current active version
         - Activates the target version
@@ -155,11 +149,11 @@ class AgentPromptService:
         """
         # Get current active version
         active_prompt = await AgentPromptService.get_active_prompt(
-            db, agent_name, environment
+            db, agent_name, environment,
         )
         if not active_prompt:
             raise ValueError(
-                f"No active prompt for agent {agent_name} in environment {environment}"
+                f"No active prompt for agent {agent_name} in environment {environment}",
             )
 
         # Get target version
@@ -176,7 +170,7 @@ class AgentPromptService:
         if not target_prompt:
             raise ValueError(
                 f"Target version {target_version} not found for "
-                f"agent {agent_name} in environment {environment}"
+                f"agent {agent_name} in environment {environment}",
             )
 
         if target_prompt.id == active_prompt.id:
@@ -209,22 +203,20 @@ class AgentPromptService:
 
         logger.info(
             f"Rolled back prompt for agent {agent_name} in environment {environment} "
-            f"from version {active_prompt.version} to version {target_version}"
+            f"from version {active_prompt.version} to version {target_version}",
         )
         return target_prompt
 
     @staticmethod
-    def get_available_agents(db: Session) -> List[str]:
-        """
-        Get list of unique agent names that have prompts configured.
+    def get_available_agents(db: Session) -> list[str]:
+        """Get list of unique agent names that have prompts configured.
         """
         agents = db.query(AgentPromptConfig.agent_name).distinct().all()
         return [agent[0] for agent in agents]
 
     @staticmethod
     async def ensure_default_prompts(db: Session, environment: str) -> None:
-        """
-        Ensure default prompts exist for all core agents in an environment.
+        """Ensure default prompts exist for all core agents in an environment.
         This is called during initialization to provide fallback prompts.
         """
         default_agents = {
@@ -237,7 +229,7 @@ class AgentPromptService:
 
         for agent_name, default_prompt in default_agents.items():
             existing = await AgentPromptService.get_active_prompt(
-                db, agent_name, environment
+                db, agent_name, environment,
             )
             if not existing:
                 prompt = AgentPromptConfig(

@@ -1,14 +1,15 @@
 """Recurring payment management service."""
 
-from datetime import datetime, timezone, timedelta, date as date_type
-from sqlalchemy.orm import Session
-from fastapi import HTTPException
-
+from datetime import date as date_type
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from app.models.recurring_payment_rule import RecurringPaymentRule
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
 from app.models.beneficiary import Beneficiary
 from app.models.payment_settings import PaymentSettings
+from app.models.recurring_payment_rule import RecurringPaymentRule
 from app.schemas.payments import RecurringPaymentCreate, RecurringPaymentUpdate
 
 
@@ -79,7 +80,7 @@ def create_recurring_payment_rule(
     # Calculate next run date
     start_date_dt = (
         datetime.combine(payload.start_date, datetime.min.time()).replace(
-            tzinfo=timezone.utc
+            tzinfo=timezone.utc,
         )
         if payload.start_date
         else datetime.now(timezone.utc)
@@ -149,7 +150,7 @@ def list_recurring_payment_rules(
     Optional filter by status: active, paused, expired.
     """
     query = db.query(RecurringPaymentRule).filter(
-        RecurringPaymentRule.user_id == user_id
+        RecurringPaymentRule.user_id == user_id,
     )
 
     if status:
@@ -159,7 +160,7 @@ def list_recurring_payment_rules(
 
     # Order by next_run_date, then by creation date
     query = query.order_by(
-        RecurringPaymentRule.next_run_date, RecurringPaymentRule.created_at
+        RecurringPaymentRule.next_run_date, RecurringPaymentRule.created_at,
     )
 
     return query.all()
@@ -354,7 +355,7 @@ def get_upcoming_payments(
                 "frequency": rule.frequency,
                 "next_run_date": rule.next_run_date.isoformat(),
                 "description": rule.description,
-            }
+            },
         )
 
     return result
@@ -378,6 +379,7 @@ def calculate_next_run_date(
 
     Returns:
         Next run datetime in UTC
+
     """
     if day_config:
         day_of_month = day_config.get("day_of_month", day_of_month)
@@ -388,7 +390,7 @@ def calculate_next_run_date(
             base_date = last_run_date
         else:
             base_date = datetime.combine(last_run_date, datetime.min.time()).replace(
-                tzinfo=timezone.utc
+                tzinfo=timezone.utc,
             )
 
     if base_date is None:
@@ -400,7 +402,7 @@ def calculate_next_run_date(
     if frequency == "daily":
         return (base_date + timedelta(days=1)).date()
 
-    elif frequency == "weekly":
+    if frequency == "weekly":
         # Find next occurrence of day_of_week
         if not day_of_week:
             raise ValueError("day_of_week required for weekly frequency")
@@ -426,7 +428,7 @@ def calculate_next_run_date(
 
         return (base_date + timedelta(days=days_ahead)).date()
 
-    elif frequency == "monthly":
+    if frequency == "monthly":
         # Run on specified day of month
         if not day_of_month or day_of_month < 1 or day_of_month > 31:
             raise ValueError("day_of_month must be 1-31 for monthly frequency")
@@ -454,12 +456,12 @@ def calculate_next_run_date(
                 - timedelta(days=1)
             ).day
             next_date = datetime(
-                year, month, min(day_of_month, last_day_next_month), tzinfo=timezone.utc
+                year, month, min(day_of_month, last_day_next_month), tzinfo=timezone.utc,
             )
 
         return next_date.date()
 
-    elif frequency == "quarterly":
+    if frequency == "quarterly":
         # Run every 3 months on specified day
         if not day_of_month or day_of_month < 1 or day_of_month > 31:
             raise ValueError("day_of_month must be 1-31 for quarterly frequency")
@@ -479,10 +481,9 @@ def calculate_next_run_date(
                 - timedelta(days=1)
             ).day
             next_date = datetime(
-                year, month, min(day_of_month, last_day), tzinfo=timezone.utc
+                year, month, min(day_of_month, last_day), tzinfo=timezone.utc,
             )
 
         return next_date.date()
 
-    else:
-        raise ValueError(f"Invalid frequency: {frequency}")
+    raise ValueError(f"Invalid frequency: {frequency}")

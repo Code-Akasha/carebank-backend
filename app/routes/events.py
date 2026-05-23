@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import Annotated, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Annotated
 
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends
@@ -66,7 +67,7 @@ async def _event_stream(user_id: str) -> AsyncGenerator[str, None]:
             if pubsub:
                 try:
                     message = await pubsub.get_message(
-                        ignore_subscribe_messages=True, timeout=1.0
+                        ignore_subscribe_messages=True, timeout=1.0,
                     )
                     if message and message.get("type") == "message":
                         raw = message.get("data")

@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 __all__ = [
-    "bills_router",
-    "transactions_router",
-    "balances_router",
-    "products_router",
     "accounts_router",
-    "beneficiaries_router",
-    "bank_schedules_router",
-    "providers_router",
-    "health_score_router",
-    "chat_router",
-    "profile_router",
-    "planning_router",
     "actions_router",
     "auto_savings_router",
+    "balances_router",
+    "bank_schedules_router",
+    "beneficiaries_router",
+    "bills_router",
+    "chat_router",
+    "health_score_router",
+    "planning_router",
+    "products_router",
+    "profile_router",
+    "providers_router",
+    "transactions_router",
 ]
 
 

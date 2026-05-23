@@ -1,14 +1,13 @@
-"""
-Shared test fixtures and configuration for CareBank backend tests.
+"""Shared test fixtures and configuration for CareBank backend tests.
 """
 
 import atexit
 import os
 from pathlib import Path
 from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
-
 
 # ── Environment setup for CI ──────────────────────────────────────────
 # Set test-safe defaults so tests don't require real services.
@@ -115,9 +114,10 @@ def test_db(client):
 def test_user_data(test_db):
     """Create a test user with payment settings"""
     import uuid
-    from app.models.user import User
-    from app.models.payment_settings import PaymentSettings
     from datetime import datetime
+
+    from app.models.payment_settings import PaymentSettings
+    from app.models.user import User
 
     # Generate unique email to avoid UNIQUE constraint violations
     unique_id = str(uuid.uuid4())[:8]
@@ -156,9 +156,10 @@ def test_user_data(test_db):
 def test_user_2(test_db):
     """Create a second test user for isolation testing"""
     import uuid
-    from app.models.user import User
-    from app.models.payment_settings import PaymentSettings
     from datetime import datetime
+
+    from app.models.payment_settings import PaymentSettings
+    from app.models.user import User
 
     # Generate unique email to avoid UNIQUE constraint violations
     unique_id = str(uuid.uuid4())[:8]
@@ -196,8 +197,9 @@ def test_user_2(test_db):
 @pytest.fixture
 def test_beneficiary_data(test_db, test_user_data):
     """Create test beneficiaries"""
-    from app.models.beneficiary import Beneficiary
     from datetime import datetime
+
+    from app.models.beneficiary import Beneficiary
 
     benef1 = Beneficiary(
         user_id=test_user_data["user_id"],
@@ -239,8 +241,9 @@ def test_payment_settings(test_db, test_user_data):
 @pytest.fixture
 def test_recurring_rule_data(test_db, test_user_data, test_beneficiary_data):
     """Create a test recurring payment rule"""
+    from datetime import date, datetime
+
     from app.models.recurring_payment_rule import RecurringPaymentRule
-    from datetime import datetime, date
 
     rule = RecurringPaymentRule(
         user_id=test_user_data["user_id"],

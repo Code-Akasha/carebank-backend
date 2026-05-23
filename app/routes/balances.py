@@ -8,7 +8,7 @@ from app.core.security import get_current_user
 from app.models.balance import Balance
 from app.models.user import User
 from app.schemas.models import BalanceResponse
-from app.services.banking_client import get_banking_client, BankingClientError
+from app.services.banking_client import BankingClientError, get_banking_client
 
 router = APIRouter(prefix="/api/balances", tags=["balances"])
 
@@ -23,16 +23,16 @@ async def get_balance(
         balance_data = await client.get_balance(current_user.user_id)
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     balance = db.query(Balance).filter(Balance.user_id == current_user.user_id).first()
     if balance:
         balance.current_balance = balance_data.get(
-            "current_balance", balance.current_balance
+            "current_balance", balance.current_balance,
         )
         balance.available_balance = balance_data.get(
-            "available_balance", balance.available_balance
+            "available_balance", balance.available_balance,
         )
         balance.last_updated = balance_data.get("last_updated", balance.last_updated)
     else:

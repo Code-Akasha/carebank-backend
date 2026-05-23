@@ -18,7 +18,6 @@ class RiskThresholds:
 @lru_cache
 def get_risk_thresholds() -> RiskThresholds:
     """Load thresholds from settings once and reuse."""
-
     settings = get_settings()
     return RiskThresholds(
         what_if_low=settings.whatif_low_threshold,

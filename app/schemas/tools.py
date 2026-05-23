@@ -1,5 +1,4 @@
-"""
-Tool schema definitions and metadata for discovery.
+"""Tool schema definitions and metadata for discovery.
 
 This module provides:
 1. Pydantic schemas for tool payload validation
@@ -10,7 +9,6 @@ This module provides:
 from typing import Any
 
 from pydantic import BaseModel, Field
-
 
 # ============================================================================
 # Action Payload Schemas
@@ -75,31 +73,26 @@ class BankTransactionPayload(BaseModel):
 class PayRentPayload(BankTransactionPayload):
     """Payload for pay_rent action."""
 
-    pass
 
 
 class PayBillPayload(BankTransactionPayload):
     """Payload for pay_bill action."""
 
-    pass
 
 
 class PayGasPayload(BankTransactionPayload):
     """Payload for pay_gas action."""
 
-    pass
 
 
 class PayUtilityPayload(BankTransactionPayload):
     """Payload for pay_utility action."""
 
-    pass
 
 
 class TransferSavingsPayload(BankTransactionPayload):
     """Payload for transfer_savings action."""
 
-    pass
 
 
 # ============================================================================
@@ -113,7 +106,7 @@ class ToolMetadata(BaseModel):
     name: str = Field(description="Human-readable tool name")
     description: str = Field(description="What the tool does")
     action_types: list[str] = Field(
-        description="List of action types this tool handles"
+        description="List of action types this tool handles",
     )
     timeout_seconds: int = Field(
         default=15,
@@ -145,10 +138,10 @@ class ActionTypeSchema(BaseModel):
     action_type: str = Field(description="Action type identifier")
     description: str = Field(description="What this action does")
     payload_schema: dict[str, Any] = Field(
-        description="JSON Schema for payload validation"
+        description="JSON Schema for payload validation",
     )
     requires_approval: bool = Field(
-        description="Whether approval needed before execution"
+        description="Whether approval needed before execution",
     )
     max_amount: float | None = Field(
         default=None,
@@ -169,7 +162,7 @@ class ToolDiscoveryResponse(BaseModel):
 
     tools: list[ToolMetadata] = Field(description="List of available tools")
     action_types: list[ActionTypeSchema] = Field(
-        description="Detailed schema for each action type"
+        description="Detailed schema for each action type",
     )
     timestamp: str = Field(description="ISO 8601 timestamp of discovery response")
 
@@ -192,5 +185,5 @@ class ToolExecutionResult(BaseModel):
         description="Tool-specific metadata",
     )
     error: str | None = Field(
-        default=None, description="Error message if execution failed"
+        default=None, description="Error message if execution failed",
     )

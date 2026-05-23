@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
-import httpx
 import time
 
+import httpx
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from app.core.config import get_settings
@@ -79,9 +78,8 @@ def _normalize_provider_type(provider_type: str | None) -> str:
     return "ollama"
 
 
-def _get_llm_config_from_db(environment: str) -> Optional[dict]:
-    """
-    Retrieve runtime Ollama configuration from database for a given environment.
+def _get_llm_config_from_db(environment: str) -> dict | None:
+    """Retrieve runtime Ollama configuration from database for a given environment.
     Returns None if no active config is found.
 
     This function is called on-demand to check for admin-configured tunnel settings
@@ -174,10 +172,9 @@ def _build_llm_from_admin_config(config: dict, temperature: float, max_tokens: i
 def get_llm_provider(
     temperature: float = 0.7,
     max_tokens: int = 500,
-    environment: Optional[str] = None,
-) -> tuple[Optional[BaseChatModel], str]:
-    """
-    Factory to retrieve configured LLM.
+    environment: str | None = None,
+) -> tuple[BaseChatModel | None, str]:
+    """Factory to retrieve configured LLM.
 
     Resolution order (first match wins):
     1. Runtime DB config for current environment (admin-managed provider config)
@@ -191,6 +188,7 @@ def get_llm_provider(
 
     Returns:
         tuple of (LLM Instance or None, Provider Name)
+
     """
     settings = get_settings()
     if not environment:
@@ -237,7 +235,7 @@ def get_llm_provider(
                         temperature=temperature,
                     )
                     logger.info(
-                        f"Using DB-configured Ollama provider for environment {environment}"
+                        f"Using DB-configured Ollama provider for environment {environment}",
                     )
                     return llm, f"ollama:{model}"
                 logger.info(
@@ -282,7 +280,7 @@ def get_llm_provider(
                                 ollama_model,
                             )
                             raise RuntimeError(
-                                f"Ollama model unavailable: {ollama_model}"
+                                f"Ollama model unavailable: {ollama_model}",
                             )
                     else:
                         logger.warning(

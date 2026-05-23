@@ -1,10 +1,8 @@
 """Pydantic schemas for payment operations."""
 
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
-
 
 # ============================================================================
 # BENEFICIARY SCHEMAS
@@ -15,7 +13,7 @@ class BeneficiaryCreate(BaseModel):
     """Create a new beneficiary."""
 
     nickname: str = Field(
-        ..., min_length=1, max_length=50, description="User-friendly name"
+        ..., min_length=1, max_length=50, description="User-friendly name",
     )
     identifier_type: str = Field(
         ...,
@@ -28,18 +26,18 @@ class BeneficiaryCreate(BaseModel):
         max_length=100,
         description="Phone, UPI ID, or account number",
     )
-    category: Optional[str] = Field(
-        None, max_length=50, description="Category (family, bills, services)"
+    category: str | None = Field(
+        None, max_length=50, description="Category (family, bills, services)",
     )
 
 
 class BeneficiaryUpdate(BaseModel):
     """Update an existing beneficiary."""
 
-    nickname: Optional[str] = Field(None, min_length=1, max_length=50)
-    category: Optional[str] = Field(None, max_length=50)
-    is_trusted: Optional[bool] = Field(
-        None, description="Mark as trusted for auto-execute"
+    nickname: str | None = Field(None, min_length=1, max_length=50)
+    category: str | None = Field(None, max_length=50)
+    is_trusted: bool | None = Field(
+        None, description="Mark as trusted for auto-execute",
     )
 
 
@@ -47,13 +45,13 @@ class BeneficiaryResponse(BaseModel):
     """Beneficiary response model."""
 
     id: int
-    nickname: Optional[str]
+    nickname: str | None
     identifier_type: str
     identifier_value: str
-    category: Optional[str]
+    category: str | None
     is_verified: bool
     is_trusted: bool
-    last_used_at: Optional[datetime]
+    last_used_at: datetime | None
     payment_count: int
     created_at: datetime
 
@@ -71,16 +69,16 @@ class ExecutePaymentPayload(BaseModel):
 
     beneficiary_id: int = Field(..., description="Beneficiary ID")
     amount: float = Field(..., gt=0, le=500000, description="Payment amount in rupees")
-    description: Optional[str] = Field(
-        None, max_length=200, description="Payment description"
+    description: str | None = Field(
+        None, max_length=200, description="Payment description",
     )
     payment_method: str = Field(
         default="upi",
         pattern="^(upi|account_transfer)$",
         description="Payment method",
     )
-    mpin: Optional[str] = Field(None, description="User MPIN for verification")
-    idempotency_key: Optional[str] = Field(None, description="Client idempotency key")
+    mpin: str | None = Field(None, description="User MPIN for verification")
+    idempotency_key: str | None = Field(None, description="Client idempotency key")
 
 
 class PaymentHistoryResponse(BaseModel):
@@ -94,8 +92,8 @@ class PaymentHistoryResponse(BaseModel):
     payment_method: str
     status: str
     execution_date: datetime
-    mockbank_transaction_id: Optional[str]
-    error_reason: Optional[str]
+    mockbank_transaction_id: str | None
+    error_reason: str | None
     created_at: datetime
 
     class Config:
@@ -112,40 +110,40 @@ class RecurringPaymentCreate(BaseModel):
 
     beneficiary_id: int = Field(..., description="Beneficiary ID")
     amount: float = Field(
-        ..., gt=0, le=100000, description="Amount per cycle (max ₹100k)"
+        ..., gt=0, le=100000, description="Amount per cycle (max ₹100k)",
     )
-    description: Optional[str] = Field(
-        None, min_length=1, max_length=100, description="Bill/service name"
+    description: str | None = Field(
+        None, min_length=1, max_length=100, description="Bill/service name",
     )
     frequency: str = Field(
         ...,
         pattern="^(daily|weekly|monthly|quarterly)$",
         description="Frequency",
     )
-    day_config: Optional[dict] = Field(
+    day_config: dict | None = Field(
         None,
         description='{"day_of_week": "monday"} for weekly or {"day_of_month": 5} for monthly',
     )
-    start_date: Optional[date] = Field(
-        None, description="Start date (defaults to today)"
+    start_date: date | None = Field(
+        None, description="Start date (defaults to today)",
     )
-    end_date: Optional[date] = Field(
-        None, description="End date (optional; None = indefinite)"
+    end_date: date | None = Field(
+        None, description="End date (optional; None = indefinite)",
     )
     requires_approval: bool = Field(
-        default=True, description="Require approval for each payment"
+        default=True, description="Require approval for each payment",
     )
 
 
 class RecurringPaymentUpdate(BaseModel):
     """Update an existing recurring payment rule."""
 
-    amount: Optional[float] = Field(None, gt=0, le=100000)
-    description: Optional[str] = Field(None, min_length=1, max_length=100)
-    frequency: Optional[str] = Field(None, pattern="^(daily|weekly|monthly|quarterly)$")
-    day_config: Optional[dict] = Field(None)
-    end_date: Optional[date] = Field(None)
-    requires_approval: Optional[bool] = Field(None)
+    amount: float | None = Field(None, gt=0, le=100000)
+    description: str | None = Field(None, min_length=1, max_length=100)
+    frequency: str | None = Field(None, pattern="^(daily|weekly|monthly|quarterly)$")
+    day_config: dict | None = Field(None)
+    end_date: date | None = Field(None)
+    requires_approval: bool | None = Field(None)
 
 
 class RecurringPaymentResponse(BaseModel):
@@ -156,16 +154,16 @@ class RecurringPaymentResponse(BaseModel):
     amount: float
     description: str
     frequency: str
-    day_of_month: Optional[int]
-    day_of_week: Optional[str]
+    day_of_month: int | None
+    day_of_week: str | None
     start_date: date
-    end_date: Optional[date]
+    end_date: date | None
     next_run_date: date
     status: str  # "active", "paused", "expired"
     requires_approval: bool
     total_executions: int
-    last_executed_at: Optional[datetime]
-    last_execution_status: Optional[str]
+    last_executed_at: datetime | None
+    last_execution_status: str | None
     created_at: datetime
 
     class Config:
@@ -177,10 +175,10 @@ class RecurringPaymentUpcomingResponse(BaseModel):
 
     recurring_rule_id: int
     description: str
-    beneficiary_nickname: Optional[str]
+    beneficiary_nickname: str | None
     amount: float
     upcoming_payments: list[dict] = Field(
-        description="List of next 5 scheduled payments with dates"
+        description="List of next 5 scheduled payments with dates",
     )
 
 
@@ -209,10 +207,10 @@ class PaymentSettingsResponse(BaseModel):
 class PaymentSettingsUpdate(BaseModel):
     """Update payment settings."""
 
-    mpin_threshold: Optional[float] = Field(None, gt=0, le=1000000)
-    auto_approve_trusted: Optional[bool] = Field(None)
-    daily_limit: Optional[float] = Field(None, gt=0, le=10000000)
-    recurring_payment_max: Optional[float] = Field(None, gt=0, le=1000000)
+    mpin_threshold: float | None = Field(None, gt=0, le=1000000)
+    auto_approve_trusted: bool | None = Field(None)
+    daily_limit: float | None = Field(None, gt=0, le=10000000)
+    recurring_payment_max: float | None = Field(None, gt=0, le=1000000)
 
 
 class SetMPINRequest(BaseModel):
@@ -231,9 +229,9 @@ class PaymentExecutionResult(BaseModel):
 
     status: str  # "success", "pending", "failed"
     message: str
-    execution_id: Optional[int] = None
-    transaction_id: Optional[str] = None
-    error_reason: Optional[str] = None
+    execution_id: int | None = None
+    transaction_id: str | None = None
+    error_reason: str | None = None
 
     def __getitem__(self, key: str):
         return getattr(self, key)

@@ -1,5 +1,4 @@
-"""
-Comprehensive Security Tests
+"""Comprehensive Security Tests
 
 Tests to ensure authorization boundaries, authentication requirements,
 and prevent security vulnerabilities from reoccurring.
@@ -42,7 +41,7 @@ class _MockBankingClient:
                 "category": payload.get("category"),
                 "description": payload.get("description"),
                 "date": datetime(2026, 4, 1, 10, 0, tzinfo=timezone.utc),
-            }
+            },
         )
         return {"status": "queued", "id": tx_id}
 
@@ -73,7 +72,7 @@ def test_users(client):
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
         users[name] = SimpleNamespace(
-            user_id=data["user_id"], token=data["access_token"]
+            user_id=data["user_id"], token=data["access_token"],
         )
     return users
 
@@ -120,7 +119,7 @@ class TestSecurityBoundaries:
 
         # User 2 should not be able to see user 1's transactions
         response = client.get(
-            "/api/transactions/", headers={"Authorization": f"Bearer {token2}"}
+            "/api/transactions/", headers={"Authorization": f"Bearer {token2}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -158,7 +157,7 @@ class TestSecurityBoundaries:
         ]
 
         response = client.delete(
-            "/bot/telegram/webhook", headers={"Authorization": f"Bearer {user_token}"}
+            "/bot/telegram/webhook", headers={"Authorization": f"Bearer {user_token}"},
         )
         assert response.status_code in [
             status.HTTP_403_FORBIDDEN,
@@ -371,7 +370,7 @@ class TestWebhookSecurity:
         """Test Telegram webhook signature verification."""
         # Test webhook without secret header
         response = client.post(
-            "/bot/telegram/webhook", json={"message": {"text": "test"}}
+            "/bot/telegram/webhook", json={"message": {"text": "test"}},
         )
         # Should either require secret or accept it (depending on configuration)
         assert response.status_code in [200, 400, 401, 403, 503]
@@ -409,7 +408,7 @@ class TestRateLimiting:
         responses = []
         for _ in range(50):  # Make many requests quickly
             response = client.get(
-                "/api/transactions/", headers={"Authorization": f"Bearer {token}"}
+                "/api/transactions/", headers={"Authorization": f"Bearer {token}"},
             )
             responses.append(response.status_code)
 
@@ -454,7 +453,7 @@ class TestErrorHandling:
 
         # Test accessing non-existent transaction
         response = client.get(
-            "/api/transactions/999999", headers={"Authorization": f"Bearer {token}"}
+            "/api/transactions/999999", headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 404
 
@@ -495,7 +494,7 @@ class TestSecurityIntegration:
 
         # 3. Verify transaction ownership
         response = client.get(
-            "/api/transactions/", headers={"Authorization": f"Bearer {token}"}
+            "/api/transactions/", headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -525,12 +524,12 @@ class TestSecurityIntegration:
         for endpoint in endpoints_to_test:
             # User 1 should only see their own data
             response1 = client.get(
-                endpoint, headers={"Authorization": f"Bearer {token1}"}
+                endpoint, headers={"Authorization": f"Bearer {token1}"},
             )
 
             # User 2 should only see their own data
             response2 = client.get(
-                endpoint, headers={"Authorization": f"Bearer {token2}"}
+                endpoint, headers={"Authorization": f"Bearer {token2}"},
             )
 
             # Both should either succeed with their own data or require additional auth

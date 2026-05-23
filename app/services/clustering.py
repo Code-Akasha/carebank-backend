@@ -26,21 +26,21 @@ _CENTROIDS = np.array(
             0.05,
         ],  # Social Spender — food + entertainment heavy
         [0.20, 0.05, 0.15, 0.40, 0.10, 0.10],  # Impulse Buyer — shopping-heavy
-    ]
+    ],
 )
 
 _CATEGORY_ORDER = ["food", "transport", "entertainment", "shopping", "bills", "other"]
 
 
 def cluster_persona(spending_profile: dict[str, float]) -> dict:
-    """
-    Assign a user persona based on spending category percentages.
+    """Assign a user persona based on spending category percentages.
 
     Args:
         spending_profile: {category: percentage} e.g. {"food": 0.35, "transport": 0.15, ...}
 
     Returns:
         dict with persona label, cluster_id, confidence, top_category
+
     """
     if not spending_profile:
         return {
@@ -51,7 +51,7 @@ def cluster_persona(spending_profile: dict[str, float]) -> dict:
         }
 
     feature_vector = np.array(
-        [spending_profile.get(cat, 0.0) for cat in _CATEGORY_ORDER]
+        [spending_profile.get(cat, 0.0) for cat in _CATEGORY_ORDER],
     ).reshape(1, -1)
 
     distances = np.linalg.norm(_CENTROIDS - feature_vector, axis=1)

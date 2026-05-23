@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Schema Validator - Database schema validation
+"""Schema Validator - Database schema validation
 Validates Prisma schemas and checks for common issues.
 
 Usage:
@@ -13,11 +12,11 @@ Checks:
     - Naming conventions
 """
 
-import sys
 import json
 import re
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Fix Windows console encoding
 try:
@@ -66,7 +65,7 @@ def validate_prisma_schema(file_path: Path) -> list:
             # Check for createdAt/updatedAt
             if "createdAt" not in model_body and "created_at" not in model_body:
                 issues.append(
-                    f"Model '{model_name}' missing createdAt field (recommended)"
+                    f"Model '{model_name}' missing createdAt field (recommended)",
                 )
 
             # Check for @relation without fields
@@ -83,7 +82,7 @@ def validate_prisma_schema(file_path: Path) -> list:
                     and f'@@index(["{fk}"])' not in content
                 ):
                     issues.append(
-                        f"Consider adding @@index([{fk}]) for better query performance in {model_name}"
+                        f"Consider adding @@index([{fk}]) for better query performance in {model_name}",
                     )
 
         # Check for enum definitions
@@ -137,7 +136,7 @@ def main():
 
         if issues:
             all_issues.append(
-                {"file": str(file_path.name), "type": schema_type, "issues": issues}
+                {"file": str(file_path.name), "type": schema_type, "issues": issues},
             )
 
     # Summary

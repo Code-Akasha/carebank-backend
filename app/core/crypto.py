@@ -1,13 +1,13 @@
-"""
-Encryption/decryption utilities for sensitive fields in models.
+"""Encryption/decryption utilities for sensitive fields in models.
 
 Uses Fernet (symmetric encryption from cryptography library) for field-level encryption.
 The encryption key is derived from a master key stored in configuration.
 """
 
 import logging
-from typing import Optional
+
 from cryptography.fernet import Fernet
+
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -44,12 +44,11 @@ class EncryptionManager:
             return plaintext.decode("utf-8")
         except Exception as e:
             logger.error(f"Decryption failed: {e}")
-            raise ValueError(f"Failed to decrypt value: {str(e)}")
+            raise ValueError(f"Failed to decrypt value: {e!s}")
 
     @staticmethod
     def mask_sensitive_value(value: str, show_chars: int = 4) -> str:
-        """
-        Mask a sensitive value for display (e.g., "abc...xyz").
+        """Mask a sensitive value for display (e.g., "abc...xyz").
         Shows first and last N characters; hides the middle.
         """
         if not value or len(value) <= show_chars * 2:
@@ -58,7 +57,7 @@ class EncryptionManager:
 
 
 # Global instance
-_encryption_manager: Optional[EncryptionManager] = None
+_encryption_manager: EncryptionManager | None = None
 
 
 def get_encryption_manager() -> EncryptionManager:

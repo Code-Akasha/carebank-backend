@@ -41,7 +41,7 @@ def as_utc(dt: datetime) -> datetime:
 
 
 def serialize_request(
-    model: ActionRequest, *, replayed: bool = False
+    model: ActionRequest, *, replayed: bool = False,
 ) -> ActionRequestResponse:
     return ActionRequestResponse(
         id=model.id,
@@ -132,7 +132,7 @@ def create_action_request_for_user(
     body: ActionRequestCreate,
 ) -> ActionRequestCreateResult:
     trusted_recurring = is_trusted_recurring(
-        db, current_user.user_id, body.action_payload
+        db, current_user.user_id, body.action_payload,
     )
     policy = evaluate_action_policy(
         body.action_type,

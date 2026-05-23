@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -18,8 +17,8 @@ logger = logging.getLogger(__name__)
 class BankingConnectorService:
     @staticmethod
     def get_active_config(
-        db: Session, environment: str
-    ) -> Optional[BankingConnectorConfig]:
+        db: Session, environment: str,
+    ) -> BankingConnectorConfig | None:
         return (
             db.query(BankingConnectorConfig)
             .filter(
@@ -32,7 +31,7 @@ class BankingConnectorService:
 
     @staticmethod
     def get_or_create_config(
-        db: Session, environment: str, user_id: str
+        db: Session, environment: str, user_id: str,
     ) -> BankingConnectorConfig:
         config = (
             db.query(BankingConnectorConfig)
@@ -62,7 +61,7 @@ class BankingConnectorService:
         db: Session,
         environment: str,
         base_url: str,
-        secret: Optional[str],
+        secret: str | None,
         request_timeout_sec: int,
         user_id: str,
         is_active: bool = True,
@@ -95,17 +94,17 @@ class BankingConnectorService:
                         "base_url": config.base_url,
                         "timeout": config.request_timeout_sec,
                         "is_active": config.is_active,
-                    }
+                    },
                 ),
                 status="success",
-            )
+            ),
         )
         db.commit()
         db.refresh(config)
         return config
 
     @staticmethod
-    def decrypt_secret(config: BankingConnectorConfig) -> Optional[str]:
+    def decrypt_secret(config: BankingConnectorConfig) -> str | None:
         if not config.secret_encrypted:
             return None
         return get_encryption_manager().decrypt(config.secret_encrypted)
@@ -115,7 +114,7 @@ class BankingConnectorService:
         db: Session,
         config: BankingConnectorConfig,
         is_success: bool,
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ) -> None:
         config.last_connectivity_check = datetime.now(timezone.utc)
         config.last_error = None if is_success else error_message

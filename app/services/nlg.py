@@ -45,15 +45,15 @@ def generate_response(
     data_context: Any,
     task_description: str,
 ) -> dict[str, Any]:
-    """
-    Generates a natural language response using the configured LLM.
+    """Generates a natural language response using the configured LLM.
     Uses a template fallback if LLM is unavailable or fails.
 
     Returns:
         dict with text, provider, and persona used
+
     """
     llm, provider = get_llm_provider(
-        temperature=0.5
+        temperature=0.5,
     )  # Lower temperature to reduce hallucination
 
     if not llm:
@@ -70,7 +70,7 @@ def generate_response(
                 "persona": persona,
                 "data_context": serialized_context,
                 "task_description": task_description,
-            }
+            },
         )
         model_name, tokens_used = _extract_generation_metadata(provider, response)
         return {
@@ -87,7 +87,7 @@ def generate_response(
 
 
 def _template_fallback(
-    persona: str, data_context: str, task_description: str
+    persona: str, data_context: str, task_description: str,
 ) -> dict[str, Any]:
     """Fallback generator when LLMs fail or are misconfigured. Avoids hallucinating data."""
     structured = _structured_fallback_text(data_context)
@@ -250,7 +250,7 @@ def _serialize_data_context(data_context: Any) -> str:
 
 
 def _extract_generation_metadata(
-    provider: str, response: Any
+    provider: str, response: Any,
 ) -> tuple[str | None, int | None]:
     """Extract model name and total tokens from the LLM response metadata."""
     metadata = getattr(response, "response_metadata", None)

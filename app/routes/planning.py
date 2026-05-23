@@ -38,7 +38,7 @@ router = APIRouter(prefix="/api/planning", tags=["planning"])
 
 
 @router.post(
-    "/plans", response_model=FinancialPlanResponse, status_code=status.HTTP_201_CREATED
+    "/plans", response_model=FinancialPlanResponse, status_code=status.HTTP_201_CREATED,
 )
 def create_plan(
     body: FinancialPlanCreate,
@@ -109,7 +109,7 @@ def list_recurring_rules(
     db: Session = Depends(get_db),
 ):
     query = db.query(RecurringRule).filter(
-        RecurringRule.user_id == current_user.user_id
+        RecurringRule.user_id == current_user.user_id,
     )
     if not include_inactive:
         query = query.filter(RecurringRule.is_active.is_(True))
@@ -170,7 +170,7 @@ def list_checklist(
     db: Session = Depends(get_db),
 ):
     query = db.query(ChecklistItem).filter(
-        ChecklistItem.user_id == current_user.user_id
+        ChecklistItem.user_id == current_user.user_id,
     )
 
     if status_filter:

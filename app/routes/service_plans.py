@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -38,8 +38,8 @@ def create_plan(
 @router.get("", response_model=list[ServicePlanResponse])
 def list_plans(
     current_user: Annotated[User, Depends(get_current_user)],
-    business_user_id: Optional[str] = Query(
-        None, description="Filter by business user ID"
+    business_user_id: str | None = Query(
+        None, description="Filter by business user ID",
     ),
     active_only: bool = Query(True),
     db: Session = Depends(get_db),

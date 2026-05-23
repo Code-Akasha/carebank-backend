@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import Column, DateTime, Integer, JSON, String, Text
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
 
 from app.core.database import Base
 

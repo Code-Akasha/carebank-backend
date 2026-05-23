@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-SEO Checker - Search Engine Optimization Audit
+"""SEO Checker - Search Engine Optimization Audit
 Checks HTML/JSX/TSX pages for SEO best practices.
 
 PURPOSE:
@@ -18,11 +17,11 @@ Usage:
     python seo_checker.py <project_path>
 """
 
-import sys
 import json
 import re
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Fix Windows console encoding
 try:
@@ -165,13 +164,13 @@ def check_page(file_path: Path) -> dict:
         issues.append("Missing Open Graph tags")
 
     # 4. Heading hierarchy - multiple H1s
-    h1_matches = re.findall(r"<h1[^>]*>", content, re.I)
+    h1_matches = re.findall(r"<h1[^>]*>", content, re.IGNORECASE)
     if len(h1_matches) > 1:
         issues.append(f"Multiple H1 tags ({len(h1_matches)})")
 
     # 5. Images without alt
     img_pattern = r"<img[^>]+>"
-    imgs = re.findall(img_pattern, content, re.I)
+    imgs = re.findall(img_pattern, content, re.IGNORECASE)
     for img in imgs:
         if "alt=" not in img.lower():
             issues.append("Image missing alt attribute")

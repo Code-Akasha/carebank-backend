@@ -1,12 +1,13 @@
-"""
-LLM Tunnel Configuration Model.
+"""LLM Tunnel Configuration Model.
 
 Stores runtime configuration for secure tunnel to local Ollama instance,
 environment-scoped (dev/stage/prod).
 """
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, Index
 from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, String, Text
+
 from app.core.database import Base
 
 
@@ -16,31 +17,31 @@ class LLMTunnelConfig(Base):
     id = Column(Integer, primary_key=True, index=True)
     environment = Column(String, nullable=False, index=True)  # "dev" | "stage" | "prod"
     provider_type = Column(
-        String, default="ngrok", nullable=False
+        String, default="ngrok", nullable=False,
     )  # For future multi-provider support
     tunnel_url = Column(String, nullable=False)  # e.g., "https://abc123.ngrok.io"
     tunnel_auth_token_encrypted = Column(
-        String, nullable=True
+        String, nullable=True,
     )  # Encrypted ngrok auth token or None
     ollama_model_default = Column(
-        String, default="qwen3:8b", nullable=False
+        String, default="qwen3:8b", nullable=False,
     )  # Default model to use
     request_timeout_sec = Column(
-        Integer, default=30, nullable=False
+        Integer, default=30, nullable=False,
     )  # HTTP request timeout
     is_active = Column(Boolean, default=True, nullable=False, index=True)
 
     # Connectivity monitoring
     last_connectivity_check = Column(DateTime, nullable=True)
     last_error = Column(
-        Text, nullable=True
+        Text, nullable=True,
     )  # Last error message if connectivity failed
 
     # Audit fields
     created_by = Column(String, nullable=False, index=True)  # user_id who created
     updated_by = Column(String, nullable=False)  # user_id who last updated
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False,
     )
     updated_at = Column(
         DateTime,

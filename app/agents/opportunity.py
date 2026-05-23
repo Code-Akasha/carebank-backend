@@ -1,16 +1,15 @@
-from app.agents.base import BaseAgent, AgentInput, AgentOutput
 import logging
 from typing import Any
 
-from app.services.data import generate_mock_transactions
+from app.agents.base import AgentInput, AgentOutput, BaseAgent
 from app.services.banking_client import (
-    get_transactions_sync,
-    get_products_sync,
-    get_accounts_sync,
-    get_providers_sync,
     BankingClientError,
+    get_accounts_sync,
+    get_products_sync,
+    get_providers_sync,
+    get_transactions_sync,
 )
-
+from app.services.data import generate_mock_transactions
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ class OpportunityAgent(BaseAgent):
         ]
 
     def _detect_unused_subscriptions(
-        self, transactions: list[dict[str, Any]]
+        self, transactions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         # Hardcoding unused pattern matching for testing purpose
         # In a real app we'd look for recurring payments without corresponding login data etc
@@ -115,7 +114,7 @@ class OpportunityAgent(BaseAgent):
             return get_transactions_sync(user_id=user_id)
         except BankingClientError as exc:
             logger.warning(
-                "OpportunityAgent fallback transactions for %s: %s", user_id, exc
+                "OpportunityAgent fallback transactions for %s: %s", user_id, exc,
             )
             return generate_mock_transactions(user_id, days=30)
 
@@ -130,7 +129,7 @@ class OpportunityAgent(BaseAgent):
                     "name": "Premium Savings Account",
                     "interest_rate": 7.5,
                     "provider_id": "carebank_retail",
-                }
+                },
             ]
 
     def _fetch_accounts(self, user_id: str) -> list[dict[str, Any]]:
@@ -138,7 +137,7 @@ class OpportunityAgent(BaseAgent):
             return get_accounts_sync(user_id)
         except BankingClientError as exc:
             logger.warning(
-                "OpportunityAgent fallback accounts for %s: %s", user_id, exc
+                "OpportunityAgent fallback accounts for %s: %s", user_id, exc,
             )
             return [
                 {
@@ -150,7 +149,7 @@ class OpportunityAgent(BaseAgent):
                     "current_balance": 25000.0,
                     "available_balance": 20000.0,
                     "status": "active",
-                }
+                },
             ]
 
     def _fetch_providers(self) -> list[dict[str, Any]]:
@@ -163,7 +162,7 @@ class OpportunityAgent(BaseAgent):
                     "id": "carebank_retail",
                     "name": "CareBank Retail",
                     "status": "online",
-                }
+                },
             ]
 
     def _select_best_product(
@@ -240,7 +239,7 @@ class OpportunityAgent(BaseAgent):
         }
 
     def _pick_underutilized_account(
-        self, accounts: list[dict[str, Any]]
+        self, accounts: list[dict[str, Any]],
     ) -> dict[str, Any] | None:
         if not accounts:
             return None

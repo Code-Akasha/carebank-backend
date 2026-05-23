@@ -46,7 +46,7 @@ def get_recommendation(
 ):
     """Get auto-savings recommendation based on current financial forecast."""
     result = _agent._invoke(
-        AgentInput(user_id=current_user.user_id, message="auto savings recommendation")
+        AgentInput(user_id=current_user.user_id, message="auto savings recommendation"),
     )
     metadata = result.metadata or {}
     return SavingsRecommendation(
@@ -68,7 +68,7 @@ async def approve_savings(
 
     # Validate amount against recommendation
     result = _agent._invoke(
-        AgentInput(user_id=user_id, message="auto savings recommendation")
+        AgentInput(user_id=user_id, message="auto savings recommendation"),
     )
     metadata = result.metadata or {}
     max_suggested = metadata.get("suggested_amount", 0)
@@ -96,7 +96,7 @@ async def approve_savings(
                 "category": "savings",
                 "merchant": "CareBank Auto-Savings",
                 "description": f"Auto-savings transfer: ₹{request.amount}",
-            }
+            },
         )
 
         transaction_id = tx_result.get("transaction_id") or tx_result.get("id", "")

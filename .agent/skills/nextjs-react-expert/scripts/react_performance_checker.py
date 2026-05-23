@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-React Performance Checker
+"""React Performance Checker
 Automated performance audit for React/Next.js projects
 Based on Vercel Engineering best practices
 """
@@ -30,7 +29,7 @@ class PerformanceChecker:
 
                 # Pattern: multiple awaits in sequence without Promise.all
                 sequential_awaits = re.findall(
-                    r"await\s+\w+.*?\n\s*await\s+\w+", content
+                    r"await\s+\w+.*?\n\s*await\s+\w+", content,
                 )
 
                 if sequential_awaits:
@@ -41,7 +40,7 @@ class PerformanceChecker:
                             "issue": "Sequential awaits detected (waterfall)",
                             "fix": "Use Promise.all() for parallel fetching",
                             "section": "1-async-eliminating-waterfalls.md",
-                        }
+                        },
                     )
             except Exception:
                 continue
@@ -59,10 +58,10 @@ class PerformanceChecker:
 
                 # Pattern: import from index files or barrel exports
                 barrel_imports = re.findall(
-                    r"import.*from\s+['\"](@/.*?)/index['\"]", content
+                    r"import.*from\s+['\"](@/.*?)/index['\"]", content,
                 )
                 barrel_imports += re.findall(
-                    r"import.*from\s+['\"]\.\.?/.*?['\"](?!.*?\.tsx?)", content
+                    r"import.*from\s+['\"]\.\.?/.*?['\"](?!.*?\.tsx?)", content,
                 )
 
                 if barrel_imports:
@@ -73,7 +72,7 @@ class PerformanceChecker:
                             "issue": "Potential barrel imports detected",
                             "fix": "Import directly from specific files",
                             "section": "2-bundle-bundle-size-optimization.md",
-                        }
+                        },
                     )
             except Exception:
                 continue
@@ -108,13 +107,13 @@ class PerformanceChecker:
                                 self.warnings.append(
                                     {
                                         "file": str(
-                                            check_file.relative_to(self.project_path)
+                                            check_file.relative_to(self.project_path),
                                         ),
                                         "type": "CRITICAL",
                                         "issue": f"Large component {filename} imported statically",
                                         "fix": "Use dynamic() for code splitting",
                                         "section": "2-bundle-bundle-size-optimization.md",
-                                    }
+                                    },
                                 )
                                 break
             except Exception:
@@ -141,7 +140,7 @@ class PerformanceChecker:
                                 "issue": "Data fetching in useEffect",
                                 "fix": "Consider using SWR or React Query for deduplication",
                                 "section": "4-client-client-side-data-fetching.md",
-                            }
+                            },
                         )
             except Exception:
                 continue
@@ -159,7 +158,7 @@ class PerformanceChecker:
 
                 # Check for component definitions without memo
                 components = re.findall(
-                    r"(?:export\s+)?(?:const|function)\s+([A-Z]\w+)", content
+                    r"(?:export\s+)?(?:const|function)\s+([A-Z]\w+)", content,
                 )
 
                 if (
@@ -176,7 +175,7 @@ class PerformanceChecker:
                                 "issue": "Component with props not memoized",
                                 "fix": "Consider using React.memo if props are stable",
                                 "section": "5-rerender-re-render-optimization.md",
-                            }
+                            },
                         )
             except Exception:
                 continue
@@ -201,7 +200,7 @@ class PerformanceChecker:
                             "issue": "Using <img> instead of next/image",
                             "fix": "Use next/image for automatic optimization",
                             "section": "6-rendering-rendering-performance.md",
-                        }
+                        },
                     )
             except Exception:
                 continue
@@ -213,7 +212,7 @@ class PerformanceChecker:
         print("=" * 60)
 
         print(
-            f"\n[CRITICAL ISSUES] ({len([i for i in self.issues if i['type'] == 'CRITICAL'])})"
+            f"\n[CRITICAL ISSUES] ({len([i for i in self.issues if i['type'] == 'CRITICAL'])})",
         )
         for issue in self.issues:
             if issue["type"] == "CRITICAL":
@@ -235,7 +234,7 @@ class PerformanceChecker:
         print("\n" + "=" * 60)
         print("SUMMARY:")
         print(
-            f"  Critical Issues: {len([i for i in self.issues if i['type'] == 'CRITICAL'])}"
+            f"  Critical Issues: {len([i for i in self.issues if i['type'] == 'CRITICAL'])}",
         )
         print(f"  Warnings: {len(self.warnings)}")
         print("=" * 60)

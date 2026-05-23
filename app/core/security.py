@@ -4,10 +4,10 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
+import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import bcrypt
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -45,15 +45,15 @@ def decode_access_token(token: str) -> dict:
     settings = get_settings()
     try:
         payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
+            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm],
         )
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired",
         ) from exc
     except jwt.PyJWTError as exc:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token",
         ) from exc
     return payload
 
@@ -66,17 +66,17 @@ async def get_current_user(
     user_id = payload.get("user_id")
     if not user_id:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload",
         )
 
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found",
         )
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User account is deactivated"
+            status_code=status.HTTP_403_FORBIDDEN, detail="User account is deactivated",
         )
     return user
 
@@ -86,6 +86,6 @@ async def require_admin(
 ) -> User:
     if current_user.role != "admin":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required",
         )
     return current_user

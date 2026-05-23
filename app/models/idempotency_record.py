@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import JSON, Column, DateTime, Integer, String, UniqueConstraint
 
 from app.core.database import Base
 
@@ -9,7 +9,7 @@ class IdempotencyRecord(Base):
     __tablename__ = "idempotency_records"
     __table_args__ = (
         UniqueConstraint(
-            "user_id", "scope", "idempotency_key", name="uq_idempotency_scope_key"
+            "user_id", "scope", "idempotency_key", name="uq_idempotency_scope_key",
         ),
     )
 

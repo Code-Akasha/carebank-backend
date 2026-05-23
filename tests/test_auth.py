@@ -1,5 +1,4 @@
-"""
-Integration tests for the CareBank Auth API.
+"""Integration tests for the CareBank Auth API.
 """
 
 import uuid
@@ -37,7 +36,7 @@ def test_login_user(client):
 
     # Then login
     response = client.post(
-        "/api/auth/login", json={"email": email, "password": "Password123!"}
+        "/api/auth/login", json={"email": email, "password": "Password123!"},
     )
     assert response.status_code == 200
     data = response.json()

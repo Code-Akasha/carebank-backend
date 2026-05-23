@@ -11,13 +11,13 @@ COOLDOWN_HOURS = 4
 
 
 def can_send_nudge(user_id: str) -> tuple[bool, str]:
-    """
-    Checks if a nudge can be sent to the user based on fatigue rules.
+    """Checks if a nudge can be sent to the user based on fatigue rules.
     - Max DAILY_LIMIT nudges per 24 hours.
     - Minimum COOLDOWN_HOURS between nudges.
 
     Returns:
         (allowed: bool, reason: str)
+
     """
     now = datetime.now(timezone.utc)
     history = _user_nudge_history.get(user_id, [])

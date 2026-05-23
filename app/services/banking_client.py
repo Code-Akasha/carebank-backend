@@ -73,7 +73,7 @@ class BankingClient:
             self._timeout = httpx.Timeout(float(timeout_sec), connect=10.0)
 
     def _auth_headers(
-        self, user_id: str | None, *, role: str = "user"
+        self, user_id: str | None, *, role: str = "user",
     ) -> dict[str, str]:
         payload = {
             "user_id": user_id or "system",
@@ -99,7 +99,7 @@ class BankingClient:
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             try:
                 response = await client.request(
-                    method, url, params=params, json=json_body, headers=headers
+                    method, url, params=params, json=json_body, headers=headers,
                 )
                 response.raise_for_status()
                 data = response.json()
@@ -114,7 +114,7 @@ class BankingClient:
                     detail,
                 )
                 raise BankingClientError(
-                    f"status={status_code}: {detail}", status_code=status_code
+                    f"status={status_code}: {detail}", status_code=status_code,
                 ) from exc
             except httpx.HTTPError as exc:
                 logger.error(
@@ -149,7 +149,7 @@ class BankingClient:
             params["settlement_status"] = settlement_status
 
         data = await self._request(
-            "GET", "/transactions", user_id=user_id, params=params
+            "GET", "/transactions", user_id=user_id, params=params,
         )
         return [self._normalize_transaction(item) for item in data]
 
@@ -171,12 +171,12 @@ class BankingClient:
 
     async def get_banking_policies(self, user_id: str | None = None) -> dict[str, Any]:
         data = await self._request(
-            "GET", "/banking/policies", user_id=user_id or "system"
+            "GET", "/banking/policies", user_id=user_id or "system",
         )
         return data
 
     async def get_action_policy(
-        self, action_type: str, user_id: str | None = None
+        self, action_type: str, user_id: str | None = None,
     ) -> dict[str, Any]:
         data = await self._request(
             "GET",
@@ -223,10 +223,10 @@ class BankingClient:
         return []
 
     async def create_beneficiary(
-        self, user_id: str, payload: dict[str, Any]
+        self, user_id: str, payload: dict[str, Any],
     ) -> dict[str, Any]:
         return await self._request(
-            "POST", "/beneficiaries", user_id=user_id, json_body=payload
+            "POST", "/beneficiaries", user_id=user_id, json_body=payload,
         )
 
     async def verify_beneficiary(
@@ -329,13 +329,13 @@ class BankingClient:
         if not user_id:
             raise ValueError("user_id required to trigger transaction")
         return await self._request(
-            "POST", "/transactions/trigger", user_id=user_id, json_body=payload
+            "POST", "/transactions/trigger", user_id=user_id, json_body=payload,
         )
 
     # ── Admin-scoped endpoints ───────────────────────────────────────
 
     async def create_profile(
-        self, user_id: str, balance: float = 25000.0
+        self, user_id: str, balance: float = 25000.0,
     ) -> dict[str, Any]:
         return await self._request(
             "POST",
@@ -349,7 +349,7 @@ class BankingClient:
         )
 
     async def trigger_scenario(
-        self, user_id: str, scenario_type: str
+        self, user_id: str, scenario_type: str,
     ) -> dict[str, Any]:
         return await self._request(
             "POST",
@@ -360,7 +360,7 @@ class BankingClient:
         )
 
     async def get_admin_users(
-        self, *, page: int = 1, per_page: int = 200
+        self, *, page: int = 1, per_page: int = 200,
     ) -> list[dict[str, Any]]:
         data = await self._request(
             "GET",
@@ -374,7 +374,7 @@ class BankingClient:
         return []
 
     async def get_webhook_dead_letters(
-        self, *, status_filter: str | None = None
+        self, *, status_filter: str | None = None,
     ) -> dict[str, Any]:
         params: dict[str, Any] | None = None
         if status_filter:
@@ -388,7 +388,7 @@ class BankingClient:
         )
 
     async def replay_webhook_dead_letter(
-        self, dead_letter_id: str, *, webhook_url: str | None = None
+        self, dead_letter_id: str, *, webhook_url: str | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] | None = None
         if webhook_url:
@@ -485,7 +485,7 @@ def get_transactions_sync(
             end_date=end_date,
             category=category,
             settlement_status=settlement_status,
-        )
+        ),
     )
 
 
@@ -510,7 +510,7 @@ def get_banking_policies_sync(user_id: str | None = None) -> dict[str, Any]:
 
 
 def get_action_policy_sync(
-    action_type: str, user_id: str | None = None
+    action_type: str, user_id: str | None = None,
 ) -> dict[str, Any]:
     client = get_banking_client()
     return _run_sync(client.get_action_policy(action_type, user_id=user_id))

@@ -1,30 +1,30 @@
-"""
-Admin LLM Configuration Routes.
+"""Admin LLM Configuration Routes.
 
 All routes are protected by admin role requirement.
 Handles tunnel configuration, model discovery, and prompt customization.
 """
 
 import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.crypto import get_encryption_manager
 from app.core.database import SessionLocal
 from app.core.security import get_current_user, require_admin
-from app.core.crypto import get_encryption_manager
+from app.models.agent_prompt_config import AgentPromptConfig
 from app.schemas.admin_llm import (
+    AgentPromptConfigCreate,
+    AgentPromptConfigResponse,
+    ConnectivityTestResult,
     LLMTunnelConfigCreate,
     LLMTunnelConfigResponse,
     ModelListResponse,
-    ConnectivityTestResult,
-    AgentPromptConfigCreate,
-    AgentPromptConfigResponse,
     PromptListResponse,
 )
+from app.services.agent_prompt_service import AgentPromptService
 from app.services.llm_admin_service import LLMAdminService
 from app.services.llm_model_discovery import LLMModelDiscoveryService
-from app.services.agent_prompt_service import AgentPromptService
-from app.models.agent_prompt_config import AgentPromptConfig
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def _serialize_config(config) -> LLMTunnelConfigResponse:
     if config.tunnel_auth_token_encrypted:
         encryptor = get_encryption_manager()
         token_masked = encryptor.mask_sensitive_value(
-            config.tunnel_auth_token_encrypted
+            config.tunnel_auth_token_encrypted,
         )
 
     return LLMTunnelConfigResponse(
@@ -77,13 +77,12 @@ async def get_tunnel_config(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> LLMTunnelConfigResponse:
-    """
-    Retrieve tunnel configuration for an environment.
+    """Retrieve tunnel configuration for an environment.
     Returns config with masked auth token.
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user.user_id
+            db, environment, current_user.user_id,
         )
         return _serialize_config(config)
     except Exception as e:
@@ -102,8 +101,7 @@ async def update_tunnel_config(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> LLMTunnelConfigResponse:
-    """
-    Update tunnel configuration for an environment.
+    """Update tunnel configuration for an environment.
     Auth token is encrypted before storage.
     """
     try:
@@ -139,13 +137,12 @@ async def test_tunnel_connectivity(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ConnectivityTestResult:
-    """
-    Test connectivity to configured Ollama tunnel for an environment.
+    """Test connectivity to configured Ollama tunnel for an environment.
     Records the result and returns status.
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user.user_id
+            db, environment, current_user.user_id,
         )
 
         if not config.is_active or not config.tunnel_url:
@@ -176,7 +173,7 @@ async def test_tunnel_connectivity(
         logger.error(f"Connectivity test failed for {environment}: {e}")
         return ConnectivityTestResult(
             status="error",
-            error=f"Connectivity test failed: {str(e)}",
+            error=f"Connectivity test failed: {e!s}",
         )
 
 
@@ -192,13 +189,12 @@ async def list_ollama_models(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ModelListResponse:
-    """
-    List available Ollama models from configured tunnel for an environment.
+    """List available Ollama models from configured tunnel for an environment.
     Results are cached for 60 seconds.
     """
     try:
         config = await LLMAdminService.get_or_create_tunnel_config(
-            db, environment, current_user.user_id
+            db, environment, current_user.user_id,
         )
 
         if LLMAdminService.get_config_provider_type(config) != "ollama":
@@ -230,7 +226,7 @@ async def list_ollama_models(
         logger.error(f"Failed to list models for {environment}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to discover models: {str(e)}",
+            detail=f"Failed to discover models: {e!s}",
         )
 
 
@@ -245,8 +241,7 @@ async def list_all_prompts(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> PromptListResponse:
-    """
-    List all active agent prompts across all environments.
+    """List all active agent prompts across all environments.
     """
     try:
         prompts = db.query(AgentPromptConfig).filter(AgentPromptConfig.is_active).all()
@@ -271,13 +266,12 @@ async def get_prompt_history(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> PromptListResponse:
-    """
-    Get full version history for a specific agent prompt in an environment.
+    """Get full version history for a specific agent prompt in an environment.
     Includes both active and inactive versions.
     """
     try:
         history = await AgentPromptService.get_prompt_history(
-            db, agent_name, environment
+            db, agent_name, environment,
         )
 
         return PromptListResponse(
@@ -286,7 +280,7 @@ async def get_prompt_history(
         )
     except Exception as e:
         logger.error(
-            f"Failed to get prompt history for {agent_name}/{environment}: {e}"
+            f"Failed to get prompt history for {agent_name}/{environment}: {e}",
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -303,8 +297,7 @@ async def publish_agent_prompt(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> AgentPromptConfigResponse:
-    """
-    Publish a new version of an agent prompt for an environment.
+    """Publish a new version of an agent prompt for an environment.
     Automatically deactivates the previous version.
     """
     try:
@@ -341,8 +334,7 @@ async def rollback_agent_prompt(
     _: None = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> AgentPromptConfigResponse:
-    """
-    Rollback an agent prompt to a specific previous version in an environment.
+    """Rollback an agent prompt to a specific previous version in an environment.
     """
     try:
         rolled_back = await AgentPromptService.rollback_prompt(

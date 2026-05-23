@@ -1,9 +1,8 @@
-from app.agents.communication import CommunicationAgent
 from app.agents.base import AgentInput, AgentStatus
+from app.agents.communication import CommunicationAgent
 from app.compliance.guard import validate_and_refine
 from app.services.nlg import generate_response
-from app.services.nudge import can_send_nudge, record_nudge, _user_nudge_history
-
+from app.services.nudge import _user_nudge_history, can_send_nudge, record_nudge
 
 # ── Nudge Fatigue Tests ───────────────────────────────────────────────
 
@@ -45,7 +44,7 @@ class TestNLGService:
             lambda *args, **kwargs: (None, "template_fallback"),
         )
         result = generate_response(
-            "Cautious Saver", "Low savings", "Increase emergency fund"
+            "Cautious Saver", "Low savings", "Increase emergency fund",
         )
         assert result["provider"] == "template_fallback"
         assert "prioritize stability" in result["text"].lower()
@@ -56,7 +55,7 @@ class TestNLGService:
             lambda *args, **kwargs: (None, "template_fallback"),
         )
         result = generate_response(
-            "Social Spender", "High dining", "Cut back eating out"
+            "Social Spender", "High dining", "Cut back eating out",
         )
         assert result["provider"] == "template_fallback"
         assert "fits your budget" in result["text"].lower()
@@ -114,7 +113,7 @@ class TestCommunicationAgent:
                     "top_factor": "savings",
                     "weak_factor": "liquidity",
                 },
-            }
+            },
         ]
         output = agent.invoke(
             AgentInput(
@@ -125,7 +124,7 @@ class TestCommunicationAgent:
                     "agent_results": agent_results,
                     "task": "Summarize the health score data.",
                 },
-            )
+            ),
         )
         assert output.agent_name == "CommunicationAgent"
         assert len(output.response) > 0
@@ -143,7 +142,7 @@ class TestCommunicationAgent:
                     "data": "General financial inquiry",
                     "task": "Be helpful",
                 },
-            )
+            ),
         )
         assert output.agent_name == "CommunicationAgent"
         assert len(output.response) > 0
@@ -157,7 +156,7 @@ class TestCommunicationAgent:
                 message="Nudge user",
                 intent="general",
                 context={"is_nudge": True},
-            )
+            ),
         )
         # Second nudge (should be blocked by cooldown)
         output = agent.invoke(
@@ -166,7 +165,7 @@ class TestCommunicationAgent:
                 message="Nudge user again",
                 intent="general",
                 context={"is_nudge": True},
-            )
+            ),
         )
         assert "Nudge Blocked" in output.response
         assert output.metadata["nudge"] == "blocked"
@@ -204,7 +203,7 @@ class TestCommunicationAgent:
                     "agent_results": agent_results,
                     "task": "Synthesize balance and what-if results.",
                 },
-            )
+            ),
         )
         assert output.agent_name == "CommunicationAgent"
         assert len(output.response) > 0
@@ -218,7 +217,7 @@ class TestCommunicationAgent:
                 message="Tell me a fun fact",
                 intent="general",
                 context={"task": "Answer the question"},
-            )
+            ),
         )
 
         assert output.status == "success"
@@ -238,7 +237,7 @@ class TestCommunicationAgent:
                     "current_balance": 25540.52,
                     "available_balance": 24297.15,
                 },
-            }
+            },
         ]
         output = agent.invoke(
             AgentInput(
@@ -249,7 +248,7 @@ class TestCommunicationAgent:
                     "agent_results": agent_results,
                     "task": "Summarize the user's balance.",
                 },
-            )
+            ),
         )
         assert "Total balance ₹ 24,297.15" in output.response
         assert "Current balance ₹ 25,540.52" in output.response
@@ -268,7 +267,7 @@ class TestCommunicationAgent:
                     "post_purchase_balance": -25702.85,
                     "verdict": "not_recommended",
                 },
-            }
+            },
         ]
 
         output = agent.invoke(
@@ -277,7 +276,7 @@ class TestCommunicationAgent:
                 message="can i buy a new laptop of 50 thousand",
                 intent="affordability",
                 context={"agent_results": agent_results},
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "affordability_template"
@@ -296,7 +295,7 @@ class TestCommunicationAgent:
                     "current_balance": 25540.52,
                     "available_balance": 24297.15,
                 },
-            }
+            },
         ]
 
         output = agent.invoke(
@@ -308,7 +307,7 @@ class TestCommunicationAgent:
                     "agent_results": agent_results,
                     "task": "Help create recurring rent schedule",
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") != "balance_template"
@@ -326,7 +325,7 @@ class TestCommunicationAgent:
                 context={
                     "task": "Create recurring rent schedule",
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "planning_executor"
@@ -362,7 +361,7 @@ class TestCommunicationAgent:
                         },
                     ],
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "planning_executor"
@@ -408,11 +407,11 @@ class TestCommunicationAgent:
                                 "current_balance": 25540.52,
                                 "available_balance": 24297.15,
                             },
-                        }
+                        },
                     ],
                     "task": "Answer balance and savings question",
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "balance_template"
@@ -429,7 +428,7 @@ class TestCommunicationAgent:
                 context={
                     "task": "Create action request",
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "action_engine_planner"
@@ -447,7 +446,7 @@ class TestCommunicationAgent:
                 message="what are my pending bils",
                 intent="general",
                 context={},
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "action_engine_planner"
@@ -479,7 +478,7 @@ class TestCommunicationAgent:
                         },
                     ],
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "action_engine_planner"
@@ -505,9 +504,9 @@ class TestCommunicationAgent:
                             "action_type": "pay_bill",
                             "action_payload": {"amount": 2000},
                         },
-                    }
+                    },
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "action_engine_planner"
@@ -526,7 +525,7 @@ class TestCommunicationAgent:
                     "action_command": "get_action_status",
                     "request_id": 123,
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "action_engine_planner"
@@ -550,9 +549,9 @@ class TestCommunicationAgent:
                             "action_type": "pay_bill",
                             "action_payload": {"amount": 2000},
                         },
-                    }
+                    },
                 },
-            )
+            ),
         )
 
         assert output.metadata.get("provider") == "action_engine_planner"

@@ -37,7 +37,7 @@ class DummyBankingClient:
                     "available_balance": balance,
                     "status": "active",
                     "last_statement_date": datetime.now(timezone.utc).isoformat(),
-                }
+                },
             ],
         )
         self.transactions.setdefault(user_id, [])
@@ -159,7 +159,7 @@ print("trigger_tx", transaction_resp.status_code)
 assert transaction_resp.status_code == 200
 
 chat_resp = client.post(
-    "/api/chat", json={"message": "show my balance"}, headers=headers
+    "/api/chat", json={"message": "show my balance"}, headers=headers,
 )
 print("chat", chat_resp.status_code)
 assert chat_resp.status_code in (200, 201)

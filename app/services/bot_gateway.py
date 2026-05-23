@@ -84,10 +84,8 @@ def normalize_telegram_user_id(raw_value: str | None) -> str | None:
     value = str(raw_value).strip().lower()
     if not value:
         return None
-    if value.startswith("telegram:"):
-        value = value[len("telegram:") :]
-    if value.startswith("tg:"):
-        value = value[len("tg:") :]
+    value = value.removeprefix("telegram:")
+    value = value.removeprefix("tg:")
     if value.startswith("tg_"):
         return value
     if re.fullmatch(r"\d+", value):
@@ -244,7 +242,7 @@ class TelegramGatewayService:
         text = bot.get_text(message)
         if not text:
             await bot.send_message(
-                chat_id, "Please type a message to chat with CareBank."
+                chat_id, "Please type a message to chat with CareBank.",
             )
             return
 
@@ -262,7 +260,7 @@ class TelegramGatewayService:
         if text.strip().lower() in {"/start", "/whoami", "whoami"}:
             if current_user:
                 await bot.send_message(
-                    chat_id, self._build_whoami_linked_response(normalized_sender)
+                    chat_id, self._build_whoami_linked_response(normalized_sender),
                 )
                 return
             if await self._handle_unlinked_user(
@@ -416,7 +414,7 @@ class TelegramGatewayService:
                     "conversation_state": conversation_state,
                     "db": db,
                     "current_user": current_user,
-                }
+                },
             )
 
             if result.get("pending_intent_ignored"):
@@ -493,7 +491,7 @@ class TelegramGatewayService:
         payload = self.pairing_store.pop(clean_code)
         if not payload:
             raise HTTPException(
-                status_code=404, detail="pairing code not found or expired"
+                status_code=404, detail="pairing code not found or expired",
             )
 
         telegram_user_id = normalize_telegram_user_id(payload.get("telegram_user_id"))

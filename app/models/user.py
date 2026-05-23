@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import synonym
 
 from app.core.database import Base
@@ -16,7 +17,7 @@ class User(Base):
     full_name = Column(String, nullable=True, default="")
     role = Column(String, default="user", nullable=False)
     account_type = Column(
-        String, default="personal", nullable=False
+        String, default="personal", nullable=False,
     )  # "personal" or "business"
     is_active = Column(Boolean, default=True, nullable=False)
 

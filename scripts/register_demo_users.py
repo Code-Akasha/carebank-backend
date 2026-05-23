@@ -10,8 +10,9 @@ The backend framework itself contains NO hardcoded user data.
 
 from __future__ import annotations
 
-import httpx
 import sys
+
+import httpx
 
 BASE_URL = "http://localhost:8000"
 

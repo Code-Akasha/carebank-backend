@@ -7,8 +7,7 @@ import numpy as np
 
 
 def detect_anomaly(amount: float, history: list[float]) -> dict:
-    """
-    Detect if a transaction amount is anomalous relative to history.
+    """Detect if a transaction amount is anomalous relative to history.
 
     Args:
         amount: current transaction amount (absolute value)
@@ -16,6 +15,7 @@ def detect_anomaly(amount: float, history: list[float]) -> dict:
 
     Returns:
         dict with is_anomaly, anomaly_score, severity
+
     """
     sanitized_history = [
         abs(float(value)) for value in history if math.isfinite(float(value))

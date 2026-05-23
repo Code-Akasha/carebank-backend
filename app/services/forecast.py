@@ -13,8 +13,7 @@ def forecast_balance(
     transactions: list[dict],
     periods: int = 30,
 ) -> dict:
-    """
-    Forecast end-of-month balance using Prophet (or linear fallback).
+    """Forecast end-of-month balance using Prophet (or linear fallback).
 
     Args:
         transactions: list of dicts with 'date' and 'amount' keys
@@ -22,6 +21,7 @@ def forecast_balance(
 
     Returns:
         dict with predicted_balance, bounds, forecast_error, daily_forecast
+
     """
     if len(transactions) < 5:
         return _empty_forecast()
@@ -63,7 +63,7 @@ def _prophet_forecast(transactions: list[dict], periods: int) -> dict:
     )
 
     daily = forecast.tail(periods)[["ds", "yhat"]].rename(
-        columns={"ds": "date", "yhat": "predicted"}
+        columns={"ds": "date", "yhat": "predicted"},
     )
     daily["date"] = daily["date"].dt.strftime("%Y-%m-%d")
     daily["predicted"] = daily["predicted"].round(2)
@@ -106,7 +106,7 @@ def _linear_fallback(transactions: list[dict], periods: int) -> dict:
         "lower_bound": round(predicted - 1.645 * std, 2),
         "upper_bound": round(predicted + 1.645 * std, 2),
         "forecast_error": round(
-            min(std / abs(predicted), 1.0) if predicted != 0 else 0.5, 4
+            min(std / abs(predicted), 1.0) if predicted != 0 else 0.5, 4,
         ),
         "daily_forecast": [],
     }

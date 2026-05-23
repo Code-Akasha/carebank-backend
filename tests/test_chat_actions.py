@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import date
 import uuid
+from datetime import date
+
 import pytest
 
 from app.services import action_policy
@@ -43,7 +44,7 @@ def test_chat_action_create_then_approve_executes(client, monkeypatch):
         }
 
     monkeypatch.setattr(
-        action_policy, "get_action_policy_sync", fake_get_action_policy_sync
+        action_policy, "get_action_policy_sync", fake_get_action_policy_sync,
     )
 
     created = client.post(
@@ -81,7 +82,7 @@ def test_chat_action_create_then_approve_executes(client, monkeypatch):
 
 
 def _create_recurring_rule(
-    client, headers, *, category: str, title: str, amount: float
+    client, headers, *, category: str, title: str, amount: float,
 ):
     day = date.today().day
     response = client.post(
@@ -102,7 +103,7 @@ def _create_recurring_rule(
 
 
 def test_chat_pay_rent_discovers_and_emits_buttons_then_pay_now_creates_request(
-    client, monkeypatch
+    client, monkeypatch,
 ):
     token, _ = _register_and_token(client)
     headers = {"Authorization": f"Bearer {token}"}
@@ -130,7 +131,7 @@ def test_chat_pay_rent_discovers_and_emits_buttons_then_pay_now_creates_request(
         }
 
     monkeypatch.setattr(
-        action_policy, "get_action_policy_sync", fake_get_action_policy_sync
+        action_policy, "get_action_policy_sync", fake_get_action_policy_sync,
     )
 
     discovered = client.post(
@@ -202,12 +203,11 @@ def test_chat_later_snoozes_and_suppresses_bill_suggestion(client):
 
 
 def test_chat_pay_bill_explicit_approve_status_and_idempotency(client, monkeypatch):
-    """
-    NOTE: This test has a mock infrastructure issue where the tool execution
+    """NOTE: This test has a mock infrastructure issue where the tool execution
     doesn't get captured. The approval path appears to not invoke the tool
     as expected. This test passes up to the approval step but the execution
     mock is not triggered. Marked for later investigation.
     """
     pytest.skip(
-        "Mock infrastructure issue - tool not invoked during approval execution"
+        "Mock infrastructure issue - tool not invoked during approval execution",
     )

@@ -53,13 +53,13 @@ def run_tests():
         f.write("# CareBank E2E Workflow Test Logs\n\n")
         f.write(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(
-            f"**Gemini Configured:** {'Yes' if settings.gemini_api_key else 'No'}\n\n"
+            f"**Gemini Configured:** {'Yes' if settings.gemini_api_key else 'No'}\n\n",
         )
 
         for idx, scenario in enumerate(TEST_SCENARIOS, 1):
             user_id = f"test_user_{idx}"
             print(
-                f"\n[{idx}/{len(TEST_SCENARIOS)}] Running Scenario: {scenario['name']}"
+                f"\n[{idx}/{len(TEST_SCENARIOS)}] Running Scenario: {scenario['name']}",
             )
             print(f"User Message: {scenario['message']}")
 
@@ -103,8 +103,8 @@ def run_tests():
                 print("  -> SUCCESS")
 
             except Exception as e:
-                print(f"  -> FAILED: {str(e)}")
-                f.write(f"**ERROR:** `{str(e)}`\n\n---\n")
+                print(f"  -> FAILED: {e!s}")
+                f.write(f"**ERROR:** `{e!s}`\n\n---\n")
 
     print(f"\nAll tests complete. Detailed logs written to {log_file_path}")
 

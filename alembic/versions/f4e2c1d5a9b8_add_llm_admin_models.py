@@ -6,22 +6,21 @@ Create Date: 2026-05-07 00:00:00.000000
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "f4e2c1d5a9b8"
-down_revision: Union[str, Sequence[str], None] = "0f191ad76d6f"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "0f191ad76d6f"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Create LLM tunnel configuration, agent prompt configuration, and admin action log tables."""
-
     # Create LLM tunnel configuration table
     op.create_table(
         "llm_tunnel_configs",

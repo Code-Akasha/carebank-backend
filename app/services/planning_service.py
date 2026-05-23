@@ -106,7 +106,7 @@ def advance_month(day_of_month: int, current_due: date) -> date:
 
 
 def create_checklist_item(
-    db: Session, rule: RecurringRule, due_date: date
+    db: Session, rule: RecurringRule, due_date: date,
 ) -> ChecklistItem:
     existing = (
         db.query(ChecklistItem)
@@ -264,7 +264,7 @@ def update_recurring_rule_for_user(
     rule = (
         db.query(RecurringRule)
         .filter(
-            RecurringRule.id == rule_id, RecurringRule.user_id == current_user.user_id
+            RecurringRule.id == rule_id, RecurringRule.user_id == current_user.user_id,
         )
         .first()
     )
@@ -293,7 +293,7 @@ def materialize_rule_once_for_user(
     rule = (
         db.query(RecurringRule)
         .filter(
-            RecurringRule.id == rule_id, RecurringRule.user_id == current_user.user_id
+            RecurringRule.id == rule_id, RecurringRule.user_id == current_user.user_id,
         )
         .first()
     )
@@ -358,7 +358,7 @@ def update_checklist_status_for_user(
     item = (
         db.query(ChecklistItem)
         .filter(
-            ChecklistItem.id == item_id, ChecklistItem.user_id == current_user.user_id
+            ChecklistItem.id == item_id, ChecklistItem.user_id == current_user.user_id,
         )
         .first()
     )

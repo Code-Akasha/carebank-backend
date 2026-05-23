@@ -1,9 +1,9 @@
-from pathlib import Path
 import logging
 import time
+from pathlib import Path
 
 from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.core.config import get_settings
 
@@ -35,45 +35,44 @@ Base = declarative_base()
 
 
 def init_db() -> None:
-    """
-    Import all models and try to create schema.
+    """Import all models and try to create schema.
     If DB is unavailable, this is non-fatal - schema creation will be retried by the scheduler.
     """
-    import app.models.balance  # noqa: F401
-    import app.models.transaction  # noqa: F401
-    import app.models.product  # noqa: F401
-    import app.models.account  # noqa: F401
-    import app.models.provider  # noqa: F401
-    import app.models.session  # noqa: F401
-    import app.models.audit_log  # noqa: F401
-    import app.models.user  # noqa: F401
-    import app.models.user_mpin  # noqa: F401
-    import app.models.user_profile  # noqa: F401
-    import app.models.financial_plan  # noqa: F401
-    import app.models.recurring_rule  # noqa: F401
-    import app.models.checklist_item  # noqa: F401
-    import app.models.notification  # noqa: F401
-    import app.models.bill_snooze  # noqa: F401
-    import app.models.action_request  # noqa: F401
-    import app.models.action_execution  # noqa: F401
-    import app.models.idempotency_record  # noqa: F401
-
-    # Payment system models (generic payments + recurring bills)
-    import app.models.payment_settings  # noqa: F401
-    import app.models.beneficiary  # noqa: F401
-    import app.models.recurring_payment_rule  # noqa: F401
-    import app.models.payment_history  # noqa: F401
-
-    # Admin LLM and tunnel configuration models
-    import app.models.llm_tunnel_config  # noqa: F401
-    import app.models.agent_prompt_config  # noqa: F401
-    import app.models.admin_action_log  # noqa: F401
-    import app.models.banking_connector_config  # noqa: F401
+    import app.models.account
+    import app.models.action_execution
+    import app.models.action_request
+    import app.models.admin_action_log
+    import app.models.agent_prompt_config
+    import app.models.audit_log
+    import app.models.balance
+    import app.models.banking_connector_config
+    import app.models.beneficiary
+    import app.models.bill
+    import app.models.bill_snooze
 
     # Business & billing models
-    import app.models.business_profile  # noqa: F401
-    import app.models.service_plan  # noqa: F401
-    import app.models.bill  # noqa: F401
+    import app.models.business_profile
+    import app.models.checklist_item
+    import app.models.financial_plan
+    import app.models.idempotency_record
+
+    # Admin LLM and tunnel configuration models
+    import app.models.llm_tunnel_config
+    import app.models.notification
+    import app.models.payment_history
+
+    # Payment system models (generic payments + recurring bills)
+    import app.models.payment_settings
+    import app.models.product
+    import app.models.provider
+    import app.models.recurring_payment_rule
+    import app.models.recurring_rule
+    import app.models.service_plan
+    import app.models.session
+    import app.models.transaction
+    import app.models.user
+    import app.models.user_mpin
+    import app.models.user_profile  # noqa: F401
 
     # Test quick connection to fail fast if DB is down
     try:
@@ -93,7 +92,7 @@ def init_db() -> None:
             logger.info("Database schema created/verified successfully")
         except Exception as e:
             logger.warning(
-                f"Database schema creation failed (non-fatal, will retry on request): {e}"
+                f"Database schema creation failed (non-fatal, will retry on request): {e}",
             )
         return
 
@@ -119,7 +118,7 @@ def _test_database_connection(max_retries: int = 10) -> None:
                 wait_time = min(2 ** (attempt - 1), 10)  # 1s, 2s, 4s, 8s, 10s, ...
                 logger.warning(
                     f"Database connection attempt {attempt}/{max_retries} failed: {e}. "
-                    f"Retrying in {wait_time}s..."
+                    f"Retrying in {wait_time}s...",
                 )
                 time.sleep(wait_time)
             else:
@@ -129,13 +128,14 @@ def _test_database_connection(max_retries: int = 10) -> None:
                 )
     raise RuntimeError(
         f"Cannot connect to database at {settings.get_database_url()} after {max_retries} "
-        f"attempts: {last_error}"
+        f"attempts: {last_error}",
     ) from last_error
 
 
 def _run_alembic_upgrade() -> None:
-    from alembic import command
     from alembic.config import Config
+
+    from alembic import command
 
     repo_root = Path(__file__).resolve().parents[2]
     alembic_ini = repo_root / "alembic.ini"
@@ -159,16 +159,16 @@ def _apply_dev_schema_backfills() -> None:
         }
         product_id_column = product_columns.get("id")
         if product_id_column is not None and str(
-            product_id_column["type"]
+            product_id_column["type"],
         ).lower().startswith("integer"):
             logger.warning(
-                "DB backfill: converting products.id from integer to varchar for provider compatibility"
+                "DB backfill: converting products.id from integer to varchar for provider compatibility",
             )
             with engine.begin() as conn:
                 conn.execute(
                     text(
-                        "ALTER TABLE products ALTER COLUMN id TYPE VARCHAR USING id::text"
-                    )
+                        "ALTER TABLE products ALTER COLUMN id TYPE VARCHAR USING id::text",
+                    ),
                 )
 
     user_columns = {column["name"] for column in inspector.get_columns("users")}
@@ -176,14 +176,14 @@ def _apply_dev_schema_backfills() -> None:
         return
 
     logger.warning(
-        "DB backfill: adding missing users.telegram_user_id column for schema compatibility"
+        "DB backfill: adding missing users.telegram_user_id column for schema compatibility",
     )
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN telegram_user_id VARCHAR"))
         conn.execute(
             text(
-                "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_telegram_user_id ON users (telegram_user_id)"
-            )
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_telegram_user_id ON users (telegram_user_id)",
+            ),
         )
 
 

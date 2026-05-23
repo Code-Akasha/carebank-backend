@@ -33,7 +33,6 @@ def run_scenario(
     clear_history: bool = True,
 ) -> ScenarioResult:
     """Run a single conversational turn with a deterministic mocked intent."""
-
     if clear_history:
         clear_conversation_state(user_id)
 
@@ -55,7 +54,7 @@ def run_scenario(
     )
 
     with patch(
-        "app.agents.coordinator._classify_intent_with_llm", return_value=mock_result
+        "app.agents.coordinator._classify_intent_with_llm", return_value=mock_result,
     ):
         # Run the graph
         result = coordinator_graph.invoke(
@@ -67,7 +66,7 @@ def run_scenario(
                 "conversation_state": conversation_state,
                 "db": None,
                 "current_user": None,
-            }
+            },
         )
 
     response_metadata = result.get("response_metadata") or {}
@@ -95,5 +94,5 @@ def run_scenario(
         intent=result.get("intent", mock_intent),
         response=result.get("agent_response", ""),
         action=response_metadata.get("action"),
-        pending_state=current_state if current_state else None,
+        pending_state=current_state or None,
     )

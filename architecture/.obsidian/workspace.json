@@ -1,0 +1,246 @@
+{
+  "main": {
+    "id": "800991a854747099",
+    "type": "split",
+    "children": [
+      {
+        "id": "223fc48f176fa7a8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6239d7d644346870",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "12-security-compliance.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "12-security-compliance"
+            }
+          },
+          {
+            "id": "46d2d61682f8bc06",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "03-agent-pipeline.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "03-agent-pipeline"
+            }
+          },
+          {
+            "id": "e393b4672d7dec56",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "10-realtime-events.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "10-realtime-events"
+            }
+          },
+          {
+            "id": "93171d2247608cdd",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "11-admin-observability.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "11-admin-observability"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "cbb56014c450b0ae",
+    "type": "split",
+    "children": [
+      {
+        "id": "f973fbd7383ceb27",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7cb9fe30e40b12b6",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "423bcdf215972d8f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "e483c6595ff99e49",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 211.5
+  },
+  "right": {
+    "id": "b2107ba2ee2befe0",
+    "type": "split",
+    "children": [
+      {
+        "id": "ec67e62dbfa38042",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ec2ec0c1e9c7d7e5",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "03-agent-pipeline.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for 03-agent-pipeline"
+            }
+          },
+          {
+            "id": "ee8c180e37bcc964",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "03-agent-pipeline.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from 03-agent-pipeline"
+            }
+          },
+          {
+            "id": "3624be955bcdf7f4",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "87681e7dad95fb49",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "d03f275302b9968e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "03-agent-pipeline.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of 03-agent-pipeline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "6239d7d644346870",
+  "lastOpenFiles": [
+    "13-core-topology.md",
+    "03-agent-pipeline.md",
+    "11-admin-observability.md",
+    "10-realtime-events.md",
+    "08-auto-savings.md",
+    "09-action-engine.md",
+    "12-security-compliance.md",
+    "04-health-score.md",
+    "05-what-if-simulator.md",
+    "06-transaction-lifecycle.md",
+    "07-recurring-payments.md",
+    "02-authentication-sessions.md",
+    "01-user-onboarding.md",
+    "README.md",
+    "CHANGES.md"
+  ]
+}

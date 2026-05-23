@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 
 class AgentStatus(str, Enum):

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Mobile UX Audit Script - Full Mobile Design Coverage
+"""Mobile UX Audit Script - Full Mobile Design Coverage
 
 Analyzes React Native / Flutter code for compliance with:
 
@@ -65,10 +64,10 @@ Analyzes React Native / Flutter code for compliance with:
 Total: 50+ mobile-specific checks
 """
 
-import sys
+import json
 import os
 import re
-import json
+import sys
 from pathlib import Path
 
 
@@ -81,7 +80,7 @@ class MobileAuditor:
 
     def audit_file(self, filepath: str) -> None:
         try:
-            with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            with open(filepath, encoding="utf-8", errors="replace") as f:
                 content = f.read()
         except:
             return
@@ -91,10 +90,10 @@ class MobileAuditor:
 
         # Detect framework
         is_react_native = bool(
-            re.search(r"react-native|@react-navigation|React\.Native", content)
+            re.search(r"react-native|@react-navigation|React\.Native", content),
         )
         is_flutter = bool(
-            re.search(r"import \'package:flutter|MaterialApp|Widget\.build", content)
+            re.search(r"import \'package:flutter|MaterialApp|Widget\.build", content),
         )
 
         if not (is_react_native or is_flutter):
@@ -108,7 +107,7 @@ class MobileAuditor:
         for size in small_sizes:
             if int(size) < 44:
                 self.issues.append(
-                    f"[Touch Target] {filename}: Touch target size {size}px < 44px minimum (iOS: 44pt, Android: 48dp)"
+                    f"[Touch Target] {filename}: Touch target size {size}px < 44px minimum (iOS: 44pt, Android: 48dp)",
                 )
 
         # 1.2 Touch Target Spacing Check
@@ -117,7 +116,7 @@ class MobileAuditor:
         for gap in small_gaps:
             if int(gap) < 8:
                 self.warnings.append(
-                    f"[Touch Spacing] {filename}: Touch target spacing {gap}px < 8px minimum. Accidental taps risk."
+                    f"[Touch Spacing] {filename}: Touch target spacing {gap}px < 8px minimum. Accidental taps risk.",
                 )
 
         # 1.3 Thumb Zone Placement Check
@@ -131,42 +130,42 @@ class MobileAuditor:
             re.search(
                 r'position:\s*["\']?absolute["\']?|bottom:\s*\d+|style.*bottom|justifyContent:\s*["\']?flex-end',
                 content,
-            )
+            ),
         )
         if primary_buttons and not has_bottom_placement:
             self.warnings.append(
-                f"[Thumb Zone] {filename}: Primary CTA may not be in thumb zone (bottom). Place primary actions at bottom for easy reach."
+                f"[Thumb Zone] {filename}: Primary CTA may not be in thumb zone (bottom). Place primary actions at bottom for easy reach.",
             )
 
         # 1.4 Gesture Alternatives Check
         # Swipe actions should have visible button alternatives
         has_swipe_gestures = bool(
-            re.search(r"Swipeable|onSwipe|PanGestureHandler|swipe", content)
+            re.search(r"Swipeable|onSwipe|PanGestureHandler|swipe", content),
         )
         has_visible_buttons = bool(
             re.search(
-                r"Button.*(?:delete|archive|more)|TouchableOpacity|Pressable", content
-            )
+                r"Button.*(?:delete|archive|more)|TouchableOpacity|Pressable", content,
+            ),
         )
         if has_swipe_gestures and not has_visible_buttons:
             self.warnings.append(
-                f"[Gestures] {filename}: Swipe gestures detected without visible button alternatives. Motor impaired users need alternatives."
+                f"[Gestures] {filename}: Swipe gestures detected without visible button alternatives. Motor impaired users need alternatives.",
             )
 
         # 1.5 Haptic Feedback Check
         # Important actions should have haptic feedback
         has_important_actions = bool(
-            re.search(r"(?:onPress|onSubmit|delete|remove|confirm|purchase)", content)
+            re.search(r"(?:onPress|onSubmit|delete|remove|confirm|purchase)", content),
         )
         has_haptics = bool(
             re.search(
                 r"Haptics|Vibration|react-native-haptic-feedback|FeedbackManager",
                 content,
-            )
+            ),
         )
         if has_important_actions and not has_haptics:
             self.warnings.append(
-                f"[Haptics] {filename}: Important actions without haptic feedback. Consider adding haptic confirmation."
+                f"[Haptics] {filename}: Important actions without haptic feedback. Consider adding haptic confirmation.",
             )
 
         # 1.6 Touch Feedback Timing Check
@@ -174,11 +173,11 @@ class MobileAuditor:
         if is_react_native:
             has_pressable = bool(re.search(r"Pressable|TouchableOpacity", content))
             has_feedback_state = bool(
-                re.search(r"pressed|style.*opacity|underlay", content)
+                re.search(r"pressed|style.*opacity|underlay", content),
             )
             if has_pressable and not has_feedback_state:
                 self.warnings.append(
-                    f"[Touch Feedback] {filename}: Pressable without visual feedback state. Add opacity/scale change for tap confirmation."
+                    f"[Touch Feedback] {filename}: Pressable without visual feedback state. Add opacity/scale change for tap confirmation.",
                 )
 
         # --- 2. MOBILE PERFORMANCE CHECKS ---
@@ -186,11 +185,11 @@ class MobileAuditor:
         # 2.1 CRITICAL: ScrollView vs FlatList
         has_scrollview = bool(re.search(r"<ScrollView|ScrollView\.", content))
         has_map_in_scrollview = bool(
-            re.search(r"ScrollView.*\.map\(|ScrollView.*\{.*\.map", content)
+            re.search(r"ScrollView.*\.map\(|ScrollView.*\{.*\.map", content),
         )
         if has_scrollview and has_map_in_scrollview:
             self.issues.append(
-                f"[Performance CRITICAL] {filename}: ScrollView with .map() detected. Use FlatList for lists to prevent memory explosion."
+                f"[Performance CRITICAL] {filename}: ScrollView with .map() detected. Use FlatList for lists to prevent memory explosion.",
             )
 
         # 2.2 React.memo Check
@@ -199,7 +198,7 @@ class MobileAuditor:
             has_react_memo = bool(re.search(r"React\.memo|memo\(", content))
             if has_list and not has_react_memo:
                 self.warnings.append(
-                    f"[Performance] {filename}: FlatList without React.memo on list items. Items will re-render on every parent update."
+                    f"[Performance] {filename}: FlatList without React.memo on list items. Items will re-render on every parent update.",
                 )
 
         # 2.3 useCallback Check
@@ -208,7 +207,7 @@ class MobileAuditor:
             has_use_callback = bool(re.search(r"useCallback", content))
             if has_flatlist and not has_use_callback:
                 self.warnings.append(
-                    f"[Performance] {filename}: FlatList renderItem without useCallback. New function created every render."
+                    f"[Performance] {filename}: FlatList renderItem without useCallback. New function created every render.",
                 )
 
         # 2.4 keyExtractor Check (CRITICAL)
@@ -218,11 +217,11 @@ class MobileAuditor:
             uses_index_key = bool(re.search(r"key=\{.*index.*\}|key:\s*index", content))
             if has_flatlist and not has_key_extractor:
                 self.issues.append(
-                    f"[Performance CRITICAL] {filename}: FlatList without keyExtractor. Index-based keys cause bugs on reorder/delete."
+                    f"[Performance CRITICAL] {filename}: FlatList without keyExtractor. Index-based keys cause bugs on reorder/delete.",
                 )
             if uses_index_key:
                 self.issues.append(
-                    f"[Performance CRITICAL] {filename}: Using index as key. This causes bugs when list changes. Use unique ID from data."
+                    f"[Performance CRITICAL] {filename}: Using index as key. This causes bugs when list changes. Use unique ID from data.",
                 )
 
         # 2.5 useNativeDriver Check
@@ -230,40 +229,40 @@ class MobileAuditor:
             has_animated = bool(re.search(r"Animated\.", content))
             has_native_driver = bool(re.search(r"useNativeDriver:\s*true", content))
             has_native_driver_false = bool(
-                re.search(r"useNativeDriver:\s*false", content)
+                re.search(r"useNativeDriver:\s*false", content),
             )
             if has_animated and has_native_driver_false:
                 self.warnings.append(
-                    f"[Performance] {filename}: Animation with useNativeDriver: false. Use true for 60fps (only supports transform/opacity)."
+                    f"[Performance] {filename}: Animation with useNativeDriver: false. Use true for 60fps (only supports transform/opacity).",
                 )
             if has_animated and not has_native_driver:
                 self.warnings.append(
-                    f"[Performance] {filename}: Animated component without useNativeDriver. Add useNativeDriver: true for 60fps."
+                    f"[Performance] {filename}: Animated component without useNativeDriver. Add useNativeDriver: true for 60fps.",
                 )
 
         # 2.6 Memory Leak Check
         if is_react_native:
             has_effect = bool(re.search(r"useEffect", content))
             has_cleanup = bool(
-                re.search(r"return\s*\(\)\s*=>|return\s+function", content)
+                re.search(r"return\s*\(\)\s*=>|return\s+function", content),
             )
             has_subscriptions = bool(
-                re.search(r"addEventListener|subscribe|\.focus\(\)|\.off\(", content)
+                re.search(r"addEventListener|subscribe|\.focus\(\)|\.off\(", content),
             )
             if has_effect and has_subscriptions and not has_cleanup:
                 self.issues.append(
-                    f"[Memory Leak] {filename}: useEffect with subscriptions but no cleanup function. Memory leak on unmount."
+                    f"[Memory Leak] {filename}: useEffect with subscriptions but no cleanup function. Memory leak on unmount.",
                 )
 
         # 2.7 Console.log Detection
         console_logs = len(
             re.findall(
-                r"console\.log|console\.warn|console\.error|console\.debug", content
-            )
+                r"console\.log|console\.warn|console\.error|console\.debug", content,
+            ),
         )
         if console_logs > 5:
             self.warnings.append(
-                f"[Performance] {filename}: {console_logs} console.log statements detected. Remove before production (blocks JS thread)."
+                f"[Performance] {filename}: {console_logs} console.log statements detected. Remove before production (blocks JS thread).",
             )
 
         # 2.8 Inline Function Detection
@@ -274,66 +273,65 @@ class MobileAuditor:
             )
             if len(inline_functions) > 3:
                 self.warnings.append(
-                    f"[Performance] {filename}: {len(inline_functions)} inline arrow functions in props. Creates new function every render. Use useCallback."
+                    f"[Performance] {filename}: {len(inline_functions)} inline arrow functions in props. Creates new function every render. Use useCallback.",
                 )
 
         # 2.9 Animation Properties Check
         # Warn if animating expensive properties
         animating_layout = bool(
-            re.search(r"Animated\.timing.*(?:width|height|margin|padding)", content)
+            re.search(r"Animated\.timing.*(?:width|height|margin|padding)", content),
         )
         if animating_layout:
             self.issues.append(
-                f"[Performance] {filename}: Animating layout properties (width/height/margin). Use transform/opacity for 60fps."
+                f"[Performance] {filename}: Animating layout properties (width/height/margin). Use transform/opacity for 60fps.",
             )
 
         # --- 3. MOBILE NAVIGATION CHECKS ---
 
         # 3.1 Tab Bar Max Items Check
         tab_bar_items = len(
-            re.findall(r"Tab\.Screen|createBottomTabNavigator|BottomTab", content)
+            re.findall(r"Tab\.Screen|createBottomTabNavigator|BottomTab", content),
         )
         if tab_bar_items > 5:
             self.warnings.append(
-                f"[Navigation] {filename}: {tab_bar_items} tab bar items (max 5 recommended). More than 5 becomes hard to tap."
+                f"[Navigation] {filename}: {tab_bar_items} tab bar items (max 5 recommended). More than 5 becomes hard to tap.",
             )
 
         # 3.2 Tab State Preservation Check
         has_tab_nav = bool(
-            re.search(r"createBottomTabNavigator|Tab\.Navigator", content)
+            re.search(r"createBottomTabNavigator|Tab\.Navigator", content),
         )
         if has_tab_nav:
             # Look for lazy prop (false preserves state)
             has_lazy_false = bool(re.search(r"lazy:\s*false", content))
             if not has_lazy_false:
                 self.warnings.append(
-                    f"[Navigation] {filename}: Tab navigation without lazy: false. Tabs may lose state on switch."
+                    f"[Navigation] {filename}: Tab navigation without lazy: false. Tabs may lose state on switch.",
                 )
 
         # 3.3 Back Handling Check
         has_back_listener = bool(
-            re.search(r"BackHandler|useFocusEffect|navigation\.addListener", content)
+            re.search(r"BackHandler|useFocusEffect|navigation\.addListener", content),
         )
         has_custom_back = bool(re.search(r"onBackPress|handleBackPress", content))
         if has_custom_back and not has_back_listener:
             self.warnings.append(
-                f"[Navigation] {filename}: Custom back handling without BackHandler listener. May not work correctly."
+                f"[Navigation] {filename}: Custom back handling without BackHandler listener. May not work correctly.",
             )
 
         # 3.4 Deep Link Support Check
         has_linking = bool(
-            re.search(r"Linking\.|Linking\.openURL|deepLink|universalLink", content)
+            re.search(r"Linking\.|Linking\.openURL|deepLink|universalLink", content),
         )
         has_config = bool(
-            re.search(r"apollo-link|react-native-screens|navigation\.link", content)
+            re.search(r"apollo-link|react-native-screens|navigation\.link", content),
         )
         if not has_linking and not has_config:
             self.passed_count += 1
-        else:
-            if has_linking and not has_config:
-                self.warnings.append(
-                    f"[Navigation] {filename}: Deep linking detected but may lack proper configuration. Test notification/share flows."
-                )
+        elif has_linking and not has_config:
+            self.warnings.append(
+                f"[Navigation] {filename}: Deep linking detected but may lack proper configuration. Test notification/share flows.",
+            )
 
         # --- 4. MOBILE TYPOGRAPHY CHECKS ---
 
@@ -344,11 +342,11 @@ class MobileAuditor:
                 re.search(
                     r"fontFamily:\s*[\"']?(?:System|San Francisco|Roboto|-apple-system)",
                     content,
-                )
+                ),
             )
             if has_custom_font and not has_system_font:
                 self.warnings.append(
-                    f"[Typography] {filename}: Custom font detected. Consider system fonts (iOS: SF Pro, Android: Roboto) for native feel."
+                    f"[Typography] {filename}: Custom font detected. Consider system fonts (iOS: SF Pro, Android: Roboto) for native feel.",
                 )
 
         # 4.2 Text Scaling Check (iOS Dynamic Type)
@@ -358,11 +356,11 @@ class MobileAuditor:
                 re.search(
                     r"allowFontScaling:\s*true|responsiveFontSize|useWindowDimensions",
                     content,
-                )
+                ),
             )
             if has_font_sizes and not has_scaling:
                 self.warnings.append(
-                    f"[Typography] {filename}: Fixed font sizes without scaling support. Consider allowFontScaling for accessibility."
+                    f"[Typography] {filename}: Fixed font sizes without scaling support. Consider allowFontScaling for accessibility.",
                 )
 
         # 4.3 Mobile Line Height Check
@@ -370,7 +368,7 @@ class MobileAuditor:
         for lh in line_heights:
             if float(lh) > 1.8:
                 self.warnings.append(
-                    f"[Typography] {filename}: lineHeight {lh} too high for mobile. Mobile text needs tighter spacing (1.3-1.5)."
+                    f"[Typography] {filename}: lineHeight {lh} too high for mobile. Mobile text needs tighter spacing (1.3-1.5).",
                 )
 
         # 4.4 Font Size Limits
@@ -379,11 +377,11 @@ class MobileAuditor:
             size = float(fs)
             if size < 12:
                 self.warnings.append(
-                    f"[Typography] {filename}: fontSize {size}px below 12px minimum readability."
+                    f"[Typography] {filename}: fontSize {size}px below 12px minimum readability.",
                 )
             elif size > 32:
                 self.warnings.append(
-                    f"[Typography] {filename}: fontSize {size}px very large. Consider using responsive scaling."
+                    f"[Typography] {filename}: fontSize {size}px very large. Consider using responsive scaling.",
                 )
 
         # --- 5. MOBILE COLOR SYSTEM CHECKS ---
@@ -391,19 +389,19 @@ class MobileAuditor:
         # 5.1 Pure Black Avoidance
         if re.search(r'#000000|color:\s*black|backgroundColor:\s*["\']?black', content):
             self.warnings.append(
-                f"[Color] {filename}: Pure black (#000000) detected. Use dark gray (#1C1C1E iOS, #121212 Android) for better OLED/battery."
+                f"[Color] {filename}: Pure black (#000000) detected. Use dark gray (#1C1C1E iOS, #121212 Android) for better OLED/battery.",
             )
 
         # 5.2 Dark Mode Support
         has_color_schemes = bool(
-            re.search(r'useColorScheme|colorScheme|appearance:\s*["\']?dark', content)
+            re.search(r'useColorScheme|colorScheme|appearance:\s*["\']?dark', content),
         )
         has_dark_mode_style = bool(
-            re.search(r"\\\?.*dark|style:\s*.*dark|isDark", content)
+            re.search(r"\\\?.*dark|style:\s*.*dark|isDark", content),
         )
         if not has_color_schemes and not has_dark_mode_style:
             self.warnings.append(
-                f"[Color] {filename}: No dark mode support detected. Consider useColorScheme for system dark mode."
+                f"[Color] {filename}: No dark mode support detected. Consider useColorScheme for system dark mode.",
             )
 
         # --- 6. PLATFORM iOS CHECKS ---
@@ -417,25 +415,25 @@ class MobileAuditor:
 
             # 6.2 iOS Haptic Types
             has_haptic_import = bool(
-                re.search(r"expo-haptics|react-native-haptic-feedback", content)
+                re.search(r"expo-haptics|react-native-haptic-feedback", content),
             )
             has_haptic_types = bool(
                 re.search(
-                    r"ImpactFeedback|NotificationFeedback|SelectionFeedback", content
-                )
+                    r"ImpactFeedback|NotificationFeedback|SelectionFeedback", content,
+                ),
             )
             if has_haptic_import and not has_haptic_types:
                 self.warnings.append(
-                    f"[iOS Haptics] {filename}: Haptic library imported but not using typed haptics (Impact/Notification/Selection)."
+                    f"[iOS Haptics] {filename}: Haptic library imported but not using typed haptics (Impact/Notification/Selection).",
                 )
 
             # 6.3 iOS Safe Area
             has_safe_area = bool(
-                re.search(r"SafeAreaView|useSafeAreaInsets|safeArea", content)
+                re.search(r"SafeAreaView|useSafeAreaInsets|safeArea", content),
             )
             if not has_safe_area:
                 self.warnings.append(
-                    f"[iOS] {filename}: No SafeArea detected. Content may be hidden by notch/home indicator."
+                    f"[iOS] {filename}: No SafeArea detected. Content may be hidden by notch/home indicator.",
                 )
 
         # --- 7. PLATFORM ANDROID CHECKS ---
@@ -443,59 +441,59 @@ class MobileAuditor:
         if is_react_native:
             # 7.1 Material Icons Check
             has_material_icons = bool(
-                re.search(r"@expo/vector-icons|MaterialIcons", content)
+                re.search(r"@expo/vector-icons|MaterialIcons", content),
             )
             if has_material_icons:
                 self.passed_count += 1
 
             # 7.2 Ripple Effect
             has_ripple = bool(
-                re.search(r"ripple|android_ripple|foregroundRipple", content)
+                re.search(r"ripple|android_ripple|foregroundRipple", content),
             )
             has_pressable = bool(re.search(r"Pressable|Touchable", content))
             if has_pressable and not has_ripple:
                 self.warnings.append(
-                    f"[Android] {filename}: Touchable without ripple effect. Android users expect ripple feedback."
+                    f"[Android] {filename}: Touchable without ripple effect. Android users expect ripple feedback.",
                 )
 
             # 7.3 Hardware Back Button
             if is_react_native:
                 has_back_button = bool(
-                    re.search(r"BackHandler|useBackHandler", content)
+                    re.search(r"BackHandler|useBackHandler", content),
                 )
                 has_navigation = bool(re.search(r"@react-navigation", content))
                 if has_navigation and not has_back_button:
                     self.warnings.append(
-                        f"[Android] {filename}: React Navigation detected without BackHandler listener. Android hardware back may not work correctly."
+                        f"[Android] {filename}: React Navigation detected without BackHandler listener. Android hardware back may not work correctly.",
                     )
 
         # --- 8. MOBILE BACKEND CHECKS ---
 
         # 8.1 Secure Storage Check
         has_async_storage = bool(
-            re.search(r"AsyncStorage|@react-native-async-storage", content)
+            re.search(r"AsyncStorage|@react-native-async-storage", content),
         )
         has_secure_storage = bool(
-            re.search(r"SecureStore|Keychain|EncryptedSharedPreferences", content)
+            re.search(r"SecureStore|Keychain|EncryptedSharedPreferences", content),
         )
         has_token_storage = bool(
-            re.search(r"token|jwt|auth.*storage", content, re.IGNORECASE)
+            re.search(r"token|jwt|auth.*storage", content, re.IGNORECASE),
         )
         if has_token_storage and has_async_storage and not has_secure_storage:
             self.issues.append(
-                f"[Security] {filename}: Storing auth tokens in AsyncStorage (insecure). Use SecureStore (iOS) / EncryptedSharedPreferences (Android)."
+                f"[Security] {filename}: Storing auth tokens in AsyncStorage (insecure). Use SecureStore (iOS) / EncryptedSharedPreferences (Android).",
             )
 
         # 8.2 Offline Handling Check
         has_network = bool(
-            re.search(r"fetch|axios|netinfo|@react-native-community/netinfo", content)
+            re.search(r"fetch|axios|netinfo|@react-native-community/netinfo", content),
         )
         has_offline = bool(
-            re.search(r"offline|isConnected|netInfo|cache.*offline", content)
+            re.search(r"offline|isConnected|netInfo|cache.*offline", content),
         )
         if has_network and not has_offline:
             self.warnings.append(
-                f"[Offline] {filename}: Network requests detected without offline handling. Consider NetInfo for connection status."
+                f"[Offline] {filename}: Network requests detected without offline handling. Consider NetInfo for connection status.",
             )
 
         # 8.3 Push Notification Support
@@ -503,16 +501,16 @@ class MobileAuditor:
             re.search(
                 r"Notifications|pushNotification|Firebase\.messaging|PushNotificationIOS",
                 content,
-            )
+            ),
         )
         has_push_handler = bool(
             re.search(
-                r"onNotification|addNotificationListener|notification\.open", content
-            )
+                r"onNotification|addNotificationListener|notification\.open", content,
+            ),
         )
         if has_push and not has_push_handler:
             self.warnings.append(
-                f"[Push] {filename}: Push notifications imported but no handler found. May miss notifications."
+                f"[Push] {filename}: Push notifications imported but no handler found. May miss notifications.",
             )
 
         # --- 9. EXTENDED MOBILE TYPOGRAPHY CHECKS ---
@@ -522,12 +520,12 @@ class MobileAuditor:
             # Check for iOS text styles that match HIG
             has_large_title = bool(
                 re.search(
-                    r'fontSize:\s*34|largeTitle|font-weight:\s*["\']?bold', content
-                )
+                    r'fontSize:\s*34|largeTitle|font-weight:\s*["\']?bold', content,
+                ),
             )
             has_title_1 = bool(re.search(r"fontSize:\s*28", content))
             has_headline = bool(
-                re.search(r"fontSize:\s*17.*semibold|headline", content)
+                re.search(r"fontSize:\s*17.*semibold|headline", content),
             )
             has_body = bool(re.search(r"fontSize:\s*17.*regular|body", content))
 
@@ -542,7 +540,7 @@ class MobileAuditor:
 
             if len(font_sizes) > 3 and matching_ios < len(font_sizes) / 2:
                 self.warnings.append(
-                    f"[iOS Typography] {filename}: Font sizes don't match iOS type scale. Consider iOS text styles for native feel."
+                    f"[iOS Typography] {filename}: Font sizes don't match iOS type scale. Consider iOS text styles for native feel.",
                 )
 
         # 9.2 Android Material Type Scale Check
@@ -550,13 +548,13 @@ class MobileAuditor:
             # Check for Material 3 text styles
             has_display = bool(re.search(r"fontSize:\s*[456][0-9]|display", content))
             has_headline_material = bool(
-                re.search(r"fontSize:\s*[23][0-9]|headline", content)
+                re.search(r"fontSize:\s*[23][0-9]|headline", content),
             )
             has_title_material = bool(
-                re.search(r"fontSize:\s*2[12][0-9].*medium|title", content)
+                re.search(r"fontSize:\s*2[12][0-9].*medium|title", content),
             )
             has_body_material = bool(
-                re.search(r"fontSize:\s*1[456].*regular|body", content)
+                re.search(r"fontSize:\s*1[456].*regular|body", content),
             )
             has_label = bool(re.search(r"fontSize:\s*1[1234].*medium|label", content))
 
@@ -565,7 +563,7 @@ class MobileAuditor:
             if has_display or has_headline_material:
                 if not uses_sp:
                     self.warnings.append(
-                        f"[Android Typography] {filename}: Material typography detected without sp units. Use sp for text to respect user font size preferences."
+                        f"[Android Typography] {filename}: Material typography detected without sp units. Use sp for text to respect user font size preferences.",
                     )
 
         # 9.3 Modular Scale Check
@@ -583,7 +581,7 @@ class MobileAuditor:
             for ratio in ratios[:3]:
                 if not any(abs(ratio - cr) < 0.03 for cr in common_ratios):
                     self.warnings.append(
-                        f"[Typography] {filename}: Font sizes may not follow modular scale (ratio: {ratio:.2f}). Consider consistent ratio."
+                        f"[Typography] {filename}: Font sizes may not follow modular scale (ratio: {ratio:.2f}). Consider consistent ratio.",
                     )
                     break
 
@@ -592,18 +590,18 @@ class MobileAuditor:
         if is_react_native:
             has_long_text = bool(re.search(r"<Text[^>]*>[^<]{40,}", content))
             has_max_width = bool(
-                re.search(r'maxWidth|max-w-\d+|width:\s*["\']?\d+', content)
+                re.search(r'maxWidth|max-w-\d+|width:\s*["\']?\d+', content),
             )
             if has_long_text and not has_max_width:
                 self.warnings.append(
-                    f"[Mobile Typography] {filename}: Text without max-width constraint. Mobile text should be 40-60 characters per line for readability."
+                    f"[Mobile Typography] {filename}: Text without max-width constraint. Mobile text should be 40-60 characters per line for readability.",
                 )
 
         # 9.5 Font Weight Pattern Check
         # Check for font weight distribution
         if is_react_native:
             font_weights = re.findall(
-                r'fontWeight:\s*["\']?(\d+|normal|bold|medium|light)', content
+                r'fontWeight:\s*["\']?(\d+|normal|bold|medium|light)', content,
             )
             weight_map = {
                 "normal": "400",
@@ -624,7 +622,7 @@ class MobileAuditor:
             regular_count = sum(1 for w in numeric_weights if 400 <= w < 500)
             if bold_count > regular_count:
                 self.warnings.append(
-                    f"[Mobile Typography] {filename}: More bold weights than regular. Mobile typography should be regular-dominant for readability."
+                    f"[Mobile Typography] {filename}: More bold weights than regular. Mobile typography should be regular-dominant for readability.",
                 )
 
         # --- 10. EXTENDED MOBILE COLOR SYSTEM CHECKS ---
@@ -639,13 +637,13 @@ class MobileAuditor:
         elif re.search(r'backgroundColor:\s*["\']?#[0-9A-Fa-f]{6}', content):
             # Check if using light colors in dark mode (bad for OLED)
             self.warnings.append(
-                f"[Mobile Color] {filename}: Consider OLED-optimized dark backgrounds (#121212 Android, #000000 iOS) for battery savings."
+                f"[Mobile Color] {filename}: Consider OLED-optimized dark backgrounds (#121212 Android, #000000 iOS) for battery savings.",
             )
 
         # 10.2 Saturated Color Detection (Battery)
         # Highly saturated colors consume more power on OLED
         hex_colors = re.findall(
-            r"#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})", content
+            r"#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})", content,
         )
         saturated_count = 0
         for r, g, b in hex_colors:
@@ -664,7 +662,7 @@ class MobileAuditor:
 
         if saturated_count > 10:
             self.warnings.append(
-                f"[Mobile Color] {filename}: {saturated_count} highly saturated colors detected. Desaturated colors save battery on OLED screens."
+                f"[Mobile Color] {filename}: {saturated_count} highly saturated colors detected. Desaturated colors save battery on OLED screens.",
             )
 
         # 10.3 Outdoor Visibility Check
@@ -675,30 +673,30 @@ class MobileAuditor:
             re.search(
                 r"#[EeEeEeEe].*#ffffff|#999999.*#ffffff|#333333.*#000000|#666666.*#000000",
                 content,
-            )
+            ),
         )
         if potential_low_contrast:
             self.warnings.append(
-                f"[Mobile Color] {filename}: Possible low contrast combination detected. Critical for outdoor visibility. Ensure WCAG AAA (7:1) for mobile."
+                f"[Mobile Color] {filename}: Possible low contrast combination detected. Critical for outdoor visibility. Ensure WCAG AAA (7:1) for mobile.",
             )
 
         # 10.4 Dark Mode Text Color Check
         # In dark mode, text should not be pure white
         has_dark_mode = bool(
             re.search(
-                r'dark:\s*|isDark|useColorScheme|colorScheme:\s*["\']?dark', content
-            )
+                r'dark:\s*|isDark|useColorScheme|colorScheme:\s*["\']?dark', content,
+            ),
         )
         if has_dark_mode:
             has_pure_white_text = bool(
                 re.search(
                     r'color:\s*["\']?#ffffff|#fff["\']?\}|textColor:\s*["\']?white',
                     content,
-                )
+                ),
             )
             if has_pure_white_text:
                 self.warnings.append(
-                    f"[Mobile Color] {filename}: Pure white text (#FFFFFF) in dark mode. Use #E8E8E8 or light gray for better readability."
+                    f"[Mobile Color] {filename}: Pure white text (#FFFFFF) in dark mode. Use #E8E8E8 or light gray for better readability.",
                 )
 
         # --- 11. EXTENDED PLATFORM IOS CHECKS ---
@@ -706,28 +704,28 @@ class MobileAuditor:
         if is_react_native:
             # 11.1 SF Pro Font Detection
             has_sf_pro = bool(
-                re.search(r'SF Pro|SFPro|fontFamily:\s*["\']?[-\s]*SF', content)
+                re.search(r'SF Pro|SFPro|fontFamily:\s*["\']?[-\s]*SF', content),
             )
             has_custom_font = bool(re.search(r'fontFamily:\s*["\'][^"\']+', content))
             if has_custom_font and not has_sf_pro:
                 self.warnings.append(
-                    f"[iOS] {filename}: Custom font without SF Pro fallback. Consider SF Pro Text for body, SF Pro Display for headings."
+                    f"[iOS] {filename}: Custom font without SF Pro fallback. Consider SF Pro Text for body, SF Pro Display for headings.",
                 )
 
             # 11.2 iOS System Colors Check
             # Check for semantic color usage
             has_label = bool(re.search(r'color:\s*["\']?label|\.label', content))
             has_secondaryLabel = bool(
-                re.search(r"secondaryLabel|\.secondaryLabel", content)
+                re.search(r"secondaryLabel|\.secondaryLabel", content),
             )
             has_systemBackground = bool(
-                re.search(r"systemBackground|\.systemBackground", content)
+                re.search(r"systemBackground|\.systemBackground", content),
             )
 
             has_hardcoded_gray = bool(re.search(r"#[78]0{4}", content))
             if has_hardcoded_gray and not (has_label or has_secondaryLabel):
                 self.warnings.append(
-                    f"[iOS] {filename}: Hardcoded gray colors detected. Consider iOS semantic colors (label, secondaryLabel) for automatic dark mode."
+                    f"[iOS] {filename}: Hardcoded gray colors detected. Consider iOS semantic colors (label, secondaryLabel) for automatic dark mode.",
                 )
 
             # 11.3 iOS Accent Colors Check
@@ -736,23 +734,23 @@ class MobileAuditor:
             ios_red = bool(re.search(r"#FF3B30|#FF453A|systemRed", content))
 
             has_custom_primary = bool(
-                re.search(r"primaryColor|theme.*primary|colors\.primary", content)
+                re.search(r"primaryColor|theme.*primary|colors\.primary", content),
             )
             if has_custom_primary and not (ios_blue or ios_green or ios_red):
                 self.warnings.append(
-                    f"[iOS] {filename}: Custom primary color without iOS system color fallback. Consider systemBlue for consistent iOS feel."
+                    f"[iOS] {filename}: Custom primary color without iOS system color fallback. Consider systemBlue for consistent iOS feel.",
                 )
 
             # 11.4 iOS Navigation Patterns Check
             has_navigation_bar = bool(
-                re.search(r"navigationOptions|headerStyle|cardStyle", content)
+                re.search(r"navigationOptions|headerStyle|cardStyle", content),
             )
             has_header_title = bool(
-                re.search(r'title:\s*["\']|headerTitle|navigation\.setOptions', content)
+                re.search(r'title:\s*["\']|headerTitle|navigation\.setOptions', content),
             )
             if has_navigation_bar and not has_header_title:
                 self.warnings.append(
-                    f"[iOS] {filename}: Navigation bar detected without title. iOS apps should have clear context in nav bar."
+                    f"[iOS] {filename}: Navigation bar detected without title. iOS apps should have clear context in nav bar.",
                 )
 
             # 11.5 iOS Component Patterns Check
@@ -760,11 +758,11 @@ class MobileAuditor:
             has_alert = bool(re.search(r"Alert\.alert|showAlert", content))
             has_action_sheet = bool(
                 re.search(
-                    r"ActionSheet|ActionSheetIOS|showActionSheetWithOptions", content
-                )
+                    r"ActionSheet|ActionSheetIOS|showActionSheetWithOptions", content,
+                ),
             )
             has_activity_indicator = bool(
-                re.search(r"ActivityIndicator|ActivityIndic", content)
+                re.search(r"ActivityIndicator|ActivityIndic", content),
             )
 
             if has_alert or has_action_sheet or has_activity_indicator:
@@ -775,26 +773,26 @@ class MobileAuditor:
         if is_react_native:
             # 12.1 Roboto Font Detection
             has_roboto = bool(
-                re.search(r'Roboto|fontFamily:\s*["\']?[-\s]*Roboto', content)
+                re.search(r'Roboto|fontFamily:\s*["\']?[-\s]*Roboto', content),
             )
             has_custom_font = bool(re.search(r'fontFamily:\s*["\'][^"\']+', content))
             if has_custom_font and not has_roboto:
                 self.warnings.append(
-                    f"[Android] {filename}: Custom font without Roboto fallback. Roboto is optimized for Android displays."
+                    f"[Android] {filename}: Custom font without Roboto fallback. Roboto is optimized for Android displays.",
                 )
 
             # 12.2 Material 3 Dynamic Color Check
             has_material_colors = bool(
-                re.search(r"MD3|MaterialYou|dynamicColor|useColorScheme", content)
+                re.search(r"MD3|MaterialYou|dynamicColor|useColorScheme", content),
             )
             has_theme_provider = bool(
                 re.search(
-                    r"MaterialTheme|ThemeProvider|PaperProvider|ThemeProvider", content
-                )
+                    r"MaterialTheme|ThemeProvider|PaperProvider|ThemeProvider", content,
+                ),
             )
             if not has_material_colors and not has_theme_provider:
                 self.warnings.append(
-                    f"[Android] {filename}: No Material 3 dynamic color detected. Consider Material 3 theming for personalized feel."
+                    f"[Android] {filename}: No Material 3 dynamic color detected. Consider Material 3 theming for personalized feel.",
                 )
 
             # 12.3 Material Elevation Check
@@ -803,32 +801,32 @@ class MobileAuditor:
                 re.search(
                     r"elevation:\s*\d+|shadowOpacity|shadowRadius|android:elevation",
                     content,
-                )
+                ),
             )
             has_box_shadow = bool(re.search(r"boxShadow:", content))
             if has_box_shadow and not has_elevation:
                 self.warnings.append(
-                    f"[Android] {filename}: CSS box-shadow detected without elevation. Consider Material elevation system for consistent depth."
+                    f"[Android] {filename}: CSS box-shadow detected without elevation. Consider Material elevation system for consistent depth.",
                 )
 
             # 12.4 Material Component Patterns Check
             # Check for Material components
             has_ripple = bool(
-                re.search(r"ripple|android_ripple|foregroundRipple", content)
+                re.search(r"ripple|android_ripple|foregroundRipple", content),
             )
             has_card = bool(re.search(r"Card|Paper|elevation.*\d+", content))
             has_fab = bool(re.search(r"FAB|FloatingActionButton|fab", content))
             has_snackbar = bool(re.search(r"Snackbar|showSnackBar|Toast", content))
 
             material_component_count = sum(
-                [has_ripple, has_card, has_fab, has_snackbar]
+                [has_ripple, has_card, has_fab, has_snackbar],
             )
             if material_component_count >= 2:
                 self.passed_count += 1  # Good Material design usage
 
             # 12.5 Android Navigation Patterns Check
             has_top_app_bar = bool(
-                re.search(r"TopAppBar|AppBar|CollapsingToolbar", content)
+                re.search(r"TopAppBar|AppBar|CollapsingToolbar", content),
             )
             has_bottom_nav = bool(re.search(r"BottomNavigation|BottomNav", content))
             has_navigation_rail = bool(re.search(r"NavigationRail", content))
@@ -837,14 +835,14 @@ class MobileAuditor:
                 self.passed_count += 1  # Good Android pattern
             elif has_top_app_bar and not (has_bottom_nav or has_navigation_rail):
                 self.warnings.append(
-                    f"[Android] {filename}: TopAppBar without bottom navigation. Consider BottomNavigation for thumb-friendly access."
+                    f"[Android] {filename}: TopAppBar without bottom navigation. Consider BottomNavigation for thumb-friendly access.",
                 )
 
         # --- 13. MOBILE TESTING CHECKS ---
 
         # 13.1 Testing Tool Detection
         has_rntl = bool(
-            re.search(r"react-native-testing-library|@testing-library", content)
+            re.search(r"react-native-testing-library|@testing-library", content),
         )
         has_detox = bool(re.search(r"detox|element\(|by\.text|by\.id", content))
         has_maestro = bool(re.search(r"maestro|\.yaml$", content))
@@ -862,7 +860,7 @@ class MobileAuditor:
 
         if len(testing_tools) == 0:
             self.warnings.append(
-                f"[Testing] {filename}: No testing framework detected. Consider Jest (unit) + Detox/Maestro (E2E) for mobile."
+                f"[Testing] {filename}: No testing framework detected. Consider Jest (unit) + Detox/Maestro (E2E) for mobile.",
             )
 
         # 13.2 Test Pyramid Balance Check
@@ -871,36 +869,36 @@ class MobileAuditor:
 
         if test_files > 0 and e2e_tests == 0:
             self.warnings.append(
-                f"[Testing] {filename}: Unit tests found but no E2E tests. Mobile needs E2E on real devices for complete coverage."
+                f"[Testing] {filename}: Unit tests found but no E2E tests. Mobile needs E2E on real devices for complete coverage.",
             )
 
         # 13.3 Accessibility Label Check (Mobile-specific)
         if is_react_native:
             has_pressable = bool(
-                re.search(r"Pressable|TouchableOpacity|TouchableHighlight", content)
+                re.search(r"Pressable|TouchableOpacity|TouchableHighlight", content),
             )
             has_a11y_label = bool(
-                re.search(r"accessibilityLabel|aria-label|testID", content)
+                re.search(r"accessibilityLabel|aria-label|testID", content),
             )
             if has_pressable and not has_a11y_label:
                 self.warnings.append(
-                    f"[A11y Mobile] {filename}: Touchable element without accessibilityLabel. Screen readers need labels for all interactive elements."
+                    f"[A11y Mobile] {filename}: Touchable element without accessibilityLabel. Screen readers need labels for all interactive elements.",
                 )
 
         # --- 14. MOBILE DEBUGGING CHECKS ---
 
         # 14.1 Performance Profiling Check
         has_performance = bool(
-            re.search(r"Performance|systrace|profile|Flipper", content)
+            re.search(r"Performance|systrace|profile|Flipper", content),
         )
         has_console_log = len(
-            re.findall(r"console\.(log|warn|error|debug|info)", content)
+            re.findall(r"console\.(log|warn|error|debug|info)", content),
         )
         has_debugger = bool(re.search(r"debugger|__DEV__|React\.DevTools", content))
 
         if has_console_log > 10:
             self.warnings.append(
-                f"[Debugging] {filename}: {has_console_log} console.log statements. Remove before production; they block JS thread."
+                f"[Debugging] {filename}: {has_console_log} console.log statements. Remove before production; they block JS thread.",
             )
 
         if has_performance:
@@ -909,12 +907,12 @@ class MobileAuditor:
         # 14.2 Error Boundary Check
         has_error_boundary = bool(
             re.search(
-                r"ErrorBoundary|componentDidCatch|getDerivedStateFromError", content
-            )
+                r"ErrorBoundary|componentDidCatch|getDerivedStateFromError", content,
+            ),
         )
         if not has_error_boundary and is_react_native:
             self.warnings.append(
-                f"[Debugging] {filename}: No ErrorBoundary detected. Consider adding ErrorBoundary to prevent app crashes."
+                f"[Debugging] {filename}: No ErrorBoundary detected. Consider adding ErrorBoundary to prevent app crashes.",
             )
 
         # 14.3 Hermes Check (React Native specific)
@@ -938,7 +936,6 @@ class MobileAuditor:
                     ".next",
                     "ios",
                     "android",
-                    "build",
                     ".idea",
                 }
             ]

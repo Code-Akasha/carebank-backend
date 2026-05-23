@@ -1,3 +1,3 @@
-from .guard import validate_and_refine, log_compliance_decision
+from .guard import log_compliance_decision, validate_and_refine
 
-__all__ = ["validate_and_refine", "log_compliance_decision"]
+__all__ = ["log_compliance_decision", "validate_and_refine"]

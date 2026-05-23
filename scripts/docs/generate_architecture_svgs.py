@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
 
+from PIL import Image, ImageDraw, ImageFont
 
 OUT_DIR = Path(r"d:\PycharmProjects\carebank-backend\docs\architecture-diagrams")
 
@@ -24,7 +24,7 @@ GRAY_STROKE = "#CBD5E1"
 
 
 def get_font(
-    size: int, bold: bool = False
+    size: int, bold: bool = False,
 ) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     candidates = [
         ("C:/Windows/Fonts/aptos.ttf", False),
@@ -77,10 +77,10 @@ class Canvas:
         self.draw.text((width // 2, 36), title, font=FONT_26B, fill=TITLE, anchor="mm")
 
     def section(
-        self, x: int, y: int, w: int, h: int, title: str, subtitle: str
+        self, x: int, y: int, w: int, h: int, title: str, subtitle: str,
     ) -> None:
         self.draw.rounded_rectangle(
-            (x, y, x + w, y + h), radius=22, outline=GRAY_STROKE, width=3, fill=GRAY
+            (x, y, x + w, y + h), radius=22, outline=GRAY_STROKE, width=3, fill=GRAY,
         )
         self.draw.text((x + 18, y + 20), title, font=FONT_19B, fill=TITLE)
         self.draw.text((x + 18, y + 48), subtitle, font=FONT_12, fill=MUTED)
@@ -97,10 +97,10 @@ class Canvas:
         stroke: str,
     ) -> None:
         self.draw.rounded_rectangle(
-            (x, y, x + w, y + h), radius=18, outline=stroke, width=3, fill=fill
+            (x, y, x + w, y + h), radius=18, outline=stroke, width=3, fill=fill,
         )
         self.draw.text(
-            (x + w / 2, y + 24), title, font=FONT_17B, fill=TITLE, anchor="mm"
+            (x + w / 2, y + 24), title, font=FONT_17B, fill=TITLE, anchor="mm",
         )
         yy = y + 50
         for bullet in bullets:

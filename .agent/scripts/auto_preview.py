@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Auto Preview - Antigravity Kit
+"""Auto Preview - Antigravity Kit
 ==============================
 Manages (start/stop/status) the local development server for previewing the application.
 
@@ -10,12 +9,12 @@ Usage:
     python .agent/scripts/auto_preview.py status
 """
 
-import os
-import sys
-import json
-import signal
 import argparse
+import json
+import os
+import signal
 import subprocess
+import sys
 from pathlib import Path
 
 AGENT_DIR = Path(".agent")
@@ -24,7 +23,7 @@ LOG_FILE = AGENT_DIR / "preview.log"
 
 
 def get_project_root():
-    return Path(".").resolve()
+    return Path().resolve()
 
 
 def is_running(pid):
@@ -40,13 +39,13 @@ def get_start_command(root):
     if not pkg_file.exists():
         return None
 
-    with open(pkg_file, "r") as f:
+    with open(pkg_file) as f:
         data = json.load(f)
 
     scripts = data.get("scripts", {})
     if "dev" in scripts:
         return ["npm", "run", "dev"]
-    elif "start" in scripts:
+    if "start" in scripts:
         return ["npm", "start"]
     return None
 
@@ -100,9 +99,9 @@ def stop_server():
         if is_running(pid):
             # Try gentle kill first
             os.kill(
-                pid, signal.SIGTERM
+                pid, signal.SIGTERM,
             ) if sys.platform != "win32" else subprocess.call(
-                ["taskkill", "/F", "/T", "/PID", str(pid)]
+                ["taskkill", "/F", "/T", "/PID", str(pid)],
             )
             print(f"🛑 Preview stopped (PID: {pid})")
         else:

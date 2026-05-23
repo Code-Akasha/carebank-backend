@@ -1,5 +1,4 @@
-"""
-Unified action payload validation service.
+"""Unified action payload validation service.
 
 Centralizes validation logic before tool execution:
 1. Validates payload against tool schema
@@ -18,13 +17,12 @@ class PayloadValidationError(ValueError):
         self.action_type = action_type
         self.errors = errors
         super().__init__(
-            f"Payload validation failed for {action_type}: {'; '.join(errors)}"
+            f"Payload validation failed for {action_type}: {'; '.join(errors)}",
         )
 
 
 def validate_action_payload(action_type: str, payload: dict) -> tuple[bool, list[str]]:
-    """
-    Validate action payload against tool schema and policy constraints.
+    """Validate action payload against tool schema and policy constraints.
 
     **Parameters:**
     - action_type: The action identifier
@@ -55,7 +53,7 @@ def validate_action_payload(action_type: str, payload: dict) -> tuple[bool, list
         try:
             schema.model_validate(payload)
         except Exception as exc:
-            errors.append(f"Schema validation failed: {str(exc)}")
+            errors.append(f"Schema validation failed: {exc!s}")
             return False, errors
 
     # Step 3: Check policy constraints
@@ -69,7 +67,7 @@ def validate_action_payload(action_type: str, payload: dict) -> tuple[bool, list
                     errors.append("Amount must be positive")
                 elif amount_value > policy.max_amount:
                     errors.append(
-                        f"Amount {amount_value} exceeds policy maximum of {policy.max_amount}"
+                        f"Amount {amount_value} exceeds policy maximum of {policy.max_amount}",
                     )
             except (ValueError, TypeError):
                 errors.append(f"Invalid amount format: {amount}")
@@ -78,8 +76,7 @@ def validate_action_payload(action_type: str, payload: dict) -> tuple[bool, list
 
 
 def validate_or_raise(action_type: str, payload: dict) -> None:
-    """
-    Validate action payload, raising an exception if validation fails.
+    """Validate action payload, raising an exception if validation fails.
 
     Useful for synchronous validation during action execution.
 
@@ -97,8 +94,7 @@ def validate_or_raise(action_type: str, payload: dict) -> None:
 
 
 def get_validation_warnings(action_type: str, payload: dict) -> list[str]:
-    """
-    Get validation warnings (non-blocking issues) for a payload.
+    """Get validation warnings (non-blocking issues) for a payload.
 
     Useful for UI hints without blocking action execution.
 
@@ -119,7 +115,7 @@ def get_validation_warnings(action_type: str, payload: dict) -> list[str]:
                 threshold = policy.max_amount * 0.9
                 if amount_value > threshold:
                     warnings.append(
-                        f"Amount {amount_value} is near the policy limit of {policy.max_amount}"
+                        f"Amount {amount_value} is near the policy limit of {policy.max_amount}",
                     )
             except (ValueError, TypeError):
                 pass

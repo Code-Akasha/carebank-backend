@@ -71,7 +71,7 @@ def _coerce_policy(action_type: str, payload: dict) -> tuple[ActionPolicy, dict]
         requires_approval=bool(payload.get("requires_approval", True)),
         max_amount=max_amount,
         allow_trusted_recurring_bypass=bool(
-            payload.get("allow_trusted_recurring_bypass", True)
+            payload.get("allow_trusted_recurring_bypass", True),
         ),
     )
     metadata = {

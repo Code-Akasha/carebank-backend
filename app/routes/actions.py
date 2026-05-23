@@ -89,7 +89,7 @@ def list_action_requests(
     db: Session = Depends(get_db),
 ):
     query = db.query(ActionRequest).filter(
-        ActionRequest.user_id == current_user.user_id
+        ActionRequest.user_id == current_user.user_id,
     )
     if status_filter:
         query = query.filter(ActionRequest.status == status_filter)
@@ -135,7 +135,7 @@ def list_action_executions(
     db: Session = Depends(get_db),
 ):
     query = db.query(ActionExecution).filter(
-        ActionExecution.user_id == current_user.user_id
+        ActionExecution.user_id == current_user.user_id,
     )
     if status_filter:
         query = query.filter(ActionExecution.status == status_filter)
@@ -173,7 +173,7 @@ async def reconcile_action_executions(
     client = get_banking_client()
 
     query = db.query(ActionExecution).filter(
-        ActionExecution.user_id == current_user.user_id
+        ActionExecution.user_id == current_user.user_id,
     )
     if body.execution_id is not None:
         query = query.filter(ActionExecution.id == body.execution_id)
@@ -201,7 +201,7 @@ async def reconcile_action_executions(
                     "execution_id": execution.id,
                     "status": "skipped",
                     "reason": "transaction_id_missing",
-                }
+                },
             )
             continue
 
@@ -217,7 +217,7 @@ async def reconcile_action_executions(
                     "status": "error",
                     "reason": str(exc),
                     "transaction_id": transaction_id,
-                }
+                },
             )
             continue
 
@@ -239,12 +239,12 @@ async def reconcile_action_executions(
             elif target_status == "failure":
                 execution.last_error = str(
                     (latest_event or {}).get("reason")
-                    or "Reconciled failure from MockBank"
+                    or "Reconciled failure from MockBank",
                 )
             elif target_status == "rollback":
                 execution.last_error = str(
                     (latest_event or {}).get("reason")
-                    or "Reconciled reversal from MockBank"
+                    or "Reconciled reversal from MockBank",
                 )
 
             if target_status in {"success", "failure", "rollback"}:
@@ -286,7 +286,7 @@ async def reconcile_action_executions(
                 "execution_status": execution.status,
                 "bank_status": bank_status,
                 "transaction_id": transaction_id,
-            }
+            },
         )
 
     db.commit()
@@ -303,10 +303,10 @@ async def reconcile_action_executions(
 async def mockbank_lifecycle_webhook(
     request: Request,
     x_carebank_signature: Annotated[
-        str | None, Header(alias="X-CareBank-Signature")
+        str | None, Header(alias="X-CareBank-Signature"),
     ] = None,
     x_carebank_timestamp: Annotated[
-        str | None, Header(alias="X-CareBank-Timestamp")
+        str | None, Header(alias="X-CareBank-Timestamp"),
     ] = None,
     db: Session = Depends(get_db),
 ):
@@ -317,7 +317,7 @@ async def mockbank_lifecycle_webhook(
         timestamp=x_carebank_timestamp,
     ):
         raise HTTPException(
-            status_code=401, detail="Invalid MockBank webhook signature"
+            status_code=401, detail="Invalid MockBank webhook signature",
         )
 
     try:
@@ -344,7 +344,7 @@ async def mockbank_lifecycle_webhook(
         user_id = payload.get("user_id")
         if idempotency_key:
             query = db.query(ActionExecution).filter(
-                ActionExecution.idempotency_key == str(idempotency_key)
+                ActionExecution.idempotency_key == str(idempotency_key),
             )
             if user_id:
                 query = query.filter(ActionExecution.user_id == str(user_id))

@@ -3,12 +3,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.core.finance import forecast_impact
 from app.core.security import get_current_user
 from app.models.user import User
+from app.services.banking_client import BankingClientError, get_banking_client
 from app.services.data import generate_mock_transactions
 from app.services.forecast import forecast_balance
-from app.core.finance import forecast_impact
-from app.services.banking_client import get_banking_client, BankingClientError
 
 router = APIRouter(prefix="/api/simulate", tags=["simulate"])
 
@@ -40,7 +40,7 @@ async def simulate(
         balance = await client.get_balance(current_user.user_id)
     except BankingClientError as exc:
         raise HTTPException(
-            status_code=503, detail=f"Banking API unavailable: {exc}"
+            status_code=503, detail=f"Banking API unavailable: {exc}",
         ) from exc
 
     if not transactions:
@@ -78,7 +78,7 @@ async def simulate(
                 "type": "product",
                 "name": "3-Month EMI",
                 "description": f"Split into 3 payments of ₹{request.expense_amount / 3:,.0f}",
-            }
+            },
         )
 
     return SimulateResponse(

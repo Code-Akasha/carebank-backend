@@ -1,19 +1,19 @@
 import logging
 from dataclasses import dataclass
 
-from app.agents.base import BaseAgent, AgentInput, AgentOutput, AgentStatus
-from app.services.forecast import forecast_balance
-from app.services.anomaly import detect_anomaly
-from app.services.health_score import compute_health_score
-from app.services.data import generate_mock_transactions
-from app.core.finance import forecast_impact
-from app.core.config_thresholds import get_risk_thresholds
+from app.agents.base import AgentInput, AgentOutput, AgentStatus, BaseAgent
 from app.core.config import get_settings
+from app.core.config_thresholds import get_risk_thresholds
+from app.core.finance import forecast_impact
+from app.services.anomaly import detect_anomaly
 from app.services.banking_client import (
-    get_transactions_sync,
-    get_balance_sync,
     BankingClientError,
+    get_balance_sync,
+    get_transactions_sync,
 )
+from app.services.data import generate_mock_transactions
+from app.services.forecast import forecast_balance
+from app.services.health_score import compute_health_score
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +244,7 @@ class IntelligenceAgent(BaseAgent):
                     },
                 )
             logger.warning(
-                "Falling back to default balance data for %s: %s", user_id, exc
+                "Falling back to default balance data for %s: %s", user_id, exc,
             )
             balance = {
                 "current_balance": 25000.0,
@@ -286,7 +286,7 @@ class IntelligenceAgent(BaseAgent):
         except BankingClientError as exc:
             if _is_production_env():
                 logger.warning(
-                    "Could not fetch affordability data for %s: %s", user_id, exc
+                    "Could not fetch affordability data for %s: %s", user_id, exc,
                 )
                 return AgentOutput(
                     agent_name=self.name,
@@ -299,7 +299,7 @@ class IntelligenceAgent(BaseAgent):
                     },
                 )
             logger.warning(
-                "Falling back to default affordability data for %s: %s", user_id, exc
+                "Falling back to default affordability data for %s: %s", user_id, exc,
             )
             balance = {"available_balance": 25000.0}
 
@@ -373,7 +373,7 @@ class IntelligenceAgent(BaseAgent):
                     "delta": round(delta, 2),
                     "pct_change": round(pct_change, 1),
                     "savings_if_cut_30pct": round(curr_amt * 0.30, 2),
-                }
+                },
             )
 
         # Sort by delta descending — biggest increases first
@@ -410,11 +410,11 @@ class IntelligenceAgent(BaseAgent):
         except BankingClientError as exc:
             if _is_production_env():
                 logger.error(
-                    "Transaction fetch failed in production for %s: %s", user_id, exc
+                    "Transaction fetch failed in production for %s: %s", user_id, exc,
                 )
                 raise
             logger.warning(
-                "Falling back to generated transactions for %s: %s", user_id, exc
+                "Falling back to generated transactions for %s: %s", user_id, exc,
             )
             return generate_mock_transactions(user_id)
 
@@ -425,7 +425,7 @@ class IntelligenceAgent(BaseAgent):
         except BankingClientError as exc:
             if _is_production_env():
                 logger.error(
-                    "Balance fetch failed in production for %s: %s", user_id, exc
+                    "Balance fetch failed in production for %s: %s", user_id, exc,
                 )
                 raise
             logger.warning("Falling back to default balance for %s: %s", user_id, exc)

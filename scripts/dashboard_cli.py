@@ -43,8 +43,8 @@ class Dashboard:
 
     def run(self) -> None:
         console.print("[bold cyan]\nCareBank Ops Dashboard[/bold cyan]")
-        console.print("Backend: [yellow]{}[/yellow]".format(self.backend_url))
-        console.print("Proxy: [yellow]{}[/yellow]\n".format(self.proxy_url))
+        console.print(f"Backend: [yellow]{self.backend_url}[/yellow]")
+        console.print(f"Proxy: [yellow]{self.proxy_url}[/yellow]\n")
 
         while True:
             for key, (label, _) in MENU_OPTIONS.items():
@@ -114,7 +114,7 @@ class Dashboard:
         table.add_column("Score")
         table.add_column("Persona")
         table.add_row(
-            str(data.get("score")), data.get("persona", {}).get("persona", "-")
+            str(data.get("score")), data.get("persona", {}).get("persona", "-"),
         )
         console.print(table)
         console.print_json(data=data.get("factors", {}))
@@ -135,7 +135,7 @@ class Dashboard:
     def trigger_transaction(self) -> None:
         user_id = Prompt.ask("User ID", default="user_001")
         amount = float(
-            Prompt.ask("Amount (positive=credit, negative=debit)", default="-1200")
+            Prompt.ask("Amount (positive=credit, negative=debit)", default="-1200"),
         )
         merchant = Prompt.ask("Merchant", default="CLI Merchant")
         category = Prompt.ask("Category", default="general")
@@ -146,19 +146,19 @@ class Dashboard:
             "category": category,
         }
         result = self._request_backend(
-            "POST", "/api/transactions/trigger", json=payload
+            "POST", "/api/transactions/trigger", json=payload,
         )
         console.print_json(data=result)
 
     def trigger_scenario(self) -> None:
         user_id = Prompt.ask("User ID", default="user_001")
         scenario = Prompt.ask(
-            "Scenario", choices=list(SCENARIOS), default="large_medical_expense"
+            "Scenario", choices=list(SCENARIOS), default="large_medical_expense",
         )
         token = self._admin_token()
         payload = {"user_id": user_id, "scenario_type": scenario}
         result = self._request_proxy(
-            "POST", "/admin/scenario", json=payload, token=token
+            "POST", "/admin/scenario", json=payload, token=token,
         )
         console.print_json(data=result)
 
@@ -177,7 +177,7 @@ class Dashboard:
                     "merchant": "CLI Setup",
                     "category": "dining",
                     "description": "Seeded via dashboard",
-                }
+                },
             ]
         payload = {
             "user_id": user_id,
@@ -235,15 +235,14 @@ class Dashboard:
     def watch_events(self) -> None:
         console.print("[cyan]Streaming events. Press Ctrl+C to stop.[/cyan]")
         try:
-            with httpx.Client(timeout=None) as client:
-                with client.stream(
-                    "GET", f"{self.backend_url}/api/events/stream"
-                ) as resp:
-                    resp.raise_for_status()
-                    for line in resp.iter_lines():
-                        if line and line.startswith("data: "):
-                            payload = line[6:]
-                            console.print(f"[green]{payload}[/green]")
+            with httpx.Client(timeout=None) as client, client.stream(
+                "GET", f"{self.backend_url}/api/events/stream",
+            ) as resp:
+                resp.raise_for_status()
+                for line in resp.iter_lines():
+                    if line and line.startswith("data: "):
+                        payload = line[6:]
+                        console.print(f"[green]{payload}[/green]")
         except KeyboardInterrupt:
             console.print("\n[red]Stopped stream[/red]")
 
@@ -261,7 +260,7 @@ class Dashboard:
         url = f"{self.backend_url}{path}"
         with httpx.Client(timeout=self.http_timeout) as client:
             resp = client.request(
-                method, url, params=params, json=json, follow_redirects=True
+                method, url, params=params, json=json, follow_redirects=True,
             )
             resp.raise_for_status()
             return resp.json()
@@ -279,7 +278,7 @@ class Dashboard:
         url = f"{self.proxy_url}{path}"
         with httpx.Client(timeout=self.http_timeout) as client:
             resp = client.request(
-                method, url, params=params, json=json, headers=headers
+                method, url, params=params, json=json, headers=headers,
             )
             resp.raise_for_status()
             return resp.json()

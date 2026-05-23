@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test Runner - Unified test execution and coverage reporting
+"""Test Runner - Unified test execution and coverage reporting
 Runs tests and generates coverage report based on project type.
 
 Usage:
@@ -11,11 +10,11 @@ Supports:
     - Python: pytest, unittest
 """
 
+import json
 import subprocess
 import sys
-import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Fix Windows console encoding
 try:
@@ -207,7 +206,7 @@ def main():
 
     if result["tests_run"] > 0:
         print(
-            f"Tests: {result['tests_run']} total, {result['tests_passed']} passed, {result['tests_failed']} failed"
+            f"Tests: {result['tests_run']} total, {result['tests_passed']} passed, {result['tests_failed']} failed",
         )
 
     output = {
