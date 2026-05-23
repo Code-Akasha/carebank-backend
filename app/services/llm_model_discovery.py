@@ -1,7 +1,10 @@
 """LLM Model Discovery Service.
 
-Discovers available models from Ollama instance via configured tunnel.
-Includes caching with short TTL to reduce repeated tunnel calls.
+Discovers available models from configured LLM providers:
+- Ollama: via tunnel URL (local/ngrok)
+- Gemini: via google-genai SDK
+
+Includes caching with short TTL to reduce repeated API calls.
 """
 
 import logging
@@ -212,3 +215,108 @@ class LLMModelDiscoveryService:
         """
         _discovery_cache.clear(tunnel_url)
         logger.debug(f"Cleared discovery cache for {tunnel_url or 'all'}")
+
+
+# ---------------------------------------------------------------------------
+# Gemini Model Discovery
+# ---------------------------------------------------------------------------
+
+
+class GeminiModel:
+    """Represents an available Gemini model."""
+
+    def __init__(self, name: str, display_name: str, supported_actions: list[str]):
+        self.name = name
+        self.display_name = display_name
+        self.supported_actions = supported_actions
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "display_name": self.display_name,
+            "supported_actions": self.supported_actions,
+            "available": True,
+        }
+
+
+# Simple in-memory cache for Gemini model lists (keyed by masked API key prefix)
+_GEMINI_MODEL_CACHE: dict[str, tuple[datetime, list[GeminiModel]]] = {}
+_GEMINI_MODEL_CACHE_TTL = 120  # seconds
+
+
+class GeminiModelDiscovery:
+    """Discovers available Gemini models via the google-genai SDK."""
+
+    @staticmethod
+    def list_models(
+        api_key: str,
+        *,
+        only_generative: bool = True,
+        force_refresh: bool = False,
+    ) -> list[GeminiModel]:
+        """List available Gemini models for the given API key.
+
+        Args:
+            api_key: Google AI API key.
+            only_generative: If True, filter to models that support generateContent.
+            force_refresh: Skip in-memory cache.
+
+        Returns:
+            List of GeminiModel objects.
+
+        Raises:
+            ImportError: If google-genai is not installed.
+            Exception: On API errors.
+
+        """
+        cache_key = api_key[:8]  # Use prefix only — never log full key
+        now = datetime.utcnow()
+
+        if not force_refresh and cache_key in _GEMINI_MODEL_CACHE:
+            ts, cached = _GEMINI_MODEL_CACHE[cache_key]
+            if (now - ts).total_seconds() < _GEMINI_MODEL_CACHE_TTL:
+                logger.debug("Returning cached Gemini model list")
+                return cached
+
+        try:
+            from google import genai  # type: ignore[import]
+        except ImportError as exc:
+            raise ImportError(
+                "google-genai is not installed. Run: pip install google-genai"
+            ) from exc
+
+        client = genai.Client(api_key=api_key)
+        raw_models = client.models.list()
+
+        models: list[GeminiModel] = []
+        for m in raw_models:
+            actions: list[str] = list(getattr(m, "supported_actions", []) or [])
+            if only_generative and "generateContent" not in actions:
+                continue
+            name = str(getattr(m, "name", "") or "")
+            display_name = str(getattr(m, "display_name", name) or name)
+            models.append(GeminiModel(name=name, display_name=display_name, supported_actions=actions))
+
+        _GEMINI_MODEL_CACHE[cache_key] = (now, models)
+        logger.info("Discovered %d Gemini models", len(models))
+        return models
+
+    @staticmethod
+    def test_connectivity(api_key: str) -> dict[str, Any]:
+        """Verify the API key is valid and models are reachable.
+
+        Returns a dict compatible with ConnectivityTestResult.
+
+        """
+        try:
+            start = datetime.utcnow()
+            models = GeminiModelDiscovery.list_models(api_key, force_refresh=True)
+            elapsed_ms = (datetime.utcnow() - start).total_seconds() * 1000
+            return {
+                "status": "ok",
+                "models_count": len(models),
+                "response_time_ms": round(elapsed_ms, 2),
+            }
+        except Exception as exc:
+            logger.error("Gemini connectivity test failed: %s", exc)
+            return {"status": "error", "error": str(exc)}
