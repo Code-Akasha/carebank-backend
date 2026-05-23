@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.core.config import get_settings
 from app.core.database import init_db
@@ -91,6 +92,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Trust proxy headers (X-Forwarded-For, X-Forwarded-Proto) so generated
+# absolute URLs / redirect locations use the original client scheme (https)
+# when running behind TLS-terminating load balancers / container ingress.
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 app.include_router(auth_router)
 app.include_router(bills_router)
