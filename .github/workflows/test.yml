@@ -22,6 +22,8 @@ concurrency:
 jobs:
   test:
     name: Run Tests (Python ${{ matrix.python-version }})
+    needs: [lint]
+    if: ${{ needs.lint.result == 'success' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
