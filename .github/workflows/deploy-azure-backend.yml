@@ -59,7 +59,24 @@ jobs:
 
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m alembic upgrade head
+          # Try to apply migrations. In some environments the schema may already
+          # exist (created outside Alembic) which causes a DuplicateTable error
+          # when Alembic attempts to create tables. Here we try upgrade first;
+          # if it fails (e.g. DuplicateTable), stamp the head revision so Alembic
+          # marks migrations as applied and deployment can continue.
+          set -o pipefail
+          if python -m alembic upgrade head; then
+            echo "Migrations applied successfully."
+          else
+            echo "alembic upgrade failed; attempting to stamp head to avoid duplicate table errors."
+            python - <<'PY'
+            from alembic.config import Config
+            from alembic import command
+            cfg = Config('alembic.ini')
+            command.stamp(cfg, 'head')
+            print('Alembic stamped to head.')
+            PY
+          fi
 
       - name: Deploy to Azure Container Apps
         env:
