@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows:
       - "Backend Tests"
-    types: 
+    types:
       - completed
   workflow_dispatch:
 
@@ -47,6 +47,10 @@ jobs:
       - name: Run DB migrations (if `DATABASE_URL` secret set)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BANKING_API_URL: ${{ secrets.BANKING_API_URL }}
+          BANKING_API_SECRET: ${{ secrets.BANKING_API_SECRET }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "Skipping DB migrations because DATABASE_URL secret is not set."
@@ -59,8 +63,13 @@ jobs:
 
       - name: Deploy to Azure Container Apps
         env:
-          BACKEND_PUBLIC_URL: https://backend.politefield-3469f7f1.centralindia.azurecontainerapps.io
-          CORS_ORIGINS: '["https://carebank-frontend.vercel.app","https://carebank-frontend-git-develop-jefino9488s-projects.vercel.app","https://carebank-frontend-77s9ncsgx-jefino9488s-projects.vercel.app"]'
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          BANKING_API_URL: ${{ secrets.BANKING_API_URL }}
+          BANKING_API_SECRET: ${{ secrets.BANKING_API_SECRET }}
+          BACKEND_PUBLIC_URL: ${{ secrets.BACKEND_PUBLIC_URL }}
+          CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           max_attempts=6
           attempt=1
@@ -69,7 +78,7 @@ jobs:
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-              --set-env-vars "DB_SCHEMA_MODE=alembic" "BACKEND_PUBLIC_URL=$BACKEND_PUBLIC_URL" "CORS_ORIGINS=$CORS_ORIGINS" "ENVIRONMENT=production"; then
+              --set-env-vars "DB_SCHEMA_MODE=alembic" "DATABASE_URL=secretref:database-url" "REDIS_URL=secretref:redis-url" "BANKING_API_URL=$BANKING_API_URL" "BANKING_API_SECRET=secretref:banking-api-secret" "MOCKBANK_WEBHOOK_SECRET=secretref:banking-api-secret" "PROXY_WEBHOOK_SECRET=secretref:banking-api-secret" "BACKEND_PUBLIC_URL=$BACKEND_PUBLIC_URL" "CORS_ORIGINS=$CORS_ORIGINS" "GEMINI_API_KEY=secretref:gemini-api-key" "ENVIRONMENT=production"; then
               exit 0
             fi
 
