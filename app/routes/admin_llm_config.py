@@ -25,7 +25,10 @@ from app.schemas.admin_llm import (
 )
 from app.services.agent_prompt_service import AgentPromptService
 from app.services.llm_admin_service import LLMAdminService
-from app.services.llm_model_discovery import GeminiModelDiscovery, LLMModelDiscoveryService
+from app.services.llm_model_discovery import (
+    GeminiModelDiscovery,
+    LLMModelDiscoveryService,
+)
 
 logger = logging.getLogger(__name__)
 

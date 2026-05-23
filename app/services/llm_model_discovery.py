@@ -295,7 +295,11 @@ class GeminiModelDiscovery:
                 continue
             name = str(getattr(m, "name", "") or "")
             display_name = str(getattr(m, "display_name", name) or name)
-            models.append(GeminiModel(name=name, display_name=display_name, supported_actions=actions))
+            models.append(
+                GeminiModel(
+                    name=name, display_name=display_name, supported_actions=actions
+                )
+            )
 
         _GEMINI_MODEL_CACHE[cache_key] = (now, models)
         logger.info("Discovered %d Gemini models", len(models))

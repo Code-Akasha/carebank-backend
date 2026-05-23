@@ -158,7 +158,9 @@ def _build_llm_from_admin_config(config: dict, temperature: float, max_tokens: i
         if not token:
             return None, "template_fallback"
         try:
-            llm = _build_gemini_llm(token, model or "gemini-2.5-flash", temperature, max_tokens)
+            llm = _build_gemini_llm(
+                token, model or "gemini-2.5-flash", temperature, max_tokens
+            )
             return llm, f"gemini:{model or 'gemini-2.5-flash'}"
         except ImportError:
             logger.warning("langchain-google-genai not installed")
