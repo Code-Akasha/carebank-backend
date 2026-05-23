@@ -3,7 +3,26 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+try:
+    from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+except Exception:  # pragma: no cover - older starlette in tests may not provide this
+    # Minimal fallback ASGI middleware that honors X-Forwarded-Proto so the
+    # application sees the original client scheme when behind a TLS
+    # terminating proxy. This avoids importing a missing symbol in older
+    # starlette versions used by test environments.
+    class ProxyHeadersMiddleware:
+        def __init__(self, app, trusted_hosts: str | None = None):
+            self.app = app
+
+        async def __call__(self, scope, receive, send):
+            # Only operate on HTTP requests
+            if scope.get("type") == "http":
+                headers = {k.decode(): v.decode() for k, v in scope.get("headers", [])}
+                proto = headers.get("x-forwarded-proto")
+                if proto:
+                    # take the first value if multiple
+                    scope["scheme"] = proto.split(",")[0].strip()
+            await self.app(scope, receive, send)
 
 from app.core.config import get_settings
 from app.core.database import init_db
