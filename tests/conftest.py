@@ -19,6 +19,7 @@ os.environ.setdefault("REDIS_URL", "redis://localhost:6379")
 os.environ["OPENAI_API_KEY"] = ""
 os.environ["GEMINI_API_KEY"] = ""
 os.environ["OLLAMA_BASE_URL"] = ""
+os.environ.setdefault("BACKEND_PUBLIC_URL", "https://localhost:8000")
 os.environ.setdefault("BANKING_API_URL", "http://localhost:8001")
 os.environ["BANKING_API_SECRET"] = "test-banking-secret-0123456789abcdef-long"
 os.environ["JWT_SECRET"] = "test-jwt-secret-0123456789abcdef-long"
@@ -275,3 +276,63 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "integration: integration tests")
     config.addinivalue_line("markers", "e2e: end-to-end tests")
     config.addinivalue_line("markers", "slow: slow tests")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def stub_llm_classifiers():
+    """During tests, avoid calling external LLM providers.
+
+    Monkeypatch coordinator-level LLM classification helpers to use
+    the local keyword-based fallbacks so tests are deterministic
+    and don't require external API keys or services.
+    """
+    try:
+        import app.agents.coordinator as coordinator
+        # Ensure conversation state uses in-memory store during tests
+        try:
+            from app.services.conversation_store import InMemoryConversationStore
+
+            coordinator._conversation_store = InMemoryConversationStore(max_history=50)
+        except Exception:
+            pass
+        # Replace structured LLM classification hooks with safe fallbacks.
+        def _safe_intent_classifier(message, history):
+            # If message looks like an action request, prefer 'actions' intent.
+            try:
+                action = coordinator._classify_action_request_fallback(message)
+                if action and action.is_action_request:
+                    return coordinator.ClassificationResult(
+                        intent="actions",
+                        confidence=0.9,
+                        parameters={},
+                    )
+                # Heuristic: if message contains an action verb and an amount or destination, treat as actions.
+                lower = message.lower()
+                amount = None
+                try:
+                    amount = coordinator._extract_amount_from_text(message)
+                except Exception:
+                    amount = None
+                action_verbs = ("pay", "transfer", "send", "schedule", "set up", "setup", "auto", "remind", "book", "create")
+                has_verb = any(v in lower for v in action_verbs)
+                has_destination = " to " in lower or " my " in lower or "for " in lower
+                if has_verb and (amount is not None or has_destination):
+                    return coordinator.ClassificationResult(
+                        intent="actions",
+                        confidence=0.88,
+                        parameters={"amount": float(amount) if amount is not None else None},
+                    )
+            except Exception:
+                pass
+
+            # Otherwise use keyword heuristic.
+            return coordinator._classify_intent_keywords(message)
+
+        coordinator._classify_intent_with_llm = _safe_intent_classifier
+        coordinator._classify_action_request_with_llm = (
+            lambda message, history: coordinator._classify_action_request_fallback(message)
+        )
+    except Exception:
+        # If coordinator can't be imported for some reason, skip stubbing.
+        pass
+    yield
