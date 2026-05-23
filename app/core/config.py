@@ -75,6 +75,16 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "JWT_SECRET is required (or provide BANKING_API_SECRET to derive one)"
                 )
+
+        if self.environment.lower() in {"production", "prod"}:
+            backend_public_url = self.backend_public_url.strip()
+            if not backend_public_url.startswith("https://"):
+                raise ValueError(
+                    "BACKEND_PUBLIC_URL must use https:// in production"
+                )
+
+            if not (self.cors_origins or "").strip():
+                raise ValueError("CORS_ORIGINS is required in production")
         return self
 
     def get_cors_origins(self) -> list[str]:
