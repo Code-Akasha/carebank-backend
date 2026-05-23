@@ -32,7 +32,7 @@ class AgentPromptService:
         return True, None
 
     @staticmethod
-    async def get_active_prompt(
+    def get_active_prompt(
         db: Session,
         agent_name: str,
         environment: str,
@@ -51,7 +51,7 @@ class AgentPromptService:
         )
 
     @staticmethod
-    async def get_prompt_history(
+    def get_prompt_history(
         db: Session,
         agent_name: str,
         environment: str,
@@ -93,7 +93,7 @@ class AgentPromptService:
             raise ValueError(f"Invalid prompt: {error}")
 
         # Get current active version to determine next version number
-        active_prompt = await AgentPromptService.get_active_prompt(
+        active_prompt = AgentPromptService.get_active_prompt(
             db,
             agent_name,
             environment,
@@ -154,7 +154,7 @@ class AgentPromptService:
         - Creates audit log entry
         """
         # Get current active version
-        active_prompt = await AgentPromptService.get_active_prompt(
+        active_prompt = AgentPromptService.get_active_prompt(
             db,
             agent_name,
             environment,
@@ -235,7 +235,7 @@ class AgentPromptService:
         }
 
         for agent_name, default_prompt in default_agents.items():
-            existing = await AgentPromptService.get_active_prompt(
+            existing = AgentPromptService.get_active_prompt(
                 db,
                 agent_name,
                 environment,
