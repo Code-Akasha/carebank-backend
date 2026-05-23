@@ -69,13 +69,7 @@ jobs:
             echo "Migrations applied successfully."
           else
             echo "alembic upgrade failed; attempting to stamp head to avoid duplicate table errors."
-            python - <<'PY'
-            from alembic.config import Config
-            from alembic import command
-            cfg = Config('alembic.ini')
-            command.stamp(cfg, 'head')
-            print('Alembic stamped to head.')
-            PY
+            python -c "from alembic.config import Config; from alembic import command; cfg = Config('alembic.ini'); command.stamp(cfg, 'head'); print('Alembic stamped to head.')"
           fi
 
       - name: Deploy to Azure Container Apps
