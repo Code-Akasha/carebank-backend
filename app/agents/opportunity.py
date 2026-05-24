@@ -179,7 +179,10 @@ class OpportunityAgent(BaseAgent):
     ) -> dict[str, Any] | None:
         if not products:
             return None
-        provider_lookup = {provider["id"]: provider for provider in providers}
+        provider_lookup = {
+            provider.get("id", provider.get("provider_id", str(i))): provider
+            for i, provider in enumerate(providers)
+        }
         active_providers = {
             acct["provider_id"]
             for acct in accounts

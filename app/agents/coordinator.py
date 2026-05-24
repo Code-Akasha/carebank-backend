@@ -1308,6 +1308,20 @@ def synthesize_response(state: CoordinatorState) -> CoordinatorState:
     """Send all agent results through CommunicationAgent for NLG synthesis."""
     agent_results = state.get("agent_results", [])
 
+    # Handle errors: short-circuit with the error response if any agent failed
+    if agent_results:
+        for result in agent_results:
+            if result.get("status") == AgentStatus.error:
+                return {
+                    **state,
+                    "agent_response": result.get(
+                        "response",
+                        "I'm sorry, I encountered an issue processing your request.",
+                    ),
+                    "agent_used": result.get("agent_name", "Coordinator"),
+                    "response_metadata": result.get("metadata", {}),
+                }
+
     # Handle needs_input: generate a follow-up question
     if agent_results and agent_results[-1].get("status") == AgentStatus.needs_input:
         required = agent_results[-1].get("required_params", [])
