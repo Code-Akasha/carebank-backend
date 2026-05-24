@@ -115,19 +115,17 @@ def _template_fallback(
         }
 
     payload = _parse_json_like_context(data_context)
-    if (
-        isinstance(payload, list)
-        and payload
-        and isinstance(payload[-1], dict)
-        and payload[-1].get("response")
-    ):
-        return {
-            "text": payload[-1]["response"],
-            "provider": "template_fallback",
-            "persona": persona,
-            "model": "template_fallback",
-            "tokens": None,
-        }
+    if isinstance(payload, list) and payload:
+        # Find the first non-empty response from the end
+        for item in reversed(payload):
+            if isinstance(item, dict) and item.get("response"):
+                return {
+                    "text": item["response"],
+                    "provider": "template_fallback",
+                    "persona": persona,
+                    "model": "template_fallback",
+                    "tokens": None,
+                }
     elif isinstance(payload, dict) and payload.get("response"):
         return {
             "text": payload["response"],
