@@ -114,6 +114,39 @@ def _template_fallback(
             "tokens": None,
         }
 
+    payload = _parse_json_like_context(data_context)
+    if (
+        isinstance(payload, list)
+        and payload
+        and isinstance(payload[-1], dict)
+        and payload[-1].get("response")
+    ):
+        return {
+            "text": payload[-1]["response"],
+            "provider": "template_fallback",
+            "persona": persona,
+            "model": "template_fallback",
+            "tokens": None,
+        }
+    elif isinstance(payload, dict) and payload.get("response"):
+        return {
+            "text": payload["response"],
+            "provider": "template_fallback",
+            "persona": persona,
+            "model": "template_fallback",
+            "tokens": None,
+        }
+
+    # Clean up data_context for string interpolation
+    clean_context = data_context
+    if isinstance(payload, str):
+        clean_context = payload
+    if clean_context.startswith("User query: "):
+        clean_context = clean_context.replace("User query: ", "", 1)
+
+    # Capitalize appropriately or make it fit the sentence if it's just a word
+    clean_context = str(clean_context).strip(' "')
+
     common_tail = (
         "I avoid making assumptions about your financial data to ensure accuracy. "
         "Please ask me directly about your balance, transactions, or forecast for exact numbers."
@@ -121,19 +154,19 @@ def _template_fallback(
 
     if persona == "Cautious Saver":
         text = (
-            f"Let's prioritize stability while addressing your {data_context}. "
+            f"Let's prioritize stability while addressing your {clean_context}. "
             f"Suggested focus: {task_description}. "
             f"{common_tail}"
         )
     elif persona == "Social Spender":
         text = (
-            f"Let's work on your {data_context} in a way that fits your budget. "
+            f"Let's work on your {clean_context} in a way that fits your budget. "
             f"Suggested focus: {task_description}. "
             f"{common_tail}"
         )
     else:
         text = (
-            f"I can help with that regarding your {data_context}. "
+            f"I can help with that regarding your {clean_context}. "
             f"Suggested focus: {task_description}. "
             f"{common_tail}"
         )
