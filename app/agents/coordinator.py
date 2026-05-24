@@ -544,6 +544,29 @@ def _should_resume_pending_intent(
         return _is_pending_planning_follow_up(message, history)
     if pending_intent == "actions":
         return _is_pending_actions_follow_up(message)
+
+    # Context Switch Detection for other intents (e.g., opportunity, payment)
+    message_lower = message.lower().strip()
+
+    # 1. Direct confirmations / rejections are follow-ups
+    if (
+        message_lower in _ACTIONS_FOLLOW_UP_CONFIRMATIONS
+        or message_lower in _ACTIONS_FOLLOW_UP_REJECTIONS
+    ):
+        return True
+
+    # 2. Payment specific follow-ups (MPINs, amounts)
+    if pending_intent == "payment":
+        if message_lower.isdigit():
+            return True
+        if _is_amount_only_message(message_lower):
+            return True
+
+    # 3. Use keyword classifier to see if it strongly suggests a DIFFERENT intent
+    keyword_res = _classify_intent_keywords(message)
+    if keyword_res.intent != "general" and keyword_res.intent != pending_intent:
+        return False
+
     return True
 
 

@@ -55,8 +55,76 @@ class OpportunityAgent(BaseAgent):
                 subs.append(txn)
         return subs
 
+    @staticmethod
+    def _conversation_state_from_context(ctx) -> dict:
+        state = (
+            ctx.model_extra.get("conversation_state")
+            if hasattr(ctx, "model_extra")
+            else None
+        )
+        if isinstance(state, dict):
+            return state
+        return {}
+
     def _invoke(self, agent_input: AgentInput) -> AgentOutput:
         user_id = agent_input.user_id
+
+        conversation_state = self._conversation_state_from_context(agent_input.context)
+        opp_context = conversation_state.get("opportunity_context", {})
+
+        if opp_context.get("is_comparing"):
+            product_name = opp_context.get("product_name", "the recommended product")
+            provider = opp_context.get("provider", "your bank")
+            rate = opp_context.get("rate", 0)
+            amount = opp_context.get("amount", 0)
+
+            try:
+                earnings = float(amount) * (float(rate) / 100.0)
+            except ValueError:
+                earnings = 0
+
+            # Use LLM to dynamically handle the user's follow-up (questions, yes, no, etc.)
+            from app.services.llm import get_llm_provider
+            from langchain_core.prompts import PromptTemplate
+
+            llm, _ = get_llm_provider(temperature=0.3)
+            if llm:
+                prompt = PromptTemplate.from_template(
+                    "You are a helpful financial assistant for CareBank. "
+                    "You recently suggested moving idle cash to a better product. "
+                    "Context: {context}\n"
+                    "User's reply: {message}\n"
+                    "If the user is agreeing, confirm the breakdown (Amount: {amount}, Rate: {rate}%, Earnings: {earnings}/yr) and ask if they want to initiate the transfer. "
+                    "If the user is rejecting, acknowledge it gracefully. "
+                    "If the user is asking a question (e.g. risks, details), answer it based on the context. "
+                    "Keep it concise (1-3 sentences)."
+                )
+                context_str = f"Product: {product_name}, Provider: {provider}, Rate: {rate}%, Idle Cash: {amount}, Est. Annual Earnings: {earnings}"
+                try:
+                    chain = prompt | llm
+                    llm_response = chain.invoke(
+                        {
+                            "context": context_str,
+                            "message": agent_input.message,
+                            "amount": amount,
+                            "rate": rate,
+                            "earnings": earnings,
+                        }
+                    )
+                    response = llm_response.content.strip()
+                except Exception as e:
+                    logger.warning("OpportunityAgent LLM follow-up failed: %s", e)
+                    response = "I can help you proceed with that transfer, or we can explore other options. What would you prefer?"
+            else:
+                response = "I can help you proceed with that transfer, or we can explore other options. What would you prefer?"
+
+            return AgentOutput(
+                response=response,
+                agent_name=self.name,
+                confidence=1.0,
+                metadata={"intent_handled": "opportunity", "clear_pending": True},
+            )
+
         transactions = self._fetch_transactions(user_id)
         products = self._fetch_products()
         accounts = self._fetch_accounts(user_id)
@@ -75,6 +143,7 @@ class OpportunityAgent(BaseAgent):
 
         subscriptions = self._detect_unused_subscriptions(transactions)
 
+        pending_state = None
         if subscriptions:
             sub = subscriptions[0]
             amount = abs(sub["amount"])
@@ -88,6 +157,17 @@ class OpportunityAgent(BaseAgent):
                     f"Since you're already connected with {product['provider_name']}, their {product['name']} is offering "
                     f"{product.get('interest_rate', 0)}% APR. Want me to tee up the details?"
                 )
+                pending_state = {
+                    "pending_intent": "opportunity",
+                    "opportunity_context": {
+                        "is_comparing": True,
+                        "product_name": product["name"],
+                        "provider": product["provider_name"],
+                        "rate": product.get("interest_rate", 0),
+                        "amount": amount
+                        * 12,  # Annualized savings if they cancel subscription
+                    },
+                }
             subs_flagged = 1
         else:
             target_account = self._pick_underutilized_account(accounts)
@@ -99,19 +179,33 @@ class OpportunityAgent(BaseAgent):
                     f"into {product['name']} ({product['interest_rate']}% via {product['provider_name']}), "
                     "you could earn more on idle cash. Should I prepare the comparison?"
                 )
+                pending_state = {
+                    "pending_intent": "opportunity",
+                    "opportunity_context": {
+                        "is_comparing": True,
+                        "product_name": product["name"],
+                        "provider": product["provider_name"],
+                        "rate": product.get("interest_rate", 0),
+                        "amount": target_account["available_to_move"],
+                    },
+                }
             else:
                 response += "I can still scout for higher-yield products if you like."
             subs_flagged = 0
+
+        metadata = {
+            "products_found": 1,
+            "subscriptions_flagged": subs_flagged,
+            "intent_handled": "opportunity",
+        }
+        if pending_state:
+            metadata["pending_state"] = pending_state
 
         return AgentOutput(
             response=response,
             agent_name=self.name,
             confidence=0.8,
-            metadata={
-                "products_found": 1,
-                "subscriptions_flagged": subs_flagged,
-                "intent_handled": "opportunity",
-            },
+            metadata=metadata,
         )
 
     def _fetch_transactions(self, user_id: str) -> list[dict[str, Any]]:
