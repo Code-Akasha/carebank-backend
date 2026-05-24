@@ -544,6 +544,7 @@ class ConversationalPaymentAgent(BaseAgent):
                     "clear_pending": clear_pending,
                     "ui_actions": ui_actions,
                     "error": result.error,
+                    "intent_handled": "payment",
                 },
             )
         finally:

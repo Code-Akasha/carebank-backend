@@ -107,7 +107,11 @@ class OpportunityAgent(BaseAgent):
             response=response,
             agent_name=self.name,
             confidence=0.8,
-            metadata={"products_found": 1, "subscriptions_flagged": subs_flagged},
+            metadata={
+                "products_found": 1,
+                "subscriptions_flagged": subs_flagged,
+                "intent_handled": "opportunity",
+            },
         )
 
     def _fetch_transactions(self, user_id: str) -> list[dict[str, Any]]:
