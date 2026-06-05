@@ -274,12 +274,12 @@ class IntelligenceAgent(BaseAgent):
     # ------------------------------------------------------------------
     def _handle_summary(self, user_id: str, ctx) -> AgentOutput:
         transactions = self._fetch_transactions(user_id)
-        
+
         # Determine total spending, total income
         total_spending = 0.0
         total_income = 0.0
         by_category = {}
-        
+
         for txn in transactions:
             amt = txn.get("amount", 0.0)
             if amt < 0:
@@ -288,10 +288,15 @@ class IntelligenceAgent(BaseAgent):
                 by_category[cat] = by_category.get(cat, 0.0) + abs(amt)
             else:
                 total_income += amt
-                
+
         # Sort categories
-        top_categories = [{"category": k, "amount": v} for k, v in sorted(by_category.items(), key=lambda x: x[1], reverse=True)[:5]]
-        
+        top_categories = [
+            {"category": k, "amount": v}
+            for k, v in sorted(by_category.items(), key=lambda x: x[1], reverse=True)[
+                :5
+            ]
+        ]
+
         return AgentOutput(
             agent_name=self.name,
             confidence=0.95,

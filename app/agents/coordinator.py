@@ -359,7 +359,14 @@ _INTENT_KEYWORDS: dict[str, list[str]] = {
     ],
     "what_if": ["what if", "what-if", "impact", "simulate", "scenario"],
     "affordability": ["can i buy", "should i buy", "afford", "purchase"],
-    "summary": ["summarize", "summary", "list bills", "list my bills", "spending history", "overview"],
+    "summary": [
+        "summarize",
+        "summary",
+        "list bills",
+        "list my bills",
+        "spending history",
+        "overview",
+    ],
     "advice": [
         "improve",
         "suggestions",

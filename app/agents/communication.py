@@ -333,18 +333,21 @@ class CommunicationAgent(BaseAgent):
             metadata = result.get("metadata") or {}
             if metadata.get("intent_handled") != "summary":
                 continue
-            
+
             total_spending = metadata.get("total_spending", 0.0)
             total_income = metadata.get("total_income", 0.0)
             tx_count = metadata.get("transaction_count", 0)
-            
+
             summary_text = f"You had {tx_count} transactions recently. Your total spending was ₹{total_spending:,.2f} and your total income was ₹{total_income:,.2f}."
-            
+
             top_categories = metadata.get("top_categories", [])
             if top_categories:
-                cats_str = ", ".join(f"{c['category'].title()} (₹{c['amount']:,.2f})" for c in top_categories[:3])
+                cats_str = ", ".join(
+                    f"{c['category'].title()} (₹{c['amount']:,.2f})"
+                    for c in top_categories[:3]
+                )
                 summary_text += f" Your top spending categories were: {cats_str}."
-                
+
             return summary_text
         return None
 
