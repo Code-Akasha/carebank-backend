@@ -168,6 +168,7 @@ _INTENT_TO_AGENT: dict[str, str] = {
     "auto_savings": "AutoSavingsAgent",
     "opportunity": "OpportunityAgent",
     "affordability": "IntelligenceAgent",
+    "summary": "IntelligenceAgent",
     "planning": "CommunicationAgent",
     "general": "CommunicationAgent",
     "payment": "PaymentAgent",
@@ -200,7 +201,7 @@ class ClassificationResult(BaseModel):
     """Structured output from LLM intent classification."""
 
     intent: str = Field(
-        description="One of: actions, payment, balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, planning, general",
+        description="One of: actions, payment, balance, forecast, health_score, what_if, auto_savings, opportunity, affordability, summary, planning, general",
     )
     confidence: float = Field(description="0.0 to 1.0 confidence in classification")
     parameters: dict = Field(
@@ -297,6 +298,7 @@ Intent codes (use these exactly):
 - health_score: Financial health assessment
 - what_if: Scenario analysis ("what if I spend...", impact analysis)
 - affordability: "Can I afford...", "should I buy..." purchase questions
+- summary: Summarize transaction history, list spending and income
 - advice: "How can I save more", "improve my spending", "where am I overspending", "cut back" advice
 - auto_savings: Savings advice and micro-savings
 - payment: Make a one-time peer-to-peer or bill payment
@@ -357,6 +359,7 @@ _INTENT_KEYWORDS: dict[str, list[str]] = {
     ],
     "what_if": ["what if", "what-if", "impact", "simulate", "scenario"],
     "affordability": ["can i buy", "should i buy", "afford", "purchase"],
+    "summary": ["summarize", "summary", "list bills", "list my bills", "spending history", "overview"],
     "advice": [
         "improve",
         "suggestions",

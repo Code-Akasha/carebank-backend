@@ -50,6 +50,7 @@ class IntelligenceAgent(BaseAgent):
             "future_predictions",
             "balance_inquiry",
             "affordability_check",
+            "transaction_summary",
         ]
 
     def _invoke(self, agent_input: AgentInput) -> AgentOutput:
@@ -78,6 +79,9 @@ class IntelligenceAgent(BaseAgent):
 
         if intent == "advice":
             return self._handle_advice(user_id)
+
+        if intent == "summary":
+            return self._handle_summary(user_id, ctx)
 
         # Default: return health score data
         return self._handle_health_score(user_id)
@@ -262,6 +266,41 @@ class IntelligenceAgent(BaseAgent):
                 "intent_handled": "balance",
                 "current_balance": current_balance,
                 "available_balance": available_balance,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # Summary — returns structured transaction summary
+    # ------------------------------------------------------------------
+    def _handle_summary(self, user_id: str, ctx) -> AgentOutput:
+        transactions = self._fetch_transactions(user_id)
+        
+        # Determine total spending, total income
+        total_spending = 0.0
+        total_income = 0.0
+        by_category = {}
+        
+        for txn in transactions:
+            amt = txn.get("amount", 0.0)
+            if amt < 0:
+                total_spending += abs(amt)
+                cat = txn.get("category", "other")
+                by_category[cat] = by_category.get(cat, 0.0) + abs(amt)
+            else:
+                total_income += amt
+                
+        # Sort categories
+        top_categories = [{"category": k, "amount": v} for k, v in sorted(by_category.items(), key=lambda x: x[1], reverse=True)[:5]]
+        
+        return AgentOutput(
+            agent_name=self.name,
+            confidence=0.95,
+            metadata={
+                "intent_handled": "summary",
+                "total_spending": round(total_spending, 2),
+                "total_income": round(total_income, 2),
+                "top_categories": top_categories,
+                "transaction_count": len(transactions),
             },
         )
 

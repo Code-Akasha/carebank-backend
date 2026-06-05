@@ -1,0 +1,261 @@
+# ============================================================================
+# CareBank — User Flow Chart (Reference Recreated)
+# ============================================================================
+# Render: d2 --theme 200 --layout dagre carebank_user_flow.d2 out.svg
+# ============================================================================
+
+direction: right
+
+# ─── Styles ──────────────────────────────────────────────────────────────────
+
+classes: {
+  action_node: {
+    shape: rectangle
+    style: {
+      fill: white
+      stroke: "#cbd5e1"
+      stroke-width: 1
+      border-radius: 4
+      shadow: true
+      font-size: 14
+    }
+  }
+  sub_node: {
+    shape: rectangle
+    style: {
+      fill: "#f8fafc"
+      stroke: "#e2e8f0"
+      border-radius: 4
+      font-size: 12
+    }
+  }
+  container: {
+    style: {
+      fill: transparent
+      stroke: "#94a3b8"
+      stroke-width: 2
+      border-radius: 8
+      font-size: 18
+      bold: true
+    }
+  }
+  highlight_node: {
+    shape: rectangle
+    style: {
+      fill: "#f0fdf4"
+      stroke: "#16a34a"
+      border-radius: 4
+      shadow: true
+      font-size: 14
+    }
+  }
+  db_node: {
+    shape: cylinder
+    style: {
+      fill: "#e0f2fe"
+      stroke: "#0284c7"
+      font-size: 12
+    }
+  }
+}
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  1. Entry Flow (Left)                                                      ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+User: {
+  shape: person
+  icon: https://api.iconify.design/mdi:account-tie.svg?color=%231e40af
+  style: { fill: transparent; stroke: transparent; font-size: 16; bold: true }
+}
+
+Open App: {
+  class: action_node
+  label: "Open CareBank App"
+  icon: https://api.iconify.design/mdi:cellphone.svg?color=%23475569
+}
+
+Auth: {
+  class: action_node
+  label: "Create Account\n/ Login"
+  icon: https://api.iconify.design/mdi:login.svg?color=%23475569
+}
+
+Onboarding: {
+  class: action_node
+  label: "User Onboarding\n(Setup MPIN)"
+  icon: https://api.iconify.design/mdi:account-cog.svg?color=%23475569
+}
+
+Backend Setup: {
+  class: db_node
+  label: "Backend DB Setup\nCreate Profile &\nSeed Synthetic Data"
+  icon: https://api.iconify.design/mdi:database.svg?color=%230284c7
+}
+
+# Flow Connections
+User -> Open App
+Open App -> Auth
+Auth -> Onboarding
+Onboarding -> Backend Setup: "Triggers Data Sync" { style.animated: true; style.stroke-dash: 5 }
+
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  2. Dashboard Core (Middle)                                                ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+Dashboard Core: {
+  class: container
+  label: "Dashboard"
+  
+  View Dashboard: {
+    class: action_node
+    label: "View Dashboard\n(Balances & TXs)"
+    icon: https://api.iconify.design/mdi:view-dashboard.svg?color=%230f172a
+  }
+  
+  Open Chat: {
+    class: action_node
+    label: "Open AI Chat"
+    icon: https://api.iconify.design/mdi:chat-processing.svg?color=%230ea5e9
+  }
+  
+  Send Query: {
+    class: action_node
+    label: "Send Financial\nQuery / Command"
+    icon: https://api.iconify.design/mdi:send-circle.svg?color=%2310b981
+  }
+  
+  Coordinator: {
+    class: highlight_node
+    label: "LangGraph Coordinator\n(Intent Classification)"
+    icon: https://api.iconify.design/mdi:brain.svg?color=%237c3aed
+  }
+  
+  View Dashboard -> Open Chat
+  Open Chat -> Send Query
+  Send Query -> Coordinator: "API /api/chat" { style.animated: true }
+}
+
+Onboarding -> Dashboard Core.View Dashboard: "Enters App" { style.animated: true; style.stroke-width: 2 }
+
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  3. AI Agent Processing (Right)                                            ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+Agent Processing: {
+  class: container
+  label: "AI Agent Processing"
+  
+  Intelligence: {
+    class: action_node
+    label: "Intelligence Agent"
+    icon: https://api.iconify.design/mdi:chart-line.svg?color=%232563eb
+  }
+  
+  Intel Details: {
+    shape: rectangle
+    style.fill: transparent
+    style.stroke: transparent
+    
+    Health Score: { class: sub_node; label: "Compute Health Score" }
+    WhatIf Forecasts: { class: sub_node; label: "What-If Forecasts" }
+  }
+  Intelligence -> Intel Details: "Executes"
+  
+  Payment: {
+    class: action_node
+    label: "Payment Agent"
+    icon: https://api.iconify.design/mdi:cash-fast.svg?color=%23ea580c
+  }
+  
+  Payment Details: {
+    shape: rectangle
+    style.fill: transparent
+    style.stroke: transparent
+    
+    Verify MPIN: { class: sub_node; label: "Verify MPIN" }
+    Proxy Webhook: { class: sub_node; label: "Trigger Bank Webhook" }
+  }
+  Payment -> Payment Details: "Multi-Turn Auth"
+  
+  Opportunity: {
+    class: action_node
+    label: "Auto-Savings &\nOpportunity Agent"
+    icon: https://api.iconify.design/mdi:piggy-bank.svg?color=%23db2777
+  }
+  
+  Opp Details: {
+    shape: rectangle
+    style.fill: transparent
+    style.stroke: transparent
+    
+    Micro Savings: { class: sub_node; label: "Analyze Spends" }
+    Product Recs: { class: sub_node; label: "Product Recs" }
+  }
+  Opportunity -> Opp Details: "Scans Data"
+}
+
+Dashboard Core.Coordinator -> Agent Processing.Intelligence: "Inquiry Intent" { style.animated: true; style.stroke-width: 2; style.stroke: "#2563eb" }
+Dashboard Core.Coordinator -> Agent Processing.Payment: "Action Intent" { style.animated: true; style.stroke-width: 2; style.stroke: "#ea580c" }
+Dashboard Core.Coordinator -> Agent Processing.Opportunity: "Advice Intent" { style.animated: true; style.stroke-width: 2; style.stroke: "#db2777" }
+
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  4. Compliance & Delivery (Bottom Left)                                    ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+Response Pipeline: {
+  class: container
+  label: "Compliance & Delivery"
+  
+  NLG: {
+    class: action_node
+    label: "Communication Agent\n(NLG Synthesis)"
+    icon: https://api.iconify.design/mdi:message-draw.svg?color=%234f46e5
+  }
+  
+  Compliance: {
+    class: highlight_node
+    label: "Compliance Guard\n(Regulations & Disclaimers)"
+    icon: https://api.iconify.design/mdi:shield-check.svg?color=%23eab308
+  }
+  
+  Delivery: {
+    shape: rectangle
+    style.fill: transparent
+    style.stroke: transparent
+    
+    SSE: {
+      class: action_node
+      label: "Live SSE Updates"
+      icon: https://api.iconify.design/mdi:broadcast.svg?color=%2314b8a6
+    }
+    Render UI: {
+      class: action_node
+      label: "Render Chat UI"
+      icon: https://api.iconify.design/mdi:check-circle.svg?color=%2322c55e
+    }
+  }
+  
+  NLG -> Compliance: "Draft Payload"
+  Compliance -> Delivery.SSE: "Approved"
+  Compliance -> Delivery.Render UI: "Approved"
+}
+
+# Returning flow from Agents to Output Pipeline
+Agent Processing.Intel Details.WhatIf Forecasts -> Response Pipeline.NLG: "Analysis Data" { style.animated: true; style.stroke-dash: 5 }
+Agent Processing.Payment Details.Proxy Webhook -> Response Pipeline.NLG: "Transaction Status" { style.animated: true; style.stroke-dash: 5 }
+Agent Processing.Opp Details.Product Recs -> Response Pipeline.NLG: "Insights Data" { style.animated: true; style.stroke-dash: 5 }
+
+# Final Feedback loop
+Response Pipeline.Delivery.Render UI -> Dashboard Core.View Dashboard: "Updates State" { style.animated: true; style.stroke: "#22c55e" }
+
+Final Result: {
+  class: action_node
+  label: "User Sees Output\n& Insights"
+  icon: https://api.iconify.design/mdi:file-chart.svg?color=%230f172a
+}
+
+Response Pipeline.Delivery.Render UI -> Final Result: "Displays to User" { style.animated: true }
