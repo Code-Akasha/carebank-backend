@@ -115,8 +115,8 @@ class OllamaModelInfo(BaseModel):
     """Information about an available Ollama model."""
 
     name: str
-    size_gb: float
-    size_bytes: int
+    size_gb: float = 0.0
+    size_bytes: int = 0
     available: bool
 
 
