@@ -193,6 +193,24 @@ class CommunicationAgent(BaseAgent):
                         "is_nudge": ctx.is_nudge,
                     },
                 )
+            summary_response = self._maybe_render_summary_response(
+                agent_results,
+                requested_intent=agent_input.intent,
+            )
+            if summary_response:
+                if ctx.is_nudge:
+                    record_nudge(user_id)
+                return AgentOutput(
+                    response=summary_response,
+                    agent_name=self.name,
+                    confidence=0.95,
+                    metadata={
+                        "provider": "summary_template",
+                        "model": "deterministic",
+                        "persona": persona,
+                        "is_nudge": ctx.is_nudge,
+                    },
+                )
             health_response = self._maybe_render_health_response(
                 agent_results,
                 requested_intent=agent_input.intent,
@@ -297,6 +315,40 @@ class CommunicationAgent(BaseAgent):
             tone = self._persona_opening(persona)
             spend_line = f"You can comfortably spend around {total_str} without dipping into pending funds."
             return f"{tone}Total balance {total_str}. Current balance {current_str}. {spend_line}"
+        return None
+
+    def _maybe_render_summary_response(
+        self,
+        agent_results: list[dict],
+        *,
+        requested_intent: str,
+    ) -> str | None:
+        if requested_intent != "summary":
+            return None
+
+        if self._has_non_balance_success(agent_results):
+            return None
+
+        for result in agent_results:
+            metadata = result.get("metadata") or {}
+            if metadata.get("intent_handled") != "summary":
+                continue
+
+            total_spending = metadata.get("total_spending", 0.0)
+            total_income = metadata.get("total_income", 0.0)
+            tx_count = metadata.get("transaction_count", 0)
+
+            summary_text = f"You had {tx_count} transactions recently. Your total spending was ₹{total_spending:,.2f} and your total income was ₹{total_income:,.2f}."
+
+            top_categories = metadata.get("top_categories", [])
+            if top_categories:
+                cats_str = ", ".join(
+                    f"{c['category'].title()} (₹{c['amount']:,.2f})"
+                    for c in top_categories[:3]
+                )
+                summary_text += f" Your top spending categories were: {cats_str}."
+
+            return summary_text
         return None
 
     def _maybe_render_affordability_response(

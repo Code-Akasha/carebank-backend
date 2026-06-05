@@ -1,0 +1,42 @@
+# ============================================================================
+# Slide 1: Entry Flow & Dashboard (PPT Safe / No External Links)
+# ============================================================================
+direction: right
+
+classes: {
+  step_box: {shape: rectangle; style: {fill: white; stroke: "#cbd5e1"; stroke-width: 1; border-radius: 4; font-size: 14}}
+  container: {style: {fill: transparent; stroke: "#94a3b8"; stroke-width: 2; border-radius: 8; font-size: 16; bold: true}}
+  highlight_box: {shape: rectangle; style: {fill: "#f0fdf4"; stroke: "#16a34a"; border-radius: 4; font-size: 14; stroke-width: 2}}
+  db_node: {shape: cylinder; style: {fill: "#e0f2fe"; stroke: "#0284c7"; font-size: 12}}
+  bridge_node: {shape: step; style: {fill: "#f1f5f9"; stroke: "#64748b"; font-size: 14; bold: true}}
+}
+
+"1. Entry Flow": {
+  class: container
+  direction: down
+
+  Open App: {class: step_box; label: "[ ] Open Web App"}
+  Login: {class: step_box; label: "[@] Create Account\n/ Login"}
+  Onboarding: {class: step_box; label: "[*] Onboarding\n(Setup MPIN)"}
+  DB Setup: {class: db_node; label: "[( )] DB Setup &\nSeed Data"}
+
+  Open App -> Login -> Onboarding -> DB Setup: "Sync" {style.stroke-dash: 5}
+}
+
+"2. Dashboard": {
+  class: container
+  direction: down
+
+  View Dashboard: {class: step_box; label: "[#] View Dashboard\n(Balances & TXs)"}
+  Agentic Chat: {class: step_box; label: "[+] Open Agentic Chat"}
+  Send Query: {class: step_box; label: "[>] Send Financial\nQuery / Command"}
+  Coordinator: {class: highlight_box; label: "[^] Coordinator\n(Intent Router)"}
+
+  View Dashboard -> Agentic Chat -> Send Query -> Coordinator
+}
+
+"To Slide 2 (AI Processing)": {class: bridge_node}
+
+# Connections
+"1. Entry Flow".Onboarding -> "2. Dashboard".View Dashboard: "Enters App" {style.stroke-width: 2}
+"2. Dashboard".Coordinator -> "To Slide 2 (AI Processing)": "Routes Intent" {style.stroke: "#7c3aed"; style.stroke-width: 2; style.animated: true}
