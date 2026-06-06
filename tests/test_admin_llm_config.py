@@ -46,9 +46,9 @@ def test_get_llm_provider_prefers_admin_gemini_config(monkeypatch):
         environment="development",
     )
 
-    assert provider == "gemini:gemini-1.5-flash"
+    assert provider == "gemini:gemini-2.5-flash"
     assert llm.kwargs["google_api_key"] == "gemini-secret"
-    assert llm.kwargs["model"] == "gemini-1.5-flash"
+    assert llm.kwargs["model"] == "gemini-2.5-flash"
 
 
 def test_get_llm_provider_prefers_admin_ollama_config(monkeypatch):
@@ -92,7 +92,7 @@ def test_admin_llm_config_supports_gemini_provider(client):
                 "provider_type": "gemini",
                 "tunnel_url": "",
                 "tunnel_auth_token": "gemini-secret",
-                "ollama_model_default": "gemini-1.5-flash",
+                "ollama_model_default": "gemini-2.5-flash",
                 "request_timeout_sec": 30,
             },
         )
@@ -100,7 +100,7 @@ def test_admin_llm_config_supports_gemini_provider(client):
         body = response.json()
         assert body["provider_type"] == "gemini"
         assert body["tunnel_auth_token_masked"]
-        assert body["ollama_model_default"] == "gemini-1.5-flash"
+        assert body["ollama_model_default"] == "gemini-2.5-flash"
 
         fetched = client.get("/api/admin/llm/tunnel/development")
         assert fetched.status_code == 200, fetched.text
