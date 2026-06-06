@@ -181,6 +181,8 @@ def _build_llm_from_admin_config(config: dict, temperature: float, max_tokens: i
             )
             return None, "template_fallback"
         effective_model = model or "gemini-2.5-flash"
+        if effective_model == "gemini-1.5-flash":
+            effective_model = "gemini-2.5-flash"
         try:
             llm = _build_gemini_llm(token, effective_model, temperature, max_tokens)
             logger.info(
@@ -364,17 +366,21 @@ def get_llm_provider(
     # 3. Try Gemini API (fallback when Ollama is unavailable)
     if settings.gemini_api_key:
         try:
+            effective_gemini_model = gemini_model
+            if effective_gemini_model == "gemini-1.5-flash":
+                effective_gemini_model = "gemini-2.5-flash"
+
             llm = _build_gemini_llm(
                 settings.gemini_api_key,
-                gemini_model,
+                effective_gemini_model,
                 temperature,
                 max_tokens,
             )
             logger.info(
                 "🔁 Gemini fallback activated (Ollama unavailable) — using %s",
-                gemini_model,
+                effective_gemini_model,
             )
-            return llm, f"gemini:{gemini_model}"
+            return llm, f"gemini:{effective_gemini_model}"
         except ImportError:
             logger.warning("langchain-google-genai not installed")
         except Exception as e:
