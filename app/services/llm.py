@@ -96,10 +96,10 @@ def _build_gemini_llm(
 
 
 def _get_llm_config_from_db(environment: str) -> dict | None:
-    """Retrieve runtime Ollama configuration from database for a given environment.
+    """Retrieve runtime LLM configuration from database for a given environment.
     Returns None if no active config is found.
 
-    This function is called on-demand to check for admin-configured tunnel settings
+    This function is called on-demand to check for admin-configured provider settings
     before falling back to environment variables.
     """
     try:
@@ -120,19 +120,37 @@ def _get_llm_config_from_db(environment: str) -> dict | None:
             )
 
             if config:
+                provider_type = LLMAdminService.get_config_provider_type(config)
                 token = LLMAdminService.get_decrypted_token(config)
+                logger.info(
+                    "DB LLM config found: env=%s, provider=%s, model=%s, token_present=%s, url=%s",
+                    environment,
+                    provider_type,
+                    config.ollama_model_default,
+                    bool(token),
+                    bool(config.tunnel_url),
+                )
+                if provider_type in {"gemini", "openai"} and not token:
+                    logger.warning(
+                        "DB config for %s has provider=%s but token decryption returned None! "
+                        "Check encryption key consistency (BANKING_API_SECRET / JWT_SECRET). "
+                        "Falling through to env-var providers.",
+                        environment,
+                        provider_type,
+                    )
                 return {
-                    "provider_type": LLMAdminService.get_config_provider_type(config),
+                    "provider_type": provider_type,
                     "tunnel_url": config.tunnel_url,
                     "model": config.ollama_model_default,
                     "timeout_sec": config.request_timeout_sec,
                     "token": token,
                 }
+            logger.debug("No active DB LLM config for environment=%s", environment)
             return None
         finally:
             db.close()
     except Exception as e:
-        logger.debug(f"Failed to retrieve LLM config from DB: {e}")
+        logger.warning("Failed to retrieve LLM config from DB: %s", e)
         return None
 
 
@@ -144,6 +162,7 @@ def _build_llm_from_admin_config(config: dict, temperature: float, max_tokens: i
 
     if provider_type == "ollama":
         if not tunnel_url:
+            logger.warning("Admin config: Ollama provider has no tunnel_url, skipping")
             return None, "template_fallback"
         from langchain_ollama import ChatOllama
 
@@ -156,18 +175,31 @@ def _build_llm_from_admin_config(config: dict, temperature: float, max_tokens: i
 
     if provider_type == "gemini":
         if not token:
-            return None, "template_fallback"
-        try:
-            llm = _build_gemini_llm(
-                token, model or "gemini-2.5-flash", temperature, max_tokens
+            logger.warning(
+                "Admin config: Gemini provider has no API token (decryption failed or not set). "
+                "Cannot initialize Gemini LLM from DB config."
             )
-            return llm, f"gemini:{model or 'gemini-2.5-flash'}"
+            return None, "template_fallback"
+        effective_model = model or "gemini-2.5-flash"
+        try:
+            llm = _build_gemini_llm(token, effective_model, temperature, max_tokens)
+            logger.info(
+                "Successfully built Gemini LLM from admin config: model=%s",
+                effective_model,
+            )
+            return llm, f"gemini:{effective_model}"
         except ImportError:
             logger.warning("langchain-google-genai not installed")
+            return None, "template_fallback"
+        except Exception as e:
+            logger.warning("Gemini LLM build from admin config failed: %s", e)
             return None, "template_fallback"
 
     if provider_type == "openai":
         if not token:
+            logger.warning(
+                "Admin config: OpenAI provider has no API token (decryption failed or not set)."
+            )
             return None, "template_fallback"
         from langchain_openai import ChatOpenAI
 
@@ -182,6 +214,7 @@ def _build_llm_from_admin_config(config: dict, temperature: float, max_tokens: i
         llm = ChatOpenAI(**kwargs)
         return llm, f"openai:{model or 'gpt-4o-mini'}"
 
+    logger.warning("Admin config: Unknown provider type '%s', skipping", provider_type)
     return None, "template_fallback"
 
 
@@ -267,15 +300,21 @@ def get_llm_provider(
                 )
                 if llm:
                     logger.info(
-                        "Using DB-configured %s provider for environment %s",
+                        "✅ Using DB-configured %s provider for environment %s",
                         provider_type,
                         environment,
                     )
                     return llm, provider_name
+                logger.warning(
+                    "⚠️ DB-configured %s provider for env=%s returned None. "
+                    "Falling through to env-var providers.",
+                    provider_type,
+                    environment,
+                )
         except ImportError:
             logger.warning("Required LangChain provider package not installed")
         except Exception as e:
-            logger.warning(f"DB-configured provider initialization failed: {e}")
+            logger.warning("DB-configured provider initialization failed: %s", e)
 
     # 2. Try Environment Variable Ollama
     if settings.ollama_base_url:

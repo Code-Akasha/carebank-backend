@@ -69,6 +69,10 @@ def generate_response(
     )  # Lower temperature to reduce hallucination
 
     if not llm:
+        logger.warning(
+            "LLM provider returned None (provider=%s). Using template fallback for NLG.",
+            provider,
+        )
         serialized = _serialize_data_context(data_context)
         return _template_fallback(persona, serialized, task_description)
 
@@ -243,9 +247,14 @@ def _structured_fallback_text(persona: str, data_context: str) -> str | None:
                 reply = _generate_conversational_reply(persona, query)
                 if reply:
                     return reply["text"]
+                logger.warning(
+                    "Both LLM NLG and conversational reply failed for query: %s",
+                    query[:80],
+                )
                 return (
-                    "I can help with balances, upcoming bills, transactions, or whether you can afford a purchase. "
-                    f"If you meant '{query}', please ask a bit more specifically."
+                    "I'm having trouble connecting to my AI service right now, "
+                    "so I can't fully process your request. "
+                    "Please try again in a moment, or ask about your balance, transactions, or bills directly."
                 )
         return None
 
