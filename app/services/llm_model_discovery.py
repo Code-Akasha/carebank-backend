@@ -236,6 +236,8 @@ class GeminiModel:
             "display_name": self.display_name,
             "supported_actions": self.supported_actions,
             "available": True,
+            "size_gb": 0.0,
+            "size_bytes": 0,
         }
 
 
