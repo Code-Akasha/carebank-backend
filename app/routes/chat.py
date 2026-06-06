@@ -130,3 +130,56 @@ def chat(
         agent_used=result.get("agent_used", "unknown"),
         ui_actions=ui_actions,
     )
+
+
+class HistoryMessage(BaseModel):
+    id: str
+    sender: str
+    content: str
+    timestamp: str
+
+
+class ChatHistoryResponse(BaseModel):
+    messages: list[HistoryMessage]
+
+
+@router.get("/history", response_model=ChatHistoryResponse)
+def get_chat_history(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[DBSession, Depends(get_db)],
+):
+    user_id = str(current_user.user_id)
+    logs = (
+        db.query(AuditLog)
+        .filter(AuditLog.user_id == user_id)
+        .order_by(AuditLog.timestamp.desc())
+        .limit(25)
+        .all()
+    )
+
+    # We get the logs in descending order (newest first).
+    # We need to reverse them to return chronological order.
+    logs.reverse()
+
+    messages = []
+    for log in logs:
+        # Add user message
+        messages.append(
+            HistoryMessage(
+                id=f"{log.id}-user",
+                sender="user",
+                content=log.user_message,
+                timestamp=log.timestamp.isoformat() + "Z",
+            )
+        )
+        # Add agent message
+        messages.append(
+            HistoryMessage(
+                id=f"{log.id}-agent",
+                sender="agent",
+                content=log.agent_response,
+                timestamp=log.timestamp.isoformat() + "Z",
+            )
+        )
+
+    return ChatHistoryResponse(messages=messages)
