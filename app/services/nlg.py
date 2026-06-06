@@ -236,10 +236,10 @@ def _structured_fallback_text(persona: str, data_context: str) -> str | None:
                     reply = _generate_conversational_reply(persona, query)
                     if reply:
                         return reply["text"]
-                return (
-                    "Hi! I can help with balances, transactions, spending, savings, or payments. "
-                    "What would you like to check?"
-                )
+                    return (
+                        "Hi! I can help with balances, transactions, spending, savings, or payments. "
+                        "What would you like to check?"
+                    )
                 reply = _generate_conversational_reply(persona, query)
                 if reply:
                     return reply["text"]

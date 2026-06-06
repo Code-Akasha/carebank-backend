@@ -1076,6 +1076,18 @@ class CommunicationAgent(BaseAgent):
             },
         }
 
+        if self._is_action_follow_up_message(user_message):
+            return {
+                "response": "I'm sorry, but I seem to have lost the context of the action we were discussing. Could you please specify what you'd like to do again?",
+                "confidence": 0.8,
+                "pending_state": None,
+                "clear_pending": True,
+                "action": None,
+                "ui_actions": [],
+            }
+
+        return None
+
     @classmethod
     def _parse_action_decision(cls, message: str) -> str | None:
         normalized = re.sub(r"\s+", " ", message.lower()).strip()
