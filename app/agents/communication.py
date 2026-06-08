@@ -993,6 +993,15 @@ class CommunicationAgent(BaseAgent):
         normalized_type = str(action_type).strip().lower()
         label = self._format_action_label(normalized_type)
 
+        if normalized_type == "cancel_schedule":
+            return {
+                "response": "I cannot cancel schedules directly from chat yet. Please navigate to the Schedules tab on your dashboard to manage or cancel your recurring payments.",
+                "confidence": 0.95,
+                "pending_state": None,
+                "clear_pending": True,
+                "action": None,
+            }
+
         if normalized_type == "record_note":
             if not action_payload.get("message"):
                 action_payload["message"] = user_message.strip()
@@ -1143,6 +1152,9 @@ class CommunicationAgent(BaseAgent):
             return "pay_bill"
         if "note" in lowered or "remember" in lowered or "record" in lowered:
             return "record_note"
+        if "cancel" in lowered or "stop" in lowered or "delete" in lowered:
+            if "schedule" in lowered or "payment" in lowered or "recurring" in lowered or "upcoming" in lowered:
+                return "cancel_schedule"
         return None
 
     @staticmethod
