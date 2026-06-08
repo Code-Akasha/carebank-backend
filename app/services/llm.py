@@ -245,7 +245,7 @@ def get_llm_provider(
     if not environment:
         environment = settings.environment
 
-    gemini_model = settings.gemini_model or "gemini-2.5-flash"
+    gemini_model = settings.gemini_model or "gemini-3.5-flash"
     ollama_model = settings.ollama_model or "llama3.2"
     openai_model = "gpt-4o-mini"
 
