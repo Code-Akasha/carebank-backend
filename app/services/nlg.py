@@ -43,6 +43,7 @@ IMPORTANT RULES:
 3. Keep responses concise (2-3 sentences max)
 4. Do NOT add financial disclaimers (the system adds them automatically)
 5. Match the tone to the user's persona
+6. NEVER use the '$' symbol for currency. Use the Indian Rupee symbol '₹' instead (e.g., '₹50.00' instead of '$50.00') to avoid markdown rendering bugs.
 
 Persona: {persona}
 Data (JSON): {data_context}
@@ -199,7 +200,8 @@ def _generate_conversational_reply(
 Persona: {persona}
 User message: {user_query}
 
-Reply with a short, friendly, natural answer. Do not mention policies or internal systems. Keep it to 1-2 sentences.
+Reply with a short, friendly, natural answer. Do not mention policies or internal systems. Keep it to 1-2 sentences. 
+NEVER use the '$' symbol for currency. Use the Indian Rupee symbol '₹' instead.
 """,
     )
     chain = prompt | llm
