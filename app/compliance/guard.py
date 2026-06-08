@@ -26,15 +26,14 @@ def validate_and_refine(
     intent: str,
     original_data: dict[str, Any] | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    """Compliance Guard validation pipeline.
-    1. Blacklist check
-    2. Number verification (if original data provided)
+    """Compliance Guard validation pipeline using LLM.
+    1. Blacklist check and rewrite
+    2. Number verification and rewrite
     3. Disclaimer injection
-
-    Returns:
-        tuple of (refined_response, compliance_metadata)
-
     """
+    from langchain_core.prompts import PromptTemplate
+    from app.services.llm import get_llm_provider
+
     metadata: dict[str, Any] = {
         "blacklist_flagged": False,
         "numbers_verified": True,
@@ -43,42 +42,53 @@ def validate_and_refine(
 
     refined_response = response
 
-    # 1. Blacklist Check
+    # 1. Blacklist Check via LLM
     lower_resp = refined_response.lower()
-    for term in BLACKLIST_TERMS:
-        if term in lower_resp:
-            metadata["blacklist_flagged"] = True
-            logger.warning(f"Compliance flag: Blacklisted term '{term}' found.")
-            # Redact or replace
-            refined_response = re.sub(f"(?i){term}", "[REDACTED]", refined_response)
+    flagged_terms = [term for term in BLACKLIST_TERMS if term in lower_resp]
+    if flagged_terms:
+        metadata["blacklist_flagged"] = True
+        logger.warning(f"Compliance flag: Blacklisted terms {flagged_terms} found.")
+        try:
+            llm, provider = get_llm_provider(temperature=0.2)
+            prompt = PromptTemplate.from_template(
+                "You are a compliance guard for a bank.\n"
+                "The following response contains disallowed concepts: {terms}.\n"
+                "Rewrite the response to safely mask these concepts and remove guarantees or advice. Keep the friendly tone.\n"
+                "Original Response: {response}\n\n"
+                "Rewritten Response:"
+            )
+            chain = prompt | llm
+            rewritten = chain.invoke(
+                {"terms": ", ".join(flagged_terms), "response": refined_response}
+            )
+            refined_response = rewritten.content.strip()
+        except Exception as e:
+            logger.error(f"LLM rewrite failed: {e}")
+            for term in flagged_terms:
+                refined_response = re.sub(f"(?i){term}", "[REDACTED]", refined_response)
 
-    # 2. Number Verification (Heuristic for MVP)
-    # If the LLM generates a number not in the original data context, flag an alert
+    # 2. Number Verification via LLM
     if original_data:
-        # Extract all numbers from response
-        resp_numbers = [
-            float(n.replace(",", ""))
-            for n in set(re.findall(r"\d+(?:,\d+)*(?:\.\d+)?", refined_response))
-        ]
-
-        # Flatten original data to string and extract numbers
-        data_str = str(original_data)
-        data_numbers = [
-            float(n.replace(",", ""))
-            for n in set(re.findall(r"\d+(?:,\d+)*(?:\.\d+)?", data_str))
-        ]
-
-        # Check if any major number in response (> 100) is NOT in original data
-        for num in resp_numbers:
-            if num > 100 and num not in data_numbers:
-                # Flag hallucination (allow a small float tolerance)
-                # (In a real system, we'd do fuzzy matching or use LLM-as-a-judge)
-                metadata["numbers_verified"] = False
-                logger.warning(f"Compliance flag: Possible number hallucination: {num}")
-                break
+        try:
+            llm, provider = get_llm_provider(temperature=0.0)
+            prompt = PromptTemplate.from_template(
+                "You are a compliance guard. Verify if all financial numbers in the 'Response' are accurately based on the 'Original Data'.\n"
+                "If the LLM hallucinated numbers not present in the data, rewrite the response to correct or remove them.\n"
+                "If the numbers are correct, output the response exactly as is.\n\n"
+                "Original Data: {data}\n\n"
+                "Response: {response}\n\n"
+                "Verified Response:"
+            )
+            chain = prompt | llm
+            verified = chain.invoke(
+                {"data": str(original_data), "response": refined_response}
+            )
+            if verified.content.strip():
+                refined_response = verified.content.strip()
+        except Exception as e:
+            logger.error(f"LLM number verification failed: {e}")
 
     # 3. Disclaimer Injection
-    # Always append disclaimer if it's related to forecasting or what-if
     if intent in ["health_score", "what_if", "auto_savings"]:
         if "Disclaimer" not in refined_response:
             refined_response += DISCLAIMER

@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     ollama_model: str = "qwen3:8b"
     ollama_auto_pull: bool = True
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.5-flash"
     jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
     jwt_expiry_hours: int = 24
