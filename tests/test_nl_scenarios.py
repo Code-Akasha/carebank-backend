@@ -35,7 +35,9 @@ def mock_dependencies():
                 },
             ]
 
-            def mock_generate_response(persona, data_context, task_description, **kwargs):
+            def mock_generate_response(
+                persona, data_context, task_description, **kwargs
+            ):
                 text = "Mocked NLG Response with savings tips"
                 data_str = str(data_context).lower()
                 task_str = str(task_description).lower()
@@ -45,14 +47,14 @@ def mock_dependencies():
                     text = "Your health Score is 80/100."
                 elif "advice" in task_str or "advice" in data_str or "save" in task_str:
                     text = "Here is a savings_opportunity to help you save."
-                
+
                 return {
                     "text": text,
                     "provider": "mocked",
                     "model": "mocked",
-                    "persona": persona
+                    "persona": persona,
                 }
-            
+
             with patch("app.agents.communication.generate_response") as mock_nlg:
                 mock_nlg.side_effect = mock_generate_response
 
