@@ -35,8 +35,26 @@ def mock_dependencies():
                 },
             ]
 
-            with patch("app.services.nlg.generate_response") as mock_nlg:
-                mock_nlg.return_value = "Mocked NLG Response"
+            def mock_generate_response(persona, data_context, task_description, **kwargs):
+                text = "Mocked NLG Response with savings tips"
+                data_str = str(data_context).lower()
+                task_str = str(task_description).lower()
+                if "balance" in task_str or "balance" in data_str:
+                    text = "Your balance is ₹ 50000."
+                elif "health" in task_str or "health" in data_str:
+                    text = "Your health Score is 80/100."
+                elif "advice" in task_str or "advice" in data_str or "save" in task_str:
+                    text = "Here is a savings_opportunity to help you save."
+                
+                return {
+                    "text": text,
+                    "provider": "mocked",
+                    "model": "mocked",
+                    "persona": persona
+                }
+            
+            with patch("app.agents.communication.generate_response") as mock_nlg:
+                mock_nlg.side_effect = mock_generate_response
 
                 yield {
                     "get_balance": mock_get_balance,
