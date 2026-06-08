@@ -1153,7 +1153,12 @@ class CommunicationAgent(BaseAgent):
         if "note" in lowered or "remember" in lowered or "record" in lowered:
             return "record_note"
         if "cancel" in lowered or "stop" in lowered or "delete" in lowered:
-            if "schedule" in lowered or "payment" in lowered or "recurring" in lowered or "upcoming" in lowered:
+            if (
+                "schedule" in lowered
+                or "payment" in lowered
+                or "recurring" in lowered
+                or "upcoming" in lowered
+            ):
                 return "cancel_schedule"
         return None
 
