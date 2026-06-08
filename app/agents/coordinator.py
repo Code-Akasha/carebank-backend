@@ -1165,21 +1165,28 @@ def classify_intent(state: CoordinatorState) -> CoordinatorState:
             )
         else:
             action_signal = _detect_action_request(message, history)
-            if (
-                action_signal
-                and action_signal.is_action_request
-                and action_signal.action_family == "schedule_payment"
-            ):
-                parameters: dict = {"source_text": message}
-                if action_signal.amount is not None:
-                    parameters["amount"] = float(action_signal.amount)
-                if action_signal.day_of_month is not None:
-                    parameters["day_of_month"] = int(action_signal.day_of_month)
-                result = ClassificationResult(
-                    intent="planning",
-                    confidence=max(float(action_signal.confidence), 0.78),
-                    parameters=parameters,
-                )
+            if action_signal and action_signal.is_action_request:
+                if action_signal.action_family == "schedule_payment":
+                    parameters: dict = {"source_text": message}
+                    if action_signal.amount is not None:
+                        parameters["amount"] = float(action_signal.amount)
+                    if action_signal.day_of_month is not None:
+                        parameters["day_of_month"] = int(action_signal.day_of_month)
+                    result = ClassificationResult(
+                        intent="planning",
+                        confidence=max(float(action_signal.confidence), 0.78),
+                        parameters=parameters,
+                    )
+                elif action_signal.action_family == "manage_schedule":
+                    result = ClassificationResult(
+                        intent="actions",
+                        confidence=max(float(action_signal.confidence), 0.78),
+                        parameters={"action_type": "cancel_schedule"},
+                    )
+                else:
+                    result = _contextual_intent_override(message, history)
+                    if result is None:
+                        result = _classify_intent_with_llm(message, history)
             else:
                 result = _contextual_intent_override(message, history)
                 if result is None:

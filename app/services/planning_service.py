@@ -25,7 +25,7 @@ DAY_PATTERN = re.compile(
 )
 ORDINAL_PATTERN = re.compile(r"\b(\d{1,2})(?:st|nd|rd|th)\b", flags=re.IGNORECASE)
 AMOUNT_PATTERN = re.compile(
-    r"(?:₹|inr|rs\.?\s*)?\s*(\d+(?:\.\d+)?)\s*(k|thousand|lakh|lakhs|lac|lacs|crore|crores|cr)?\b",
+    r"(?:₹|inr|rs\.?\s*)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s*(k|thousand|lakh|lakhs|lac|lacs|crore|crores|cr)?\b",
     flags=re.IGNORECASE,
 )
 
@@ -57,7 +57,8 @@ def extract_day_of_month(text: str) -> int | None:
 
 def extract_amount(text: str) -> float | None:
     for match in AMOUNT_PATTERN.finditer(text):
-        amount = float(match.group(1))
+        amount_str = match.group(1).replace(",", "")
+        amount = float(amount_str)
         unit = (match.group(2) or "").lower()
         if unit:
             multiplier = UNIT_MULTIPLIERS.get(unit)
