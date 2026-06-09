@@ -59,3 +59,25 @@ per-file-ignores = {"tests/**.py" = [
 [tool.ruff.format]
 # left intentionally minimal to avoid compatibility issues with older ruff
 # versions in CI; formatting defaults will be used.
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+files = ["app"]
+
+# Per-module overrides can be added if needed, for example:
+# [mypy:prophet]
+# ignore_missing_imports = True
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (require services)",
+    "e2e: End-to-end tests (full workflow)",
+]
