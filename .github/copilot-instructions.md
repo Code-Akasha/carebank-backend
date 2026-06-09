@@ -22,7 +22,7 @@
   - `.venv\Scripts\python.exe -m pip install -r requirements.txt`
   - `.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`
   - `.venv\Scripts\python.exe -m pytest`
-- Use pytest markers from `pytest.ini` for selective runs:
+- Use pytest markers from `pyproject.toml` for selective runs:
   - `.venv\Scripts\python.exe -m pytest -m unit`
   - `.venv\Scripts\python.exe -m pytest -m integration`
 - Lint with Ruff when touching Python code:

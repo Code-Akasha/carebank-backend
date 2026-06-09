@@ -1,3 +1,40 @@
+[project]
+name = "carebank-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.13.0",
+    "apscheduler>=3.10.0",
+    "fastapi>=0.104.0",
+    "httpx>=0.25.0",
+    "langchain-core>=0.3.0",
+    "langchain-google-genai>=2.0.0",
+    "langchain-ollama>=0.2.0",
+    "langchain-openai>=0.3.0",
+    "langgraph>=0.4.0",
+    "nest-asyncio>=1.6.0",
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
+    "passlib[bcrypt]>=1.7.0",
+    "pgvector>=0.2.0",
+    "prophet>=1.1.0",
+    "psycopg2-binary>=2.9.0",
+    "pydantic>=2.4.0",
+    "pydantic-settings>=2.0.0",
+    "pyjwt>=2.8.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "python-multipart>=0.0.6",
+    "redis>=5.0.0",
+    "respx>=0.20.0",
+    "rich>=13.7.0",
+    "ruff>=0.9.0",
+    "sqlalchemy>=2.0.0",
+    "starlette>=0.27.0",
+    "uvicorn>=0.23.0",
+]
+
 [tool.ruff]
 # Use project defaults; ruff binary in .venv will read this config
 exclude = [".agent/**", "scripts/**"]
@@ -22,3 +59,25 @@ per-file-ignores = {"tests/**.py" = [
 [tool.ruff.format]
 # left intentionally minimal to avoid compatibility issues with older ruff
 # versions in CI; formatting defaults will be used.
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+files = ["app"]
+
+# Per-module overrides can be added if needed, for example:
+# [mypy:prophet]
+# ignore_missing_imports = True
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (require services)",
+    "e2e: End-to-end tests (full workflow)",
+]
